@@ -1,0 +1,58 @@
+Memory Manage : 
+
+ *Memory bank 
+
+ 0000h-5FFFh (ROM Area) 
+ 6000h-6FFFh (Reserved)
+ 7000h-FFFFh (RAM Area) 
+
+ *Detailed Memory map 
+
+ 0000h - 1FFFh : M5 MONITOR (Internal ROM 8KB) 
+ 2000h - 5FFFh : External ROM Cartride (MAX 16KB) 
+ 6000h - 6FFFh : Reserved Area
+ 7000h - 7FFFh : Internal RAM (4KB) 
+ 8000h - FFFFh : External RAM Cartride (MAX 8KB) or 32K Expand Box (MAX 32KB) 
+
+
+ 2) I/O Ports 
+
+ *Z80CTC 
+ 00h : Channel #0: SIO Int.
+ 01h : Channel #1: Peripheral Timer 
+ 02h : Channel #2: SIO Clock Generator 
+ 03h : Channel #3: VDP Blanking(Frame) Interrupt
+
+ *VDP TMS9918A 
+ 10h : Data port
+ 11h : Control port
+
+ *Sound Generator SN76489AN 
+ 20h : Data write
+
+*Keyboard
+ 30h : row#0
+ 31h : row#1 + Joypad buttons
+ 32h : row#2 
+ 33h : row#3 
+ 34h : row#4 
+ 35h : row#5 
+ 36h : row#6 
+ 37h : Joypad Direction Input
+
+*Parallel Out
+ 40h : DATA
+ 50h : STROBE(Bit 0)
+ 50h : BUSY(Bit 1)
+
+ *Cassette tape recorder
+ 50h : Output port(Bit 0) 
+ 50h : Input port(Bit 0) 
+ 50h : Remote port(Bit 1) (motor?)
+*RESET/HALT Key
+50h : Reset/Halt Key data port(Bit 7)
+
+60h : EXIOA
+
+70h : EXIOB
+

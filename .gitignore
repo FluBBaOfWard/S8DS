@@ -1,0 +1,9 @@
+*.gg
+*.rom
+*.sms
+*.ic21
+*.sg
+S8DS.xcodeproj/project.xcworkspace/xcuserdata
+build
+*.elf
+*.nds

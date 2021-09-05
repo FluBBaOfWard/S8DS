@@ -1,0 +1,1053 @@
+ 
+ SEGA SC-3000H hardware notes
+ by Charles MacDonald
+ WWW http://cgfm2.emuviews.com
+
+ Unpublished work Copyright 2002-2011 Charles MacDonald
+
+ Table of Contents
+
+  1.) Introduction
+  2.) Overview
+  3.) Memory map
+  4.) Port map
+  5.) Keyboard and I/O
+  6.) TMS9929A information
+  7.) Custom components
+  8.) Miscellaneous
+  9.) Assistance Needed
+ 10.) Credits and acknowledgements
+ 11.) Disclaimer
+
+ What's New:
+
+ [10/12/11]
+ - Rewrote many parts of the document based on new research.
+ [07/29/04]
+ - Updated memory refresh information.
+ - Added chip revision information.
+ - Added power supply and A/V cable notes.
+ [03/04/04]
+ - Added cassette custom chip pinout
+ - Fixed error labeling PPI pins PC3 and PC4.
+ - Finished MITEC-2 pinout
+ - Confirmed unused pins in several connectors
+ - Added information on Z80 / SN76489A clock generation
+ - Changed /EXCS to be /EXM1 to fit naming conventions
+ [03/01/04]
+ - Added details on DRAM interface. Some guesswork, but mostly accurate.
+ - Added almost complete MITEC-2 custom chip pinout.
+ - Finished cartridge connector pin assignments
+ - Added keyboard ribbon cable pin assignments
+ - Added serial printer port pin assignments
+ - Fixed joystick pin assignments
+ - Expanded coverage of cart types
+ - Fixed several errors
+ [06/05/02]
+ - Added notes on PPI control register and work RAM
+ - Fixed initial values for PPI port B bits 7-5
+ - Added information on VDP register #1 bit 7
+ [05/31/02]
+ - Updated keyboard information
+ - Added interrupt information
+
+ ----------------------------------------------------------------------------
+ 1.) Introduction
+ ----------------------------------------------------------------------------
+
+ The SC-3000H is a personal computer made by SEGA. For information about
+ SEGA's 8-bit computers and game systems that came before the Mark III,
+ check out the documentation for MEKA:
+
+ http://www.smspower.org/meka/
+
+ To briefly sum things up, here's a list of the different systems:
+
+ SG-1000        No keyboard
+ SG-1000 II     No keyboard, but supports the SK-1100 external keyboard
+ SC-3000        Built-in keyboard with soft rubber keys
+ SC-3000H       Built-in keyboard with hard plastic keys
+
+ Expansion hardware
+
+ An addition for the SC-3000 was the SF-7000, which adds 64K of RAM, 8K
+ of ROM (for a disk operating system), Centronics parallel port, and an
+ RS-232C serial port. Marc Le Dourain has a webpage about it at:
+
+ http://www.multimania.com/mavati
+
+ ----------------------------------------------------------------------------
+ 2.) Overview
+ ----------------------------------------------------------------------------
+
+ The SC-3000H has the following components:
+
+ - Z80 CPU (running at 3.58 MHz).
+ - 2K work RAM.
+ - TMS9929A video chip with 16K RAM.
+ - SN76489 sound chip.
+ - Built in keyboard.
+
+ Connectors
+
+ - DC power jack (2.1mm)
+ - Two joystick connectors (DE-9)
+ - Serial printer connector (8-pin DIN)
+ - Cassette data input and output jacks (female mono miniplug)
+ - Audio / Video connector (5-pin DIN)
+ - Cartridge connector (22-pin, double sided, .125 [3.175mm] contact spacing)
+
+ Parts list
+
+  IC1 - Sharp LH0080A ("Z80-CPU-D" printed on package)
+  IC2 - SEGA MITEC-2 (28-pin DIP, .600")
+  IC3 - Fujitsu MB82128-15 (2Kx8 static RAM)
+  IC4 - Texas Instruents SN76489AN
+  IC5 - NEC D8255AC-2 (Compatible with 82C55 PPI)
+  IC6 - Fujitsu MB74LS145
+  IC7 - NEC 7805
+  IC8 - "HIC-1" (11-pin SIP hybrid module, manufacturer unknown)
+  IC9 - Texas Instruments TMS9929ANL
+ IC10 - Motorola MCM4517P15 (16Kx1 DRAM)
+ IC11 - Motorola MCM4517P15
+ IC12 - Motorola MCM4517P15
+ IC13 - Motorola MCM4517P15
+ IC14 - Motorola MCM4517P15
+ IC15 - Motorola MCM4517P15
+ IC16 - Motorola MCM4517P15
+ IC17 - Motorola MCM4517P15
+ IC18 - Mitsubishi MN74HC04
+   X1 - 10.7386 MHZ oscillator
+   X2 - 3.58 MHz oscillator
+
+ Note that both the SN76489A and TMS9929A are the 'A' versions, as opposed
+ to the original chips which have no letter suffix.
+
+ ----------------------------------------------------------------------------
+ 3.) Connector pin assignments
+ ----------------------------------------------------------------------------
+
+ DC power jack (2.1mm)
+
+ Tip is negative (ground), ring is positive (+9V DC).
+ An AC adapter that can provide 850mA or more will work fine.
+
+ Joystick connectors
+
+ Pin diagram of male DE-9 plug on back of console:
+
+   1 2 3 4 5
+    6 7 8 9
+
+ 1 : Joystick up switch
+ 2 : Joystick down switch
+ 3 : Joystick left switch
+ 4 : Joystick right switch
+ 5 : Unused (not connected to anything)
+ 6 : Left trigger switch
+ 7 : Unused (not connected to anything)
+ 8 : Common
+ 9 : Right trigger switch
+
+ Pin 8 is the common side of all switches in the joystick and is connected
+ to output line 7 of the 74LS145. It is LOW when the seventh keyboard row
+ is selected (enabling the joystick ports for input) and HIGH otherwise
+ (joystick ports disabled).
+
+ This is different from the SMS and Genesis/MegaDrive joystick connector
+ which use pin 8 as ground and pin 5 as +5V. The original type of Master
+ System joysticks are compatible with the SC-3000H, but I would not advise
+ using any special SMS joysticks (e.g. autofire or programmable) or any
+ Genesis/MegaDrive joysticks with the SC-3000H.
+
+ Serial printer connector
+
+ Pin diagram of 8-pin DIN plug on back of console:
+
+      1       7
+     2         6
+       3     5
+          4
+
+ 1 : Unused (not connected to anything)
+ 2 : PPI PC5 (DATA output)
+ 3 : PPI PC7 (/FEED output)
+ 4 : PPI PB6 (BUSY input)
+ 5 : PPI PC6 (/RESET output)
+ 6 : PPI PB5 (FAULT input)
+ 7 : GND
+
+ The pin names are from the SF-7000 documentation, not my own.
+
+ Cassette in connector
+
+ Tip:  To pin 11 of HIC-1 hybrid module.
+ Ring: Ground
+
+ Cassette out connector
+
+ Tip:  Through R15 to pin 9 of HIC-1 hybrid module.
+ Ring: Ground
+
+ Audio / Video connector
+
+ Pin diagram of female 5-pin DIN plug on back of console:
+
+     1         5
+       2     4
+          3
+
+ 1 : Composite video
+ 2 : Ground
+ 3 : Ground
+ 4 : Ground
+ 5 : Ground
+ 6 : Monaural audio
+
+ Internal keyboard ribbon cable headers
+
+ Pin numbering goes from left (1) to right (11) for both connectors.
+
+ CN7 
+
+  1 : 74LS145 output line 0
+  2 : 74LS145 output line 1
+  3 : 74LS145 output line 2
+  4 : 74LS145 output line 3
+  5 : 74LS145 output line 4
+  6 : 74LS145 output line 5
+  7 : 74LS145 output line 6
+  8 : PPI PA0
+  9 : PPI PA1
+ 10 : PPI PA2
+ 11 : PPI PA3
+
+ CN8
+
+  1 : PPI PA4
+  2 : PPI PA5
+  3 : PPI PA6
+  4 : PPI PA7
+  5 : PPI PB0
+  6 : PPI PB1
+  7 : PPI PB2
+  8 : PPI PB3
+  9 : Ground
+ 10 : Not used (see notes)
+ 11 : From RESET key to MITEC-2 pin 3 (NMI-IN)
+
+ Pins 1-7 of CN7 are outputs to select rows in the keyboard's key matrix.
+
+ Pins 8-11 of CN7 and 1-8 of CN8 are inputs with pull-up resistors to read
+ data from the selected keyboard row.
+
+ Pin 10 is not used by the keyboard. It is connected to the power switch
+ and could have been intended to control the power LED, which instead has
+ its own direct connection to the switch.
+
+ Pin 11 of CN8 is an output to the NMI-IN pin of the MITEC-2 chip.
+
+ Cartridge connector
+
+ The cartridge connector has 22 pins on both sides, on .125" (3.175mm)
+ centers. 
+
+ Solder side
+
+  A1 : Z80: A0
+  A2 : Z80: A1
+  A3 : Z80: A2
+  A4 : Z80: A3
+  A5 : Z80: A4
+  A6 : Z80: A5
+  A7 : Z80: A6
+  A8 : Z80: A7
+  A9 : Z80: A8
+ A10 : Z80: A9
+ A11 : Z80: A10
+ A12 : Z80: A11
+ A13 : Z80: A12
+ A14 : Z80: A13
+ A15 : Z80: D0
+ A16 : Z80: D1
+ A17 : Z80: D2
+ A18 : Z80: D3
+ A19 : Z80: D4
+ A20 : Z80: D5
+ A21 : Z80: D6
+ A22 : Z80: D7
+
+ Components side
+
+  B1 : +5V
+  B2 : +5V
+  B3 : MITEC-2: Work RAM /CS (for C000-FFFF)
+  B4 : MITEC-2: /EXM1 (Expansion /CS for 8000-BFFF)
+  B5 : MITEC-2: MEMORY /RD
+  B6 : MITEC-2: MEMORY /WR
+  B7 : MITEC-2: I/O PORT /RD
+  B8 : MITEC-2: I/O PORT /WR
+  B9 : Unused (not connected to anything)
+ B10 : Z80: /MREQ
+ B11 : PPI: /CONT
+ B12 : MITEC-2: /RAS0
+ B13 : MITEC-2: /CAS0
+ B14 : MITEC-2: RA7
+ B15 : MITEC-2: /RAS1
+ B16 : MITEC-2: /CAS1
+ B17 : MITEC-2: /RCSEL
+ B18 : Z80: A14
+ B19 : Z80: A15
+ B20 : Unused (not connected to anything)
+ B21 : GND
+ B22 : GND
+
+ Work RAM enable
+
+ The work RAM /CS signal from the MITEC-2 chip goes through series
+ resistor R3 (1K ohm) to the /CE pin of the 2Kx8 work RAM as well
+ as pin B3 of the cartridge connector. This allows pin B3 to enable or
+ disable work RAM as follows:
+
+ If pin B3 is tied to +5V, the work RAM is disabled and the cartridge can
+ freely map memory to the C000-FFFF range. This does not conflict with
+ the work RAM /CS signal as it is effectively connected to a 1K pull-up
+ resistor to +5V. If pin B3 is left unconnected, the work RAM /CE input is driven by the
+ MITEC work RAM /CS output and work RAM functions normally.
+
+ Grounding pin 3 would force work RAM to be permanently enabled and would
+ cause a bus conflict, preventing the system from operating. Some BASIC
+ cartridges appear to have circuitry to dynamically control this pin,
+ allowing work RAM to be selectively enabled within parts of the C000-FFFF
+ range. This may allow the cartridge to map RAM within that region that
+ supplements the built-in work RAM instead of replacing it.
+
+ Other strobes
+
+ Pin B4 is a chip select signal for memory accesses to the $8000-$BFFF range.
+ Pins B5 and B6 are /MREQ and /RD,/WR combined for memory read/write strobes.
+ Pins B7 and B8 are /IORQ and /RD,/WR combined for I/O read/write strobes.
+
+ Pin B11 is connected to PPI PB4 through a pull-up resistor. The SF-7000
+ documentation labels this pin /CONT, though it's just another input bit.
+
+ Pins B12 to B17 are used for controlling DRAM, managed by the MITEC-2 chip.
+
+ ----------------------------------------------------------------------------
+ 3.) Memory map and cartridge types
+ ----------------------------------------------------------------------------
+
+ The memory map is mostly defined by the cartridge. As mentioned earlier
+ the MITEC-2 chip does provide a /CS signal for the $8000-$BFFF and
+ $C000-$FFFF range, but it's up to the cartridge how to map ROM, RAM, etc.
+ to memory.
+
+ For any memory area that is unused, such as the work RAM area when it is
+ disabled, reads return the high byte of the address bus (e.g. reading $C1AB
+ would return $C1).
+
+ I only have a Safari Hunting and Basic Level III A cartridge, so some of the
+ following information may not apply to other cartridge types.
+
+ Safari Hunting
+
+ This cartridge has two sockets, one for a 16K ROM and another for a 2K RAM.
+ The Safari Hunting game only uses the ROM and leaves the RAM socket empty.
+ Here are the pin assignments:
+
+ 16K ROM (28-pin DIP)
+
+        +---\/---+
+    VCC |01    28| VCC
+    A12 |02    27| VCC
+     A7 |03    26| A13
+     A6 |04    25| A8
+     A5 |05    24| A9
+     A4 |06    23| A11
+     A3 |07    22| /OE  (From Z80 A15)
+     A2 |08    21| A10
+     A1 |09    20| /CS  (from Z80 /MREQ)
+     A0 |10    19| D7
+     D0 |11    18| D6
+     D1 |12    17| D5
+     D2 |13    16| D4
+    GND |14    15| D3
+        +--------+
+
+ 2Kx8 SRAM (24-pin DIP)
+
+        +---\/---+
+     A7 |01    24| VCC
+     A6 |02    23| A8
+     A5 |03    22| A9
+     A4 |04    21| /WR (From pin B6, memory /WR)
+     A3 |05    20| /OE (From pin B5, memory /RD)
+     A2 |06    19| A10
+     A1 |07    18| /CS (From pin B4, $8000-$BFFF /EXM1)
+     A0 |08    17| D7
+     D0 |09    16| D6
+     D1 |10    15| D5
+     D2 |11    14| D4
+    GND |12    13| D3
+        +--------+
+
+ This gives the following memory map:
+
+ $0000-$3FFF : ROM
+ $4000-$7FFF : ROM (mirror)
+ $8000-$BFFF : RAM (mirrored repeatedly every 2K)
+ $C000-$FFFF : Work RAM (mirrored repeatedly every 2K)
+
+ Basic Level III A (PAL)
+
+ This cartridge has a 32K ROM and four 16Kx4 DRAM sockets. Two of them
+ have TMS4416 16Kx4 DRAMs, the other two are empty. This would allow up to
+ 32K total, but only 16K is present.
+
+ 32K ROM (28-pin DIP)
+
+        +--------+
+    VCC |01    28| VCC
+    A12 |02    27| A14
+     A7 |03    26| A13
+     A6 |04    25| A8
+     A5 |05    24| A9
+     A4 |06    23| A11
+     A3 |07    22| /OE  (From pin B5, memory /RD)
+     A2 |08    21| A10
+     A1 |09    20| /CS  (From 74LS32)
+     A0 |10    19| D7
+     D0 |11    18| D6
+     D1 |12    17| D5
+     D2 |13    16| D4
+    GND |14    15| D3
+        +--------+
+
+ One gate of the 74LS32 is used to enable the ROM only during memory reads
+ when Z80 A15 is low, giving the following memory map:
+
+ $0000-$7FFF : ROM
+ $8000-$BFFF : DRAM (first 16K)
+ $C000-$FFFF : Work RAM (mirrored repeatedly every 2K)
+ - or - 
+ $C000-$FFFF : DRAM (latter 16K if work RAM disabled and missing DRAM chips added)
+
+ Cartridge information from other sources:
+
+ Terebi Oekaki
+
+ $0000-$1FFF : ROM
+ $6000       : Graphics tablet axis to read
+ $8000       : Pen pressure sense / axis data conversion busy flag
+ $A000       : Axis data
+
+ This cartridge connects to a pressure sensitive graphics tablet.
+ A plastic stylus is used, which can have its position tracked when
+ pressed against the tablet.
+
+ SF-7000
+
+ $0000-$3FFF : ROM (8K, presumably mirrored twice)
+ $0000-$FFFF : RAM (as 48K from $4000 or 64K from $0000)
+
+ On power-up, the first 16K is for ROM and the remaining 48K is for RAM.
+ The ROM can be switched out through the SF-7000's PPI, allowing all of
+ the RAM to be used.
+
+ ----------------------------------------------------------------------------
+ 4.) Z80 port map
+ ----------------------------------------------------------------------------
+
+ The VDP, PSG, and PPI are enabled according to the following port
+ addresses:
+
+ Range     PPI     VDP     PSG      Data returned
+ ------    ---     ---     ---      ---------------------------
+ $00-1F     Y       Y       Y       PPI+VDP
+ $20-3F     N       Y       Y       VDP
+ $40-5F     Y       N       Y       PPI
+ $60-7F     N       N       Y       Instruction referenced by R
+ $80-9F     Y       Y       N       PPI+VDP
+ $A0-BF     N       Y       N       VDP
+ $C0-DF     Y       N       N       PPI
+ $E0-FF     N       N       N       Instruction referenced by R
+
+ $E0-E1                             SF-7000, FDC (765AC).
+ $E4-E7                             SF-7000, PPI (8255A).
+ $E8-E9                             SF-7000, USART (8251).
+
+ For each location, data written goes to all devices that are enabled.
+
+ For addresses where both the PPI and VDP are enabled (regardless of the
+ PSG) the data returned is from the PPI but has a few bits corrupted,
+ most likely due to the VDP trying to place information on the data bus at
+ the same time.
+
+ The officially documented ports for each device are the ones where only
+ one of them is enabled. The PSG has no readable registers, so even when
+ it's enabled, there is no change to the data returned.
+
+ The SF-7000 maps its own hardware at ports $E0-FF. I haven't looked
+ into SF-7000 emulation much, so I can't comment on how these ports are
+ used.
+
+ Memory refresh behavior
+
+ The Z80 has a function for providing DRAM refresh. During any opcode fetch
+ cycle (either a prefix byte or the opcode itself) the following events
+ occur during states T3 and T4:
+
+ - /RFSH goes low
+ - /M1 goes high
+ - A15-A8 output I register contents
+ - A7-A0 output R register contents
+ - /MREQ goes low for the latter half of the T3 cycle and the first half of
+   the T4 cycle
+
+ So it looks like a regular memory access from the address indicated by
+ the IR register pair, except /RFSH is used instead of /RD.
+
+ Typically, most SC-3000 cartridges are designed where ROM /OE = /MREQ and
+ ROM /CS = A15. In this case they will respond to a refresh cycle within
+ addresses $0000-$7FFF and output data to the bus.
+
+ This behavior manifests itself when reading I/O ports $60-$7F and $E0-$FF.
+ No device will drive the data bus when these ports are read, so the value
+ returned is the byte read during the refresh cycle. Here is an step-by-step
+ description of what occurs:
+
+ Assume ROM data at offset $2A00 is $AB, $CD, $EF
+ Sample program is:
+
+    xor a
+    ld  b, a
+    ld  c, $E0
+    ld  a, $2A
+    ld  i, a
+    ld  a, $01
+    ld  r, a    ; Set refresh address in IR pair. ($2A01)
+    in  a, (c)  ; Read from port in BC pair. ($00E0)
+
+ We are interested in the timing for the 'in a, (c)' instruction. In this
+ case, it has three machine cycles of four T states each. The opcode for
+ the encoding of this particular instruction is $ED, $78.
+
+ [Opcode fetch cycle]
+ T1 : Address bus outputs PC
+ T2 : Read opcode $ED
+ T3 : Refresh cycle start (IR = $2A01, read $CD)
+ T4 : Refresh cycle end
+
+ [Opcode fetch cycle]
+ T1 : Address bus outputs PC
+ T2 : Read opcode $78
+ T3 : Refresh cycle start (IR = $2A02, read $EF)
+ T4 : Refresh cycle end
+
+ [I/O cycle]
+ T1 : Address bus outputs BC ($00E0)
+ T2 : /IORQ and /RD go low
+ TW : Forced wait cycle (lengthened if /WAIT low)
+ T3 : Data bus sampled, /IORQ and /WR go high
+
+ In this example, we assume there is ROM that will respond to the memory
+ access for the reasons listed earlier. (ROM /OE = /MREQ, ROM /CS = A15)
+ The value read back from the IN instruction is $EF, that was left over
+ from the previous refresh cycle.
+
+ If there was no device to drive the data bus, the last value on the data
+ bus is $78, and that is the value that is returned during the IN instruction
+ read.
+
+ An exception is the Basic Level III A cartridge; its ROM is disabled during
+ a refresh cycle, but the lower 3 bits of the data bus seem to fluctuate,
+ so you get values like $7B, $7F, instead of $78. Maybe all of the additional
+ hardware in the cartridge that is connected to the data bus affects the
+ bus capacitance somewhat, so it doesn't 'hold' the previous value as well
+ from the T2 state of the 2nd machine cycle all the way to T3 of the 3rd
+ machine cycle.
+
+ ----------------------------------------------------------------------------
+ 5.) Keyboard and I/O
+ ----------------------------------------------------------------------------
+
+ The keyboard, gamepads, and cassette/printer interface are handled through
+ an 8255 PPI. This chip has 24 I/O pins which are arranged into 3
+ 8-bit I/O ports called A, B, and C. It also has a control register which
+ defines if the ports are outputs or inputs, amongst other things.
+
+ The PPI has the /RESET input disabled. This means the PPI will be in an
+ undefined state when power is applied and no assumptions can be made
+ about how it is configured after a cold boot.
+
+ Port A (input) $DC
+
+ D7 : Keyboard/gamepad input data.
+ D6 : Keyboard/gamepad input data.
+ D5 : Keyboard/gamepad input data.
+ D4 : Keyboard/gamepad input data.
+ D3 : Keyboard/gamepad input data.
+ D2 : Keyboard/gamepad input data.
+ D1 : Keyboard/gamepad input data.
+ D0 : Keyboard/gamepad input data.
+
+ Pins PA7-PA0 have a 4.7K ohm pull-up resistor and are active low inputs.
+
+ Port B (input) $DD
+
+ D7 : From "HIC-1" pin 7 (Cassette data input).
+ D6 : BUSY input from serial printer.
+ D5 : FAULT input from serial printer.
+ D4 : /CONT input from B11 on cartridge connector.
+ D3 : Keyboard/gamepad input data.
+ D2 : Keyboard/gamepad input data.
+ D1 : Keyboard/gamepad input data.
+ D0 : Keyboard/gamepad input data.
+
+ Pins PB6-PB0 have a 4.7K ohm pull-up resistor and are active-low inputs.
+ PB7 is an active-high input.
+
+ With no external devices attached, bits 7,6,5 return 0,1,1 respectively.
+
+ Port C (output) $DE
+
+ D7 : To printer port pin 3 (/FEED output to serial printer)
+ D6 : To printer port pin 5 (/RESET output to serial printer output) 
+ D5 : To printer port pin 2 (DATA output to serial printer output)   
+ D4 : To "HIC-1" pin 10 (Cassette data output)
+ D3 : Unused (not connected to anything)
+ D2 : To 74LS145 to select 1 of 8 keyboard rows (bit 2)
+ D1 : To 74LS145 to select 1 of 8 keyboard rows (bit 1)
+ D0 : To 74LS145 to select 1 of 8 keyboard rows (bit 0)
+
+ Port D (DDR ctrl reg) $DF
+
+ D7 : 
+ D6 : 
+ D5 : 
+ D4 : 
+ D3 : 
+ D2 : 
+ D1 : 
+ D0 : 
+
+ -------------------------------------------------------------------------
+ |                            8522 Status Word                           |
+ -------------------------------------------------------------------------
+ |       |            Group A              |          Group B            |
+ -------------------------------------------------------------------------
+ | Bit 7 | Bit 6|Bit 5 |  Bit 4  |  Bit 3  |  Bit 2  |  Bit 1  |  Bit 0  |
+ -------------------------------------------------------------------------
+ | 1 =   | Mode select | Port A  | Port CH | Mode    | Port B  | Port CL |
+ | Set   | 00 = Mode 0 |1=Input  |1=Input  | Select  |1=Input  |1=Input  |
+ | mode  | 01 = Mode 1 |0=Output |0=Output |0=Mode0  |0=Output |0=Output |
+ |       | 1x = Mode 2 |         |         |1=Mode1  |         |         |
+ -------------------------------------------------------------------------
+ |0=     |      |      |         |         Bit select          | Logic   |
+ |Port C |      |      |         |                             | Level   |
+ |Bit Set|      |      |         |                             |         |
+ |Reset  |      |      |         |                             |         |
+ -------------------------------------------------------------------------
+
+ Mode 0 = Basic Input/Output
+ Mode 1 = Strobed Input/Output
+ Mode 2 = Bi-Directional Bus
+
+ Bank Panic, Bomb Jack, Border Line writes $92 here.
+ Sega Basic Level 2 writes $92, $0C, $0F, $0A, $0D.... $92 here.
+ Most software writes $92 to the PPI control register and $07 to PPI port C,
+ which configures ports A and B as inputs and all bits of port C as outputs,
+ as well as selecting row 7 of the keyboard matrix to access the gamepads.
+
+ When port C is configured as an output, reading it returns the last value
+ written to port C. The PPI control register cannot be read, and always
+ returns $FF.
+
+ The descriptions of the PPI ports were taken from Marc Le Dourain's
+ SF-7000 page, which I believe were in turn taken from a SF-7000 manual.
+ So I can't really elaborate much more on what each bit does, beyond what
+ I've checked myself.
+
+ The SC-3000H has a 64-key keyboard, and two gamepad ports. One of the keys
+ is called "RESET" and generates a NMI on the Z80 when pressed.
+
+ Bits 7-0 of port A and 3-0 of port B are used to return data from the
+ keyboard and gamepads. This data is broken down into 8 groups, with seven
+ for the keyboard rows and one for the two gamepads.
+
+ The keyboard rows are assigned to the following keys, where each bit
+ returns one for a pressed key and zero if the key has not been pressed.
+
+      Columns
+      PPI Port A                      PPI Port B
+ Rows D0  D1  D2  D3  D4  D5  D6  D7  D0  D1  D2  D3
+  -   ------------------------------- ---------------
+  0   '1' 'Q' 'A' 'Z' ED  ',' 'K' 'I' '8' --- --- ---
+  1   '2' 'W' 'S' 'X' SPC '.' 'L' 'O' '9' --- --- ---
+  2   '3' 'E' 'D' 'C' HC  '/' ';' 'P' '0' --- --- ---
+  3   '4' 'R' 'F' 'V' ID  PI  ':' '@' '-' --- --- ---
+  4   '5' 'T' 'G' 'B' --- DA  ']' '[' '^' --- --- ---
+  5   '6' 'Y' 'H' 'N' --- LA  CR  --- YEN --- --- FNC
+  6   '7' 'U' 'J' 'M' --- RA  UA  --- BRK GRP CTL SHF
+  7   1U  1D  1L  1R  1TL 1TR 2U  2D  2L  2R  2TL 2TR
+
+ ED  = "ENG DIER'S"
+ SPC = (Spacebar)
+ HC  = "HOME CLR"
+ ID  = "INS DEL"
+ PI  = (PI symbol)
+ DA  = (Down arrow on keypad)
+ LA  = (Left arrow on keypad)
+ RA  = (Right arrow on keypad)
+ CR  = "CR" (Enter)
+ UA  = (Up arrow on keypad)
+ YEN = (Yen symbol)
+ BRK = "BREAK"
+ GRP = "GRAPH"
+ CTL = "CTRL"
+ FNC = "FUNC"
+ SHF = "SHIFT"
+ 1U  = Joystick #1 up
+ 1D  = Joystick #1 down
+ 1L  = Joystick #1 left
+ 1R  = Joystick #1 right
+ 1TL = Joystick #1 left trigger
+ 1TR = Joystick #1 right trigger
+ 2U  = Joystick #2 up
+ 2D  = Joystick #2 down
+ 2L  = Joystick #2 left
+ 2R  = Joystick #2 right
+ 2TL = Joystick #2 left trigger
+ 2TR = Joystick #2 right trigger
+ --- = Key is unused, always returns 1
+
+ The keys are arranged in an 8x12 matrix as shown above. Some combinations
+ of key presses will cause other keys to appear to be pressed.
+ There are two rules which define this behavior:
+
+ If two or more keys on any keyboard row are pressed, pressing any key
+ on another row that occupies the same columns will cause all other keys
+ in the same columns to appear to be pressed.
+
+ For example, if keys 1, Q, A, Z are pressed, pressing 2 will also make
+ keys W, S, and X appear to be pressed.
+
+ If two or more keys on any keyboard column are pressed, pressing any key
+ on another column that occupies the same rows will cause all other keys
+ in the same rows to appear to be pressed.
+
+ For example, if keys 1, 2, 3, 4 are pressed, pressing Q will also make
+ keys W, E, and R appear to be pressed.
+
+ The two joystick ports are affected by this behavior too.
+
+ Most software writes $92 to the PPI control register and $07 to PPI port C,
+ which configures ports A and B as inputs and all bits of port C as outputs,
+ as well as selecting row 7 of the keyboard matrix to access the gamepads.
+
+ When port C is configured as an output, reading it returns the last value
+ written to port C. The PPI control register cannot be read, and always
+ returns $FF.
+
+ ----------------------------------------------------------------------------
+ 6.) TMS9929A information
+ ----------------------------------------------------------------------------
+
+ - When writing to a VDP register, bits 6-3 of the byte written are
+   ignored by the VDP.
+
+ - Data written to the data port is also copied to the VRAM read buffer.
+
+ - Bits 7-3 of register #0 and bit 2 of register #1 have no use.
+
+ - Bit 0 of register #0 does not turn off the screen when set, but rather
+   distorts the synchronization of the display. This bit is intended to
+   enable external video input which is unused in the SC-3000H.
+
+ - Bit 7 of register #1 affects how the VDP generates addresses when
+   accessing VRAM. Here's a table illustrating the differences:
+
+   VDP address      VRAM address
+   (Column)         4K mode     8/16K mode
+   AD0              VA0         VA0
+   AD1              VA1         VA1
+   AD2              VA2         VA2
+   AD3              VA3         VA3
+   AD4              VA4         VA4
+   AD5              VA5         VA5
+   AD6              VA12        VA6
+   AD7              Not used    Not used
+   (Row)
+   AD0              VA6         VA7
+   AD1              VA7         VA8
+   AD2              VA8         VA9
+   AD3              VA9         VA10
+   AD4              VA10        VA11
+   AD5              VA11        VA12
+   AD6              VA13        VA13
+   AD7              Not used    Not used
+
+   ADx - TMS9928 8-bit VRAM address/data bus
+   VAx - 14-bit VRAM address that the VDP wants to access
+
+   How the address is formed has to do with the physical layout of memory
+   cells in a DRAM chip. A 4Kx1 chip has 64x64 cells, a 8Kx1 or 16Kx1 chip
+   has 128x64 or 128x128 cells. Because the DRAM address bus is multiplexed,
+   this means 6 bits are used for 4K DRAMs and 7 bits are used for 8K or 16K
+   DRAMs.
+
+   In 4K mode the 6 bits of the row and column are output first, with
+   the remaining high-order bits mapped to AD6. In 8/16K mode the 7 bits
+   of the row and column are output normally. This also means that even
+   in 4K mode, all 16K of VRAM can be accessed. The only difference is in
+   what addresses are used to store data.
+
+ ----------------------------------------------------------------------------
+ 7.) Custom components
+ ----------------------------------------------------------------------------
+
+ "HIC-1" (11-pin SIP)
+
+  1 : +5V
+  2 : Unused (not connected to anything).
+  3 : Active-low RESET output to TMS9929, Z80, etc.
+  4 : Unused (not connected to anything).
+  5 : Unused (not connected to anything).
+  6 : Unused (not connected to anything).
+  7 : Output to PPI PB7 (Tape data in)
+  8 : Ground
+  9 : To CASSETTE-OUT miniplug jack.
+ 10 : Input from PPI PC3 (Tape data out).
+ 11 : From CASSETTE-IN miniplug jack.
+
+ This part provides an interface between the PPI's digital I/O pins
+ and the line-level audio signals going to and from a cassette deck.
+
+ Pin 3 is conditioned by some external hardware to become an open collector
+ output with a 10K pull-up to +5V via R21. It drives the reset inputs of
+ the Z80 and TMS9929A.
+
+ SEGA "MITEC 2" (28-pin DIP)
+
+                +----v----+
+       Z80 /NMI |01 o x 28| VCC
+      Z80 /MREQ |02 i o 27| TMS9929A /CSW
+         NMI-IN |03 i o 26| TMS9929A /CSR
+        Z80 /RD |04 i o 25| SN76489A /CE
+        Z80 /WR |05 i o 24| /CAS1
+      Z80 /IORQ |06 i o 23| /CAS0
+      Z80 /RFSH |07 i o 22| /RAS1
+     MEMORY /RD |08 o o 21| /RAS0
+     MEMORY /WR |09 o o 20| /RCSEL
+   I/O PORT /RD |10 o o 19| RA7
+   I/O PORT /WR |11 o i 18| Z80 A7
+        Z80 A14 |12 i i 17| Z80 A6
+        Z80 A15 |13 i o 16| /EXM1
+            GND |14 x o 15| Work RAM /CS
+                +---------+
+
+ NMI-IN is from the keyboard RESET key. I don't know if it's active high
+ or low. The chip debounces this input to provide a glitch-free pulse
+ to the Z80 NMI pin.
+
+ The memory /RD, /WR strobes are used by the 2Kx8 work RAM and cartridge
+ connector.
+
+ The I/O port /RD, /WR strobes are used by the 8255 PPI and cartridge
+ connector.
+
+ The TMS9929A has no chip select input, so it has its own read/write
+ strobes.
+
+ The SN76489A /WE and /READY pins are tied together to Z80 /WAIT. The MITEC-2
+ enables the PSG (via /CE) when the Z80 has written to the PSG port and is
+ driving the data bus; then the PSG /READY signal will delay the Z80 while
+ the PSG is processing the data being input from the bus.
+
+ This forces a wait state depending on how long the SN76489 asserts /READY,
+ which is for 32 cycles following a write. See the SN76489 datasheet for
+ more information.
+
+ DRAM interface
+
+ The MITEC-2 chip provides several output signals for managing DRAM:
+
+ MITEC    Cartridge   Signal    Description
+ pin      pin         name
+
+ 19       B14         RA7       DRAM row, bit 7
+ 20       B17         /RCSEL    Row/column select (1= row, 0= column)
+ 21       B12         /RAS0     Row address strobe for DRAM
+ 22       B15         /RAS1     Row address strobe for DRAM
+ 23       B13         /CAS0     Column address strobe for DRAM
+ 24       B16         /CAS1     Column address strobe for DRAM
+
+ The Z80 has a 7-bit refresh counter which allows it to refresh DRAMs with
+ 128 rows maximum. To support 256 rows, the MITEC chip monitors the state
+ of A6 during a refresh cycle to determine when a carry out from bit 6 of
+ the refresh counter should toggle RA7. This makes RA7 function as the eighth
+ bit of the Z80's internal refresh counter.
+
+ Unlike the other Z80 address pins, RA7 does not function as A7 outside
+ of refresh cycles, so it has a dedicated pin on the cartridge connector.
+ The cartridge is responsible for routing RA7 instead of A7 to the DRAMs.
+
+ An approximation of the logic equations for the MITEC-2 outputs are as
+ follows:
+
+ MEMORY WR#    = !MREQ & !WR;
+ MEMORY RD#    = !MREQ & !RD;
+
+ I/O PORT WR#  = !IORQ & !WR;
+ I/O PORT RD#  = !IORQ & !RD;
+
+ TMS9929A /CSW = !IORQ &  A7 & !A6 & !WR;
+ TMS9929A /CSR = !IORQ &  A7 & !A6 & !RD;
+ SN76489A /CE  = !IORQ & !A7 &  A6 & !WR;
+
+ /EXM1         = !A15 & !A14;
+ Work RAM /CS  =  A15 &  A14;
+
+ * Note that /EXM1 and Work RAM /CS are not qualified with /MREQ, so they
+   can even be triggered when accessing I/O ports when all 16 bits of the
+   port address are within $8000-$FFFF, or by refresh pulses if the I
+   register is set up such that refreshes are made from $8000-$FFFF.
+
+   This does not cause a conflict as the only read and write strobes
+   available on the cartridge connector are qualified with MREQ#.
+
+ !RCSEL_INT    = !MREQ & !RFSH & (!RD # !WR);
+ RCSEL         = Delay(RCSEL_INT, 64ns);
+
+ !RAS0         = !MREQ & !RFSH
+               # !MREQ &  RFSH & A:[8000..BFFF];
+ !RAS1         = !MREQ & !RFSH
+               # !MREQ &  RFSH & A:[C000..FFFF];
+
+ !CAS0_INT     = RCSEL & A:[8000..BFFF];
+ !CAS1_INT     = RCSEL & A:[C000..FFFF];
+
+ CAS0          = Delay(CAS0_INT, 64ns);
+ CAS1          = Delay(CAS1_INT, 64ns);
+
+ DRAM timing description
+
+ RAS0,1 are asserted for refresh cycles and memory accesses to their
+ respective address ranges. They follow MREQ and cause the row address
+ to be latched.
+
+ /RCSEL_INT follows /RD or /WR when during a memory cycle (/MREQ asserted,
+ /RFSH negated) regardless of the address. This signal goes through a 64ns
+ delay line and is output as /RCSEL. The delay gives time for RASx to fall
+ and latch the row address before /RCSEL changes.
+
+ CAS0_INT and CAS1_INT follow the delayed /RCSEL by a further 64ns. This
+ gives time for the multiplexers to switch over from the row address to
+ the column address before /CASn falls and latches them.
+
+ Basic Level III A cartridge DRAM implementation
+
+ The two TMS4416 DRAM chips mapped to $8000-$BFFF use /RAS0 and /CAS0.
+ Their /CAS signal is RCSEL and /CAS0 logically-OR'd together.
+
+ The two unused chips mapped to $C000-$FFFF use /RAS1 and /CAS1.
+ Their /CAS signal is RCSEL and /CAS1 logically-OR'd together.
+
+ RA7 is common to all four chips.
+
+ Two multiplexers are used to break up the Z80 address bus into the row
+ and column words, formatted as follows:
+
+ TMS4416    Column (RCSEL=0)    Row (RCSEL=1)
+
+ DRAM A0    GND                 Z80 A0
+ DRAM A1    Z80 A8              Z80 A1   
+ DRAM A2    Z80 A9              Z80 A2   
+ DRAM A3    Z80 A10             Z80 A3 
+ DRAM A4    Z80 A11             Z80 A4 
+ DRAM A5    Z80 A12             Z80 A5 
+ DRAM A6    Z80 A13             Z80 A6 
+ DRAM A7    GND                 RA7
+
+ Bits 0 and 7 of the row for 16Kx4 DRAMs are unused to allow expansion.
+ 64Kx4 DRAMs use these bits for address bits 14 and 15, respectively.
+
+ RA7 is used for bit 7 of the DRAM row instead of Z80 A7.
+ Z80 A7 is used by A7 of the 32K mask ROM only.
+
+ ----------------------------------------------------------------------------
+ 8.) Miscellaneous
+ ----------------------------------------------------------------------------
+
+ In my experience a US SMS 2 power supply and standard Genesis / MegaDrive
+ A/V cable (composite video + mono audio) will work with a SC-3000H.
+
+ It seems that when an interrupt occurs, the value on the Z80's data bus
+ is random data. It could be the same as reading unused ports, where the
+ Z80's R register indexes ROM to select the value read. This is because
+ there are no pull-up resistors on the Z80 data bus, and the value
+ returned is influenced by stray capacitance in the data bus traces
+ on the circuit board.
+
+ This means that interrupt mode 0 and 2 cannot be used reliably. In the
+ latter case it may be possible to set the I register to a location in RAM
+ and fill up all 257 bytes from that point with the same byte, say $08,
+ so the Z80 will jump to $0808 regardless of what data it read as the
+ low byte for the vector table. I think a similar technique is used in
+ some Spectrum computer software, though I have not tested this myself.
+
+ The SN76489A is not reset when the SC-3000H is powered on. If you cycle the
+ power to reset the machine, the PSG will play same sounds it was last
+ programmed to make, and from a cold boot the PSG emits a medium volume tone.
+
+ ----------------------------------------------------------------------------
+ 9.) Assistance Needed
+ ----------------------------------------------------------------------------
+
+ - Is there any information about how the cassette and printer interfaces
+   work? Does any software support either one (Basic maybe), or are
+   there any cassette images available?
+
+ - I'm looking for datasheets for the MCM4517P15, TMS4027, TMS4108, TMS4116,
+   TMS4416, MB81416 DRAMs, as well as schematics for any hardware that uses
+   a TMS9918 or related video chip with only 4K of video RAM.
+
+ - I'd be interested in knowing what kind of hardware is inside a Terebi
+   Oekeki or Rozetta no Shouzou cartridge (chip part numbers, etc.)
+
+ - Could anyone tell me what parts are in a SF-7000? If it implements its
+   main memory with two 64Kx4 DRAMs, would somebody be willing to trace out
+   the connections to the cartridge port, for comparison with the way DRAMs
+   are managed in the Basic Level III A cartridge?
+
+ ----------------------------------------------------------------------------
+ 10.) Credits and acknowledgements
+ ----------------------------------------------------------------------------
+
+ - Omar Cornut for MEKA, the cartridge and A/V pinouts, Terebi Oekaki
+   information, and a lot of advice. :)
+
+ - Marc Le Dourain for his great SF-7000 webpage. This is where I got
+   information about the 8255 PPI and keyboard.
+
+ - Chris MacDonald for support and program testing.
+
+ - Sean Young for the TMS9918 documentation.
+
+ ----------------------------------------------------------------------------
+ 11.) Disclaimer
+ ----------------------------------------------------------------------------
+
+ If you use any information from this document, please credit me
+ (Charles MacDonald) and optionally provide a link to my webpage
+ (http://cgfm2.emuviews.com/) so interested parties can access it.
+
+ The credit text should be present in the accompanying documentation of
+ whatever project which used the information, or even in the program
+ itself (e.g. an about box)
+
+ Regarding distribution, you cannot put this document on another
+ website, nor link directly to it.
+
+ Unpublished work Copyright 2002-2011 Charles MacDonald
+

@@ -1,0 +1,102 @@
+GG I/O information and mapper question
+
+Here's some information on the Game Gear I/O registers when the console is in
+native GG mode, and nothing is connected to the EXT connector. 
+
+The EXT connector has seven pins: TH, TR, DL, D3, D2, D1, D0. Each one is an
+active-low input. There are dedicated registers for controlling the EXT
+connector pins; incidentally each of these map to the same like-named pins of
+I/O port #2. For the same reason, the I/O port #2 TR and TH pin controls
+(direction and output level) in port $3F do not affect TR and TH at all. 
+
+Port $05 is the serial control and status register.
+Bits 7-3 can be read and written.
+Bits 2-0 return status information and are read-only. Reset value is $00.
+
+If bit 5 is set, TR is unaffected by the settings of ports $01 and $02, and becomes an input. 
+If bit 4 is set, TL is unaffected by the settings of ports $01 and $02, and becomes an output. 
+Writing to port $03 causes data to be shifted out serially through TL, at the
+baud rate specified by bit 7,6 of this register. 
+
+Amusing side note: if you read TL through port $DD, you can capture the data
+being shifted out if the baud rate is slow enough (I tried 300bps). 
+
+Port $04 is the serial data receive buffer. Always returns $FF. 
+
+Port $03 is the serial data transmit buffer.
+Can be read and written, reset value is $00.
+Writing a value starts the serial transmit process. 
+
+Port $02 is the EXT connector pin direction register.
+Can be read and written, reset value is $FF. 
+
+D7 : 0= Generate NMI on falling edge of TH. (ONLY when TH is an input), 1= No NMI generation. 
+D6 : TH is a 0=output, 1=input 
+D5 : TR is a 0=output, 1=input 
+D4 : TL is a 0=output, 1=input 
+D3 : D3 is a 0=output, 1=input 
+D2 : D2 is a 0=output, 1=input 
+D1 : D1 is a 0=output, 1=input 
+D0 : D0 is a 0=output, 1=input 
+
+As far as I can tell enabling NMI's and toggling bit 6 (through any
+combination of the data output and data direction registers) will not force
+NMI's to occur. You need something plugged into the EXT connector to pull TH
+low to do this. The Genesis and Saturn are the same way. 
+
+Port $01 returns the state of the EXT connector pins in D6-D0 when read;
+and sets their output level (to be used when/if any of the pins are configured
+as outputs) when written to. Bit 7 can be read and written and does not
+correspond to any pin or any other part of the I/O hardware. 
+
+Write: 
+D6 : TH output level is 0=low, 1=high 
+D5 : TR output level is 0=low, 1=high 
+D4 : TL output level is 0=low, 1=high 
+D3 : D3 output level is 0=low, 1=high 
+D2 : D2 output level is 0=low, 1=high 
+D1 : D1 output level is 0=low, 1=high 
+D0 : D0 output level is 0=low, 1=high 
+
+Read: 
+D6 : TH pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 6) 
+D5 : TR pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 5) 
+D4 : TL pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 4) 
+D3 : D3 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 3) 
+D2 : D2 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 2) 
+D1 : D1 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 1) 
+D0 : D0 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to bit 0) 
+
+Likewise, reading I/O ports $DC/$DD returns the same information above: 
+
+Port $DD bit 7: TH pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 6) 
+Port $DD bit 3: TR pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 5) 
+Port $DD bit 2: TL pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 4) 
+Port $DD bit 1: D3 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 3) 
+Port $DD bit 0: D2 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 2) 
+Port $DC bit 7: D1 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 1) 
+Port $DC bit 6: D0 pin state (if an input, '1' if the pin is unconnected; if an output, whatever value was written to I/O port $01 bit 0) 
+
+Setting bit 2 of port $3E to stop the I/O chip from returning data when
+reading ports $C0-$FF does nothing; this feature seems to have been removed. 
+
+I think the correlation between I/O port #2 and the EXT connector are the same
+in SMS mode; I remember reading in GamePro many years ago that an adapter
+existed to connect a Master System pad to the EXT connector for 2-player games
+through the MasterGear adapter. How two people would look at the same tiny LCD
+screen for extended bouts of gameplay is a mystery to me. 
+
+Here are the test programs I wrote: 
+
+http://cgfm2.emuviews.com/zip/ggiotest.zip 
+http://cgfm2.emuviews.com/zip/msiotest.zip 
+
+Source included. I found these useful to test my emulator, maybe somebody
+could put these in the S8-DEV software section? 
+
+And now for my question: 
+
+What pin, if any, on the 315-5235 mapper is SRAM address bit 14?
+I have a spare 32K SRAM and would like to try replacing the 8K one in my
+Phantasy Star cart, but right now only 16K would be usable.
+I'm guessing pin 28 but have no way to verify.

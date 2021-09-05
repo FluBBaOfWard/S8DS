@@ -1,0 +1,437 @@
+ ----------------------------------------------------------------------------
+ Sega Mark-III Hardware Notes
+ (C) 2008 Charles MacDonald
+ ----------------------------------------------------------------------------
+
+ [11/14/08]
+ - Initial release
+
+ ----------------------------------------------------------------------------
+ Overview
+ ----------------------------------------------------------------------------
+
+ Primary differences from other Sega 8-bit consoles:
+
+ - Has an expansion port for the "FM Sound Unit" or keyboard.
+   But not pin compatible with the SMS/SMSJ expansion port.
+ - No RESET button.
+ - No support for SC-3000H BASIC cartridges with extra RAM.
+ - No support for lightguns in the controller port.
+ - No TH pin on the controller port.
+ - No output pins available on the controller port.
+          
+ ----------------------------------------------------------------------------
+ Parts list
+ ----------------------------------------------------------------------------
+
+ Part   Description         Package         Comments
+
+ IC1  : NEC uPD780C-1       40-pin DIP      Z80-A CPU. 4.00 MHz speed rating.
+ IC2  : NEC uPD4168C-15     28-pin DIP      8Kx8 PSRAM. 150 ns speed rating.
+ IC3  : Sega 315-5124       64-pin SDIP     Custom component.
+ IC4  : NEC uPD4168C-15     28-pin DIP      8Kx8 PSRAM. 150 ns speed rating.
+ IC5  : NEC uPD4168C-15     28-pin DIP      8Kx8 PSRAM. 150 ns speed rating.
+ IC6  : ROHM BA7230LS       24-pin SZIP     Color TV signal encoder.
+ IC7  : NEC 7805            TO-220          Voltage regulator.
+ IC8  : Fujitsu MB74LS257   16-pin DIP      Quad 2-to-1 multiplexer w/ output enable.
+ IC9  : Fujitsu MB74LS257   16-pin DIP      Quad 2-to-1 multiplexer w/ output enable.
+ IC10 : Fujitsu MB74LS32    14-pin DIP      Quad positive OR gate.
+
+ ----------------------------------------------------------------------------
+ Miscellaneous
+ ----------------------------------------------------------------------------
+
+ Timing
+
+ The VDP is connected to a 10.7386 MHz crystal. It divides this by three
+ to generate the 3.579545 MHz clock signal used for:
+
+ - The Z80 CPU clock
+ - The PSG clock (internal to the VDP)
+ - The color burst clock input (Vc) of the BA7230LS
+
+ Sega PCB numbers
+
+ 171-5304 : Main PCB
+ 171-5305 : Card slot PCB
+
+ System configuration
+
+ The VDP PAL//NTSC pin is tied to ground via J2 to select NTSC mode.
+ J2 can be moved up to the empty position above it to connect the pin to
+ +5V for PAL mode, or these points could be wired to a switch.
+
+ System compatibility
+
+ SMS/SMSJ software
+
+ The unused inputs would appear as follows to the software:
+
+ Port 1 TH pin (D7): HIGH
+ Port 2 TH pin (D6): HIGH
+ Unused input (D5): HIGH    ('1' on SMS/SMSJ/GG/MK3, '0' on PBC)
+ Reset input (D4): HIGH     (Reset button not pressed)
+
+ As D7,D6 are always '1', the territory detection routine would interpret
+ the machine as being a Mark-III or Japanese SMS console.
+
+ ----------------------------------------------------------------------------
+ Connectors
+ ----------------------------------------------------------------------------
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              CN1 : Gamepad connector for 1P (Male DB-9)
+ CN2 : Gamepad connector for 2P (Male DB-9)
+
+ 1 : Up
+ 2 : Down
+ 3 : Left
+ 4 : Right
+ 5 : +5V
+ 6 : Button 1
+ 7 : Ground
+ 8 : Ground
+ 9 : Button 2
+
+ CN3 : Cartridge connector (card edge socket)
+
+ Solder side
+
+ A01 : Z80 A0
+ A02 : Z80 A1
+ A03 : Z80 A2
+ A04 : Z80 A3
+ A05 : Z80 A4
+ A06 : Z80 A5
+ A07 : Z80 A6
+ A08 : Z80 A7
+ A09 : Z80 A8
+ A10 : Z80 A9
+ A11 : Z80 A10
+ A12 : Z80 A11
+ A13 : Z80 A12
+ A14 : Z80 A13
+ A15 : Z80 D0
+ A16 : Z80 D1
+ A17 : Z80 D2
+ A18 : Z80 D3
+ A19 : Z80 D4
+ A20 : Z80 D5
+ A21 : Z80 D6
+ A22 : Z80 D7
+
+ Component side
+
+ B01 : +5V
+ B02 : Card slot enable (*1)
+ B03 : Work RAM enable (*2)
+ B04 : VDP /EXM1           
+ B05 : Z80 /RD   (SC-3000H: /MREQ+/RD, strobe for reads from memory)
+ B06 : Z80 /WR   (SC-3000H: /MREQ+/WR, strobe for writes to memory)
+ B07 : (N.C.)    (SC-3000H: /IORQ+/RD, strobe for reads from I/O ports)
+ B08 : (N.C.)    (SC-3000H: /IORQ+/WR, strobe for writes to I/O ports)
+ B09 : (N.C.)   
+ B10 : Z80 /MREQ
+ B11 : /CONT input
+ B12 : (N.C.)    (SC-3000H: /RAS0)
+ B13 : (N.C.)    (SC-3000H: /CAS0)
+ B14 : (N.C.)    (SC-3000H: CA7)
+ B15 : (N.C.)    (SC-3000H: /RAS1)
+ B16 : (N.C.)    (SC-3000H: /CAS1)
+ B17 : (N.C.)    (SC-3000H: /RCSEL)
+ B18 : Z80 A14
+ B19 : VDP /EXM2 (SC-3000H: Z80 A15)
+ B20 : (N.C.)    (SMS/SMSJ: Z80 /M1)
+ B21 : GND
+ B22 : GND
+
+ Note that many pins are unused or simplified versions of their counterparts
+ in the SC-3000H. BASIC cartridges with DRAM cannot be used on the Mark-III
+ as all the necessary refresh signals are missing.
+
+ 1.) Card slot enable
+
+ Cartridges should have pin 2 tied high to disable the /CS output to the
+ card slot. Otherwise pin 2 has a pull-down resistor, and when tied low
+ or left unconnected the card slot will be enabled.
+
+ 2.) Work RAM enable
+
+ Cartridges with extra RAM in the $C000-$FFFF range should have pin 3 tied
+ high to disable the /CS output to the work RAM in the Mark-III. Otherwise
+ pin 3 has a pull-down resistor, and when tied low or left unconnected the
+ work RAM will be enabled.
+
+ If the mapper in a cartridge supports mapping battery backed RAM to
+ the $C000-$FFFF area, it will have a connection to this pin.
+
+ CN4 : Card slot PCB connectors (two 18-pin ribbon cables)
+
+ No information.
+
+ CN5 : External keyboard connector (single sided card edge)
+
+  1 : +5V
+  2 : +5V
+  3 : Input ports enable (*1)
+  4 : Z80 A0
+  5 : Z80 A1
+  6 : Z80 D0
+  7 : Z80 D1
+  8 : Z80 D2
+  9 : Z80 D3
+ 10 : Z80 D4
+ 11 : Z80 D5
+ 12 : Z80 D6
+ 13 : Z80 D7
+ 14 : VDP /KBSEL
+ 15 : Z80 /RD
+ 16 : Z80 /WR
+ 17 : (KEY)
+ 18 : /CONT (same signal as cartridge pin B11)
+ 19 : Z80 /IORQ
+ 20 : (N.C.) To test point on reverse side.
+ 21 : Z80 A2
+ 22 : GND
+ 23 : GND
+ 24 : GND
+ 25 : GND
+
+ 1.) Input ports enable
+
+ When pin 3 is tied high the input port circuit in the Mark-III is disabled,
+ freeing up I/O port range $C0-$FF for use by a device on the keyboard
+ connector. Otherwise pin 3 has a pull-down resistor, and when tied low
+ or left unconnected the input ports will be enabled.
+
+ CN6 : Audio and video connector (8-pin DIN)
+
+ Pin connections from the solder side.
+
+ 1 2 3
+  4 5
+ 6 7 8
+
+ 1 : Composite video
+ 2 : Ground
+ 3 : Monoaural audio
+ 4 : Green video output
+ 5 : +5V
+ 6 : Composite sync output
+ 7 : Blue video output
+ 8 : Red video output
+
+ The RGB and composite sync outputs come directly from the VDP and are
+ not amplified or buffered. They may not be sufficient to drive a RGB
+ monitor.
+
+ CN7 : DC power jack
+
+ Tip  = Ground
+ Ring = +9V DC @ 850mA
+
+ ----------------------------------------------------------------------------
+ I/O hardware
+ ----------------------------------------------------------------------------
+
+ There is no I/O chip such as the 8255 used in the SC-3000H or the custom
+ I/O chip found in the SMS/SMSJ. Several TTL components (74LS32, 74LS257)
+ are used to implement the input ports.
+
+ When the I/O ports are enabled, there are two read-only addresses
+ selected by Z80 A0. Commonly accessed offsets are $C0,$C1 or $DC,$DD.
+
+ Offset 0 ($C0/$DC)
+
+ D7 : 2P down
+ D6 : 2P up
+ D5 : 1P button 2
+ D4 : 1P button 1
+ D3 : 1P right
+ D2 : 1P left
+ D1 : 1P down
+ D0 : 1P up
+
+ Offset 1 ($C1/$DD)
+
+ D7 : Unconnected
+ D6 : Unconnected
+ D5 : Unconnected
+ D4 : /CONT pin state
+ D3 : 2P button 2
+ D2 : 2P button 1
+ D1 : 2P right
+ D0 : 2P left
+
+ The gamepad inputs read '1' when a button or direction is not pressed,
+ or when a gamepad is not connected.
+
+ Unconnected inputs of 74LS-series chips tend to float high. For this
+ reason D7, D6, D5 all return '1' when read, but have no pull-up resistors.
+
+ If the /CONT pin is not connected to anything (either at cartridge pin B11
+ or keyboard connector pin 18) it will return '1' as well.
+
+ ----------------------------------------------------------------------------
+ Color TV signal encoder
+ ----------------------------------------------------------------------------
+
+ The Mark-III uses a Rohm BA7230LS NTSC color TV signal encoder chip.
+ It has several capabilities:
+
+ - Conversion of analog RGB video to component (R-Y,B-Y,Y) video.
+
+ - Conversion of component video to composite video.
+
+ - Dynamic selection between component video input and a composite
+   video input for purposes of superimposition. The composite video
+   source can also be darkened to bring attention to the component video.
+
+ In the Mark-III, the RGB output of the VDP is converted to component
+ video, then the component video is fed back into the chip and converted
+ to composite video. The superimpose function is not used.
+
+ The VDP seems to be developed for this particular chip in mind, as it
+ provides the color burst pulses (/CBT) and pedestal clamping pulses (/PCP)
+ specific to the BA7230LS.
+
+ ----------------------------------------------------------------------------
+ 315-5124
+ ----------------------------------------------------------------------------
+
+ Pin assignments
+
+                        +----v----+
+                 Z80 D0 |01 b o 64| Z80 /INT
+                 Z80 D1 |02 b i 63| Z80 A7
+                 Z80 D2 |03 b i 62| Z80 A6
+                 Z80 D3 |04 b i 61| Z80 A0
+                 Z80 D4 |05 b i 60| Z80 /IORQ
+                 Z80 D5 |06 b i 59| Z80 /WR
+                 Z80 D6 |07 b i 58| Z80 /RD
+                 Z80 D7 |08 b i 57| PAL//NTSC
+                    GND |09 s b 56| VRAM AD15
+                  AUDIO |10 o b 55| VRAM AD14
+                    +5V |11 s b 54| VRAM AD13
+                     T0 |12 o b 53| VRAM AD12
+                     T1 |13 o b 52| VRAM AD11
+                 /KBSEL |14 o b 51| VRAM AD10
+                 /CSRAM |15 o b 50| VRAM AD9
+                  /EXM1 |16 o b 49| VRAM AD8
+                  /EXM2 |17 o b 48| VRAM AD7
+                Z80 A14 |18 i b 47| VRAM AD6
+                Z80 A15 |19 i b 46| VRAM AD5
+              Z80 /MREQ |20 i b 45| VRAM AD4
+               Z80 /NMI |21 o b 44| VRAM AD3
+                /NMI-IN |22 i b 43| VRAM AD2
+               Z80 /RST |23 i b 42| VRAM AD1
+                   /CBT |24 o b 41| VRAM AD0
+                   /PCP |25 o s 40| +5V
+                R-VIDEO |26 o o 39| VRAM /CE
+                G-VIDEO |27 o o 38| VRAM /WE1
+                B-VIDEO |28 o o 37| VRAM /WE0
+                /C-SYNC |29 o o 36| VRAM /OE
+                  XTAL1 |30 i i 35| /H-L
+                  XTAL2 |31 o o 34| Z80 /CLK output
+                    GND |32 s o 33| Y1
+                        +---------+
+
+ Legend
+
+ s = Power supply
+ b = Bidirectional
+ i = Input
+ o = Output
+
+ Unused pins
+
+ /H-L is not used and is connected to a test point.
+   Y1 is not used and is connected to a test point.
+
+ Pin description
+
+  T0
+ /T1
+
+ Related to /CSYNC. Has 1 mclk wide pulses on each scanline except for
+ the the ones occupied by the /VSYNC pulse.
+
+ T0 has positive pulses and has a range of about 0-1.90V
+ /T1 has negative pulses and has a range of about 0-.45V 
+
+ /KBSEL
+
+ Strobe for read/write access to I/O ports $C0-$FF.
+ Asserted when A7, A6 are high, IORQ low.
+
+ /CSRAM
+
+ Strobe for read/write access to memory range $C000-$FFFF.
+ Asserted when A15, A14 high, MREQ low.
+
+ /EXM1
+
+ Strobe for read/write access to memory range $8000-$BFFF.
+ Asserted when A15 high, A14 and MREQ low.
+
+ /EXM2
+
+ Strobe for read/write access to memory range $0000-$7FFF.
+ Asserted when A15 and MREQ low.
+
+ /NMI-IN
+
+ Input to the VDP's debouncing logic for the pause button.
+
+ Z80 /NMI
+
+ At the start of scanline 261, /NMI will be asserted if the pause button
+ had been pressed, or negated if the pause button has been released.
+
+ /CBT (Color burst pulse)
+
+ Asserted to indicate the position on a scanline where the color burst
+ signal should be inserted into the composite video output. This connects
+ to the /BFP (burst flag pulse) pin on the BA7230LS.
+
+ Asserted 615 mclks into the scanline relative from pixel 0.
+ Pulse width is 28 mclks. Not asserted on scanlines 215 through 235.
+
+ /PCP (Pedestal clamp pulse)
+
+ Asserted 623 mclks into the scanline relative from pixel 0.
+ Pulse width is 28 mclks. Not asserted on scanlines 215 through 235.
+
+ R-VIDEO
+ G-VIDEO
+ B-VIDEO
+
+ Analog red, green, and blue video outputs.
+
+ XTAL1
+ XTAL2
+
+ Input and output for a connection to a 10.7368 MHz oscillator.
+
+ Y1
+
+ Goes low when outputting transparent pixels in the active display period,
+ and high for everything else: scanline border area, blanked lines,
+ blanked lines due to the screen being turned off, and the left 8 pixels
+ when left column blanking is enabled.
+
+ Not used in the Mark-III.
+
+ /H-L
+
+ The Z80 samples the horizontal counter through a transparent latch. This
+ signal latches the counter when held low, and passes the counter value
+ through when held high.
+
+ Not used in the Mark-III.
+
+ Z80 /CLK
+
+ Used by the Z80 and BA7230LS.
+
+ ----------------------------------------------------------------------------
+ End
+ ----------------------------------------------------------------------------

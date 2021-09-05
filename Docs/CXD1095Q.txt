@@ -1,0 +1,96 @@
+----------------------------------------------------------------------------
+I/O hardware
+----------------------------------------------------------------------------
+
+Two Sony CXD1095Q I/O chips are used. Each has the following capabilities:
+
+- Five I/O ports; A through D are 8 bits and E is 4 bits.
+- Pin direction can be set for bit groups 7-4 or 3-0 for ports A through D.
+- Pin direction can be set for bits 3-0 individually for port E.
+- Output-disable pin to force input mode for ports A through D.
+
+Each port consists of an output latch which is loaded when the port
+is written to, and an input buffer. When in output mode, reading a port
+returns the latch contents. When in input mode, the latch does nothing
+(though it can still be written to) and reading a port returns the input
+buffer data.
+
+Commonly used addresses are:
+
+$140000-$14000F : I/O chip #1
+$150000-$15000F : I/O chip #2
+$160000         : I/O chip output control
+
+Each chip has eight internal registers:
+
+$0001 - Port A data (r/w)
+$0003 - Port B data (r/w)
+$0005 - Port C data (r/w)
+$0007 - Port D data (r/w)
+$0009 - Port E data (r/w)
+$000B - Unused
+$000D - REG1 (w/o)
+$000F - REG2 (w/o)
+
+The upper 4 bits of port E, the unused register, and REG1, REG2 return zero
+when read.
+
+REG1 has the following layout:
+
+Bit 7 : Port D bits 7-4 pin direction (0= output, 1= input)
+Bit 6 : Port D bits 3-0 pin direction (0= output, 1= input)
+Bit 5 : Port C bits 7-4 pin direction (0= output, 1= input)
+Bit 4 : Port C bits 3-0 pin direction (0= output, 1= input)
+Bit 3 : Port B bits 7-4 pin direction (0= output, 1= input)
+Bit 2 : Port B bits 3-0 pin direction (0= output, 1= input)
+Bit 1 : Port A bits 7-4 pin direction (0= output, 1= input)
+Bit 0 : Port A bits 3-0 pin direction (0= output, 1= input)
+
+REG2 has the following layout:
+
+Bit 7 : Unused
+Bit 6 : Unused
+Bit 5 : Unused
+Bit 4 : Unused
+Bit 3 : Bit 3 pin direction (0= output, 1= input)
+Bit 2 : Bit 2 pin direction (0= output, 1= input)
+Bit 1 : Bit 1 pin direction (0= output, 1= input)
+Bit 0 : Bit 0 pin direction (0= output, 1= input)
+
+For the X-Board hardware these should be initialized to $03 and $FF,
+respectively.
+
+Default states
+
+When the ports are inputs (by /ODEN==L or REG1=$FF), their values
+(as read by the CPU) are:
+
+$140001 = $00
+$140003 = $00
+$140005 = $00
+$140007 = $00
+$140009 = $00
+
+$150001 = $FF
+$150003 = $FF
+$150005 = $FF
+$150007 = $FF
+$150009 = $00
+
+Output disable control
+
+Each I/O chip has an input called /ODEN. When pulled low, ports A through D
+become inputs in all eight bits.
+
+Writing to ports A-D will update the internal latch, but the pin state
+is unchanged. Reading ports A-D will return their input data, just as
+if REG1 = $FF (though REG1 hasn't changed).
+
+Accessing any location within $160000-$16FFFF latches bit 0 of the data
+bus and outputs it to the /ODEN pin of both I/O chips. When /ODEN is low,
+all pins of ports A through D become inputs. When /ODEN is high, the ports
+are programmable through REG2.
+
+Port E is unaffected by /ODEN, and none of the internal registers are
+modified while /ODEN is low; furthermore changes to registers are
+accepted though direction changes are not noticable until /ODEN is high.

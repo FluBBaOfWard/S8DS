@@ -1,0 +1,78 @@
+S8DS revision history
+-=-=-=-=-=-=-=-=-=-=-=-
+
+
+V1.1.1 - 2021-01-18 (FluBBa)
+	Code cleanup.
+
+V1.1.0 - 2018-07-28 (FluBBa)
+	Added Sord M5 support.
+
+V1.0.0 - 2016-03-12 (FluBBa)
+	Fixed Pause on SG-1000.
+
+V0.9.0 - 2015-07-25 (FluBBa)
+	Added SRAM support.
+	Fixed folder browsing a bit.
+	Fixed some nasty bugs which affected saving of settings and more.
+
+V0.8.0 - 2015-07-08 (FluBBa)
+	Added basic MSX 1 support.
+	Added SG-1000 Arcade support.
+	Added System-E support.
+	Added MegaTech files support.
+	Added support for 3 button MegaDrive pad.
+	Added mini Bios from Power Base Converter for MegaDrive.
+	Added background images for all Systems.
+	Added support for arguments from flashcard menus.
+	Added SDSC debugging support and forwarder to DS emulators.
+	Support for longer filenames and more files per folder.
+	Fixed sprite palette bug for TMS9918.
+	Turned of sprites for Mode 1.
+
+V0.7.0 - 2010-01-16 (FluBBa)
+	Fixed Super Tetris & Frogger proto when machine is set to "Auto".
+	Fixed PGA Tour Golf (low bits of VDP Stat not zero).
+	Changed palette buffering to middle of screen.
+	Changed default scale mode to "Scale To Fit".
+
+V0.6.0 - 2010-01-07 (FluBBa)
+	Added option to turn off 3D display.
+	Fixed color/saturation setting for SG/Coleco games.
+	Fixed some bogus handling of the 3D display mode.
+	Fixed "Perfect Sprites" mode, should now be used as default.
+	Changed startup values for VDP regs 0,1 & 10, might break something.
+	Changed sound renderer to be more correct.
+	Removed PAL timing for GG.
+
+V0.5.0 - 2009-12-02 (FluBBa)
+	Added support for Coleco Vision.
+	Added keyboard support for SC-3000/SG-1000.
+	Added support for mode 3 graphics.
+	Added support for red/cyan glasses in SMS 3D games.
+	Added color/saturation setting to display.
+	Fixed issues with mode 0,1 & 2 graphics.
+	Fixed cut off of long filenames in the browser.
+	Fixed timing of VInt.
+	Changed colors for the filebrowser.
+
+V0.4.0 - 2009-11-01 (FluBBa)
+	Added R as FastForward.
+	Fixed Bios handling on MD (Frogger proto GG2SMS works).
+	Fixed "Border Off" for GG.
+	Sprite collision is now "On" by default.
+	Changed R as GG start to X as GG Start.
+
+V0.3.0 - 2009-10-20 (FluBBa)
+	Fixed Bios handling a bit (GG games works again).
+
+V0.2.0 - 2009-10-19 (FluBBa)
+	After loading game GUI is automatically closed.
+	Added internal Bios (for Ace of Aces & Shadow Dancer).
+
+V0.1.0 - 2009-10-13 (FluBBa)
+	Initial release, allmost everything from SMSAdvance seems to work.
+
+V0.0.0 - 2009-07-25 (FluBBa)
+	Started Coding.
+

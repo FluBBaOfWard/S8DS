@@ -1,0 +1,30 @@
+[submodule "source/ARMZ80"]
+	path = source/ARMZ80
+	url = https://github.com/FluBBaOfWard/ARMZ80.git
+[submodule "source/ARMZ80CTC"]
+	path = source/ARMZ80CTC
+	url = https://github.com/FluBBaOfWard/ARMZ80CTC.git
+[submodule "source/SegaVDP"]
+	path = source/SegaVDP
+	url = https://github.com/FluBBaOfWard/SegaVDP.git
+[submodule "source/SN76496"]
+	path = source/SN76496
+	url = https://github.com/FluBBaOfWard/SN76496.git
+[submodule "source/Shared"]
+	path = source/Shared
+	url = https://github.com/FluBBaOfWard/NDS_Shared.git
+[submodule "source/AY38910"]
+	path = source/AY38910
+	url = https://github.com/FluBBaOfWard/AY38910.git
+[submodule "source/YM2413"]
+	path = source/YM2413
+	url = https://github.com/FluBBaOfWard/YM2413.git
+[submodule "source/PPI8255"]
+	path = source/PPI8255
+	url = https://github.com/FluBBaOfWard/PPI8255.git
+[submodule "source/SCC"]
+	path = source/SCC
+	url = https://github.com/FluBBaOfWard/SCC.git
+[submodule "source/CXD1095Q"]
+	path = source/CXD1095Q
+	url = https://github.com/FluBBaOfWard/CXD1095Q.git

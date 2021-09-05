@@ -1,0 +1,828 @@
+ ----------------------------------------------------------------------------
+ Sega System E Hardware Notes
+ (C) 2010 Charles MacDonald
+ ----------------------------------------------------------------------------
+
+ Unpublished work Copyright 2010 Charles MacDonald
+
+ What's new
+
+ [05/27/2010]
+ - Added description of bank latch timing quirks.
+ - Added DIP switches.
+ - Corrected VRAM banking behavior.
+ - Added note about floating Z80 data bus.
+ - Added display order list.
+ - Added I/O port diagram.
+ - Added main board components list.
+ - Added miscellaneous notes.
+
+ [05/26/2010]
+ - Initial release.
+
+ ----------------------------------------------------------------------------
+ Introduction
+ ----------------------------------------------------------------------------
+
+ The "System E" board is derived from the Sega Master System game console.
+ It has twice as much work RAM, two VDPs, and twice the video RAM for each
+ one amongst other changes.
+
+ The board is not JAMMA compatible and uses headers instead of edge
+ connectors for interfacing.
+
+ The board has no name designation so I am not sure what the origin of
+ the "System E" name comes from.
+
+ Some games are encrypted and use a custom Z80 IC or come in an epoxy
+ module with a battery (e.g. MC-8123).
+
+ ----------------------------------------------------------------------------
+ System overview
+ ----------------------------------------------------------------------------
+
+ Timing
+
+ XTAL is a 10.7386 MHz crystal used as follows:
+
+ VDP #1 XTAL1 input = 10.7368 MHz (XTAL)
+ VDP #2 XTAL1 input = 10.7368 MHz (XTAL)
+ Z80 /CLK input     = 5.36 MHz    (XTAL/2)
+
+ Z80 environment
+
+ The Z80 has 16K of work RAM at C000-FFFF. VDP VRAM is write-only and
+ mapped to 8000-BFFF. The rest of the memory map is defined by the ROM board
+ which is described later, and the ROM board can map read-only ROM over
+ the 8000-BFFF area without conflicts.
+
+ The Z80 interrupt sources are:
+
+ INT - VDP #1 /INT output
+ NMI - VDP #2 /INT output
+
+ Because NMI is edge sensitive and not level sensitive, a pending VDP #2
+ interrupt will not continue to cause interrupts until it acknowledged.
+
+ The Z80 NMI pin is not debounced by the debouncing circuit in either VDP
+ so there is no delay between the time a VDP #2 interrupt occurs and Z80
+ /NMI is asserted.
+
+ There are no wait states used by this system, the Z80 runs at full speed
+ all the time.
+
+ Audio
+
+ The analog PSG output of both VDPs are mixed together with equal weighting,
+ attenuated by a single volume potentiometer, then amplified and output to
+ an external 4 or 8-ohm speaker.
+
+ I/O
+
+ The Z80 is connected to three read-only input ports, two read-only
+ DIP switches, an 8255 PPI which is used to control two programmable I/O
+ ports on an expansion connector, four ULN2003 outputs suitable for driving
+ coin meters and coin chute lockout coils, and four more TTL outputs.
+
+ ----------------------------------------------------------------------------
+ Reset behavior
+ ----------------------------------------------------------------------------
+
+ A reset pulse is generated at power-up that goes to the following devices
+
+ - 8255 PPI
+ - Z80
+ - Bank latch (IC54)
+
+ The two VDPs have a longer reset period which lasts exactly eight Z80
+ cycles from the time the Z80 starts running. Because VDP #2 also generates
+ the chip select for the 8255 PPI, it is advisable to not access any
+ VDP ports (PSG, HV counters, control/data) or PPI registers during this
+ time.
+
+ When the bank latch is reset the following settings are made:
+
+ - VRAM bank 1 of 2 is selected for VDP #2.
+ - VRAM bank 1 of 2 is selected for VDP #1.
+ - VDP #1 VRAM bank 1 is mapped to $8000-$BFFF for write access.
+ - The speaker amplifier output is enabled.
+ - The ROM bank bits are all set to zero.
+
+ A different reset pulse is generated to forcibly mute the speaker
+ amplifier at start-up to prevent popping noises from occuring.
+ During this time the state of bit 4 of the bank latch is ignored, despite
+ the reset state of the bank latch enabling it.
+
+ ----------------------------------------------------------------------------
+ Video overview
+ ----------------------------------------------------------------------------
+
+ Each VDP is connected to 32K of VRAM which is split into two 16K banks.
+ The banks are set up so the VDP can generate the display from one bank while
+ the Z80 has full speed write-only access to the other one.
+
+ VDP #1 (IC35) is the main VDP. It has a transparent pixel indicator pin (Y1)
+ which is used select the VDP #2 (IC33) RGB output whenever a VDP #1 pixel
+ is blank.
+
+ The display layer priority is:
+
+ (Frontmost layer)
+
+ 1. VDP #1 tilemap (high priority)
+ 2. VDP #1 sprites
+ 3. VDP #1 tilemap (low priority)
+ 4. VDP #2 tilemap (high priority)
+ 5. VDP #2 sprites
+ 6. VDP #2 tilemap (low priority)
+ 7. VDP #2 backdrop color (register $07)
+
+ (Backmost layer)
+
+ Note that the VDP #2 sprites are always behind the VDP #1 tilemap layer
+ which limits their usefulness.
+
+ ----------------------------------------------------------------------------
+ ROM boards
+ ----------------------------------------------------------------------------
+
+ Type: 171-5234
+
+ Part list
+
+ IC1 - Z80-B CPU
+ IC2 - 27256 or 27512 EPROM
+ IC3 - 27256 or 27512 EPROM
+ IC4 - 27256 or 27512 EPROM
+ IC5 - 27256 or 27512 EPROM
+ IC6 - 74LS139
+ IC7 - 27256 EPROM only
+
+ Z80 memory map
+
+ 0000-7FFF : IC7
+ 8000-BFFF : Bank area, see jumper description for details.
+ C000-FFFF : Work RAM (16K)
+
+ Notes
+
+ Z80 /WAIT is accessible at a test point near R1.
+
+ Jumpers
+
+ Only one in each pair of J1,J2 and J3,J4 can be shorted.
+
+ EPROM type setting:
+
+ - 27512 (J1 open, J2 closed)
+ - 27256 (J1 closed, J2 open)
+
+ EPROM capacity setting:
+
+ - Two EPROMs  (J3 open, J4 closed)
+ - Four EPROMs (J3 closed, J4 open)
+
+ Here is a complete description of all bank latch settings for each
+ jumper setting. This board does not use bank latch bit 3 for anything
+ so it is omitted.
+
+ 27256, two EPROM mode
+
+ D2 D1 D0   
+  0  0  0 : IC5, offset 0000-3FFF
+  0  0  1 : IC5, offset 4000-7FFF
+  0  1  0 : IC5, offset 0000-3FFF (mirror)
+  0  1  1 : IC5, offset 4000-7FFF (mirror)
+  1  0  0 : IC3, offset 0000-3FFF
+  1  0  1 : IC3, offset 4000-7FFF
+  1  1  0 : IC3, offset 0000-3FFF (mirror)
+  1  1  1 : IC3, offset 4000-7FFF (mirror)
+
+ 27512, two EPROM mode
+
+ D2 D1 D0 
+  0  0  0 : IC5, offset 0000-3FFF
+  0  0  1 : IC5, offset 4000-7FFF
+  0  1  0 : IC5, offset 8000-BFFF
+  0  1  1 : IC5, offset C000-FFFF
+  1  0  0 : IC3, offset 0000-3FFF
+  1  0  1 : IC3, offset 4000-7FFF
+  1  1  0 : IC3, offset 8000-BFFF
+  1  1  1 : IC3, offset C000-FFFF
+
+ 27256, four ROM mode
+
+ D2 D1 D0
+  0  0  0 : IC5, offset 0000-3FFF
+  0  0  1 : IC5, offset 4000-7FFF
+  0  1  0 : IC4, offset 0000-3FFF
+  0  1  1 : IC4, offset 4000-7FFF
+  1  0  0 : IC3, offset 0000-3FFF
+  1  0  1 : IC3, offset 4000-7FFF
+  1  1  0 : IC2, offset 0000-3FFF
+  1  1  1 : IC2, offset 4000-7FFF
+
+ 27512, four ROM mode
+
+ D2 D1 D0
+  0  0  0 : IC5, offset 0000-3FFF
+  0  0  1 : IC5, offset 4000-7FFF
+  0  1  0 : IC4, offset 8000-BFFF
+  0  1  1 : IC4, offset C000-FFFF
+  1  0  0 : IC3, offset 0000-3FFF
+  1  0  1 : IC3, offset 4000-7FFF
+  1  1  0 : IC2, offset 8000-BFFF
+  1  1  1 : IC2, offset C000-FFFF
+
+ Note that in this setting not all the ROM data is accessible. While
+ I have not seen a 171-5234 board modified this way, Guru's System E
+ notes describe a modification where a wire link is added to connect
+ CN2 B22 (bank latch, bit 3) to what is described as the upper part
+ of J3, but I think it should be the lower. This would give the
+ following mapping:
+
+ D3 D2 D1 D0
+  0  0  0  0 : IC5, offset 0000-3FFF
+  0  0  0  1 : IC5, offset 4000-7FFF
+  0  0  1  0 : IC5, offset 8000-BFFF
+  0  0  1  1 : IC5, offset C000-FFFF
+  0  1  0  0 : IC3, offset 0000-3FFF
+  0  1  0  1 : IC3, offset 4000-7FFF
+  0  1  1  0 : IC3, offset 8000-BFFF
+  0  1  1  1 : IC3, offset C000-FFFF
+  1  0  0  0 : IC4, offset 0000-3FFF
+  1  0  0  1 : IC4, offset 4000-7FFF
+  1  0  1  0 : IC4, offset 8000-BFFF
+  1  0  1  1 : IC4, offset C000-FFFF
+  1  1  0  0 : IC2, offset 0000-3FFF
+  1  1  0  1 : IC2, offset 4000-7FFF
+  1  1  1  0 : IC2, offset 8000-BFFF
+  1  1  1  1 : IC2, offset C000-FFFF
+
+ In this configuration all ROM data can be accessed with bits 3,2
+ selecting the ROM and bits 1,0 selecting the offset. It seems reasonable.
+
+ Fantasy Zone 2 is the only game with four 27C512 EPROMs and may use
+ this arrangement, but it has not been confirmed. Maybe it uses a different
+ ROM board that properly supports this EPROM capacity.
+
+ ----------------------------------------------------------------------------
+ I/O ports
+ ----------------------------------------------------------------------------
+
+ There is a lot of mirroring of the I/O ports so the port address will be
+ shown bit by bit. A dash means that bit can be set to any value.
+
+ A list of the most commonly used port address for a certain device will
+ be listed where applicable, but that is only one of many other possible
+ mirrored locations.
+
+ A7     A0   Addr Device          Read            Write          
+ =========   ==== =============== =============== ===============
+ ---0 0000 : E0   Input ports     Input port #0   Contention     
+ ---0 0001 : E1      "  "         Input port #1   Contention     
+ ---0 0010 : E2      "  "         Input port #2   Contention     
+ ---0 11-- :      Expansion area  ( Dependent on the ROM board )
+ ---1 00-0 : F2   DIP switches    DSW #1          Contention     
+ ---1 00-1 : F3      "  "         DSW #2          Contention     
+ ---1 01-- : F7   Bank latch      Load latch      Load latch     
+ 01-1 10-0 : 7A   VDP #2 (IC33)   V-counter       PSG            
+ 01-1 10-1 : 7B      "  "         H-counter       PSG            
+ 10-1 10-0 : BA      "  "         Data port       Data port      
+ 10-1 10-1 : BB      "  "         Control port    Control port   
+ 11-1 1000 : F8   8255 PPI        Port A          Port A         
+ 11-1 1001 : F9      "  "         Port B          Port B         
+ 11-1 1010 : FA      "  "         Port C          Port C         
+ 11-1 1011 : FB      "  "         Ctrl. reg.      Ctrl. reg.     
+ 01-1 11-0 : 7E   VDP #1 (IC35)   V-Counter       PSG            
+ 01-1 11-1 : 7F      "  "         H-Counter       PSG            
+ 10-1 11-0 : BE      "  "         Data port       Data port      
+ 10-1 11-1 : BF      "  "         Control port    Control port
+
+ Contention means there will be a data bus conflict when you write to
+ a read-only location. Well behaved software will not do this.
+
+ The PPI control register may not be readable, this depends on the
+ particular type of 8255 being used.
+
+ For all port addresses not listed there is either no device to respond
+ to a read or write, or the device mapped there will not respond.
+
+ There is a 4.7K ohm pull-up resistor network on D0-D7 so all undriven I/O
+ ports should return $FF when read, though due to bus capacitance and
+ other conditions it may not always be $FF exactly.
+
+ If you read one of these locations the data returned is indeterminate.
+ For the same reason reading the bank latch (which is write only) will
+ load the latch with this semi-random data. So only write to the latch.
+
+ The expansion area is to map additional hardware on the ROM board to
+ an I/O port range. I don't think it is ever used.
+
+ I/O port diagram
+
+ To visualize how the I/O port space is split up, consider this diagram:
+
+ 00: III-xxxxxxxxxxxx       Key:
+ 10: ddddllll--------
+ 20: III-xxxxxxxxxxxx       I = Input ports 0,1,2
+ 30: ddddllll--------       x = Expansion area /CS asserted
+ 40: III-xxxxxxxxxxxx       d = DIP switches 0,1
+ 50: ddddllllmmmmMMMM       l = Bank latch
+ 60: III-xxxxxxxxxxxx       m = VDP #2 PSG and H/V counters
+ 70: ddddllllmmmmMMMM       M = VDP #1 PSG and H/V counters
+ 80: III-xxxxxxxxxxxx       v = VDP #2 control/data port
+ 90: ddddllllvvvvVVVV       V = VDP #1 control/data port
+ A0: III-xxxxxxxxxxxx       k = 8255 PPI
+ B0: ddddllllvvvvVVVV       - = Unused (free for use)
+ C0: III-xxxxxxxxxxxx
+ D0: ddddllllkkkk----
+ E0: III-xxxxxxxxxxxx
+ F0: ddddllllkkkk----
+
+ ----------------------------------------------------------------------------
+ Input ports
+ ----------------------------------------------------------------------------
+
+ Each port inputs the state of eight optocoupled switches which are
+ active-low.
+
+ Input port #0
+
+ D7 : CN2 A05
+ D6 : CN2 B04
+ D5 : CN2 A04
+ D4 : CN2 B03
+ D3 : CN2 A03
+ D2 : CN2 B02
+ D1 : CN2 A02
+ D0 : CN2 B01
+            
+ Input port #1
+
+ D7 : CN2 A09
+ D6 : CN2 B08
+ D5 : CN2 A08
+ D4 : CN2 B07
+ D3 : CN2 A07
+ D2 : CN2 B06
+ D1 : CN2 A06
+ D0 : CN2 B05
+            
+ Input port #2
+
+ D7 : CN2 A13
+ D6 : CN2 B12
+ D5 : CN2 A12
+ D4 : CN2 B11
+ D3 : CN2 A11
+ D2 : CN2 B10
+ D1 : CN2 A10
+ D0 : CN2 B09
+            
+ ----------------------------------------------------------------------------
+ DIP switches
+ ----------------------------------------------------------------------------
+
+ Switch state is 1=off, 0=on
+
+ DIP switch #1
+
+ D7 : SW1.8
+ D6 : SW1.7
+ D5 : SW1.6
+ D4 : SW1.5
+ D3 : SW1.4
+ D2 : SW1.3
+ D1 : SW1.2
+ D0 : SW1.1
+
+ DIP switch #2
+
+ D7 : SW2.8
+ D6 : SW2.7
+ D5 : SW2.6
+ D4 : SW2.5
+ D3 : SW2.4
+ D2 : SW2.3
+ D1 : SW2.2
+ D0 : SW2.1
+
+ ----------------------------------------------------------------------------
+ Bank latch
+ ----------------------------------------------------------------------------
+
+ D7 : Select VDP #2 VRAM bank.
+
+      1= VDP #2 uses VRAM bank #1, CPU can access bank #0 at 8000-BFFF.
+      0= VDP #2 uses VRAM bank #0, CPU can access bank #1 at 8000-BFFF.
+
+ D6 : Select VDP #1 VRAM bank.
+
+      1= VDP #1 uses VRAM bank #1, CPU can access bank #0 at 8000-BFFF.
+      0= VDP #1 uses VRAM bank #0, CPU can access bank #1 at 8000-BFFF.
+
+ D5 : Select VDP VRAM for CPU access.
+
+      1= Writes to 8000-BFFF go to currently selected bank of VDP #2.
+      0= Writes to 8000-BFFF go to currently selected bank of VDP #1.
+
+ D4 : Speaker amplifier control (0= output enabled, 1= output muted)
+ D3 : ROM bank control (to CN2 B22)
+ D2 : ROM bank control (to CN2 A22)
+ D1 : ROM bank control (to CN2 B21)
+ D0 : ROM bank control (to CN2 A21)
+
+ VRAM access quirks
+
+ The state of bits 7 and 6 are sampled by the video hardware after each
+ VRAM access the VDP makes:
+
+ - VDP #2 VRAM access causes bit 7 to be sampled.
+ - VDP #1 VRAM access causes bit 6 to be sampled.
+
+ This prevents glitches that would happen if banks were changed in the
+ middle of an VRAM access. If these bits are changed in parallel with a VDP
+ VRAM access (either due to display refresh or port based I/O) the old state
+ remains in use regardless of the new latch state until the current VRAM
+ access finishes.
+
+ It is not known how long a VDP VRAM access can last, but as the Z80 and
+ VDP are clocked at the same speed it would make sense to wait a few cycles
+ (such as a NOP) after writing to this latch and expecting the new VRAM
+ banks to be accessible.
+
+ Because bits 7,6 are only sampled after a VDP VRAM access, there is a
+ significant problem when these bits are changed when the VDP is idle such
+ as during V-Blank. In this case the state of bits 7,6 will be ignored.
+ The programmer can force the new state to be recognized by doing any kind
+ of VRAM I/O such as:
+
+ - Writing a byte to the data port if the command set is VRAM write.
+
+ - Read a byte from the data port if the command set is VRAM read.
+
+ - Issue a VRAM read command which forces a pre-load of the read buffer
+   for subsequent reads.
+
+ You have to do this for the VDP corresponding to the bit you changed, or
+ BOTH VDPs if both bits changed. And note that the bank accessed in any
+ of these cases is the previously selected bank, NOT the current bank
+ you just set in bits 7,6.
+
+ Simply changing bits 7,6 during a period of idle operation will do nothing,
+ and the state of bits 7,6 as latched after the last VRAM access will
+ continue to persist.
+
+ Idle time may also include any scanlines that are forcibly blanked by
+ turning the display off mid-frame.
+
+ Bit 5 can be changed at any time, but the currently selected bank is
+ subject to the processing delay of bits 7 and 6 as described above.
+
+ ----------------------------------------------------------------------------
+ 8255 PPI
+ ----------------------------------------------------------------------------
+
+ PA7 : CN3 B01
+ PA6 : CN3 B02
+ PA5 : CN3 B03
+ PA4 : CN3 B04
+ PA3 : CN3 B05
+ PA2 : CN3 B06
+ PA1 : CN3 B07
+ PA0 : CN3 B08
+
+ PB7 : CN1 B17
+ PB6 : CN1 B18
+ PB5 : CN1 B19
+ PB4 : CN1 B20
+ PB3 : CN1 B22
+ PB2 : CN1 B23
+ PB1 : CN1 B24
+ PB0 : CN1 B25
+
+ PC7 : CN3 B09
+ PC6 : CN3 B10
+ PC5 : CN3 B11
+ PC4 : CN3 B12
+ PC3 : CN3 B13
+ PC2 : CN3 B14
+ PC1 : CN3 B15
+ PC0 : CN3 B16
+
+ Port B is output-only.
+
+ Ports A and C can be freely defined as inputs or outputs, there is no
+ hardware limiting their function other than 10K ohm pull-up resistors
+ to +5V on the pins.
+
+ I have not seen the type of board that plugs into this connector, but
+ apparently it is for analog inputs.
+
+ Connector pin assignments
+
+ ----------------------------------------------------------------------------
+ CN1 - 2x25 pin connector with latch
+ ----------------------------------------------------------------------------
+
+ This connector has audio, video, and I/O.
+
+                        +---------+
+   Common pull-up point |A01   B01| Input port #0, bit 0
+   Input port #0, bit 1 |A02   B02| Input port #0, bit 2
+   Input port #0, bit 3 |A03   B03| Input port #0, bit 4
+   Input port #0, bit 5 |A04   B04| Input port #0, bit 6
+   Input port #0, bit 7 |A05   B05| Input port #1, bit 0
+   Input port #1, bit 1 |A06   B06| Input port #1, bit 2
+   Input port #1, bit 3 |A07   B07| Input port #1, bit 4
+   Input port #1, bit 5 |A08   B08| Input port #1, bit 6
+   Input port #1, bit 7 |A09   B09| Input port #2, bit 0
+   Input port #2, bit 1 |A10   B10| Input port #2, bit 2
+   Input port #2, bit 3 |A11   B11| Input port #2, bit 4
+   Input port #2, bit 5 |A12   B12| Input port #2, bit 6
+   Input port #2, bit 7 |A13   B13| Analog red video output
+                 (N.C.) |A14   B14| Analog green video output
+                 (N.C.) |A15   B15| Analog blue video output
+                 (N.C.) |A16   B16| Composite sync output (TTL)
+                 (N.C.) |A17   B17| 8255 PB7 (output)
+                 (N.C.) |A18   B18| 8255 PB6 (output)
+            Speaker (+) |A19   B19| 8255 PB5 (output)
+            Speaker (-) |A20   B20| 8255 PB4 (output)
+            ULN2003 GND |A21   B21| ULN2003 GND
+                    GND |A22   B22| 8255 PB0 (output)
+                    GND |A23   B23| 8255 PB1 (output)
+                    GND |A24   B24| 8255 PB2 (output)
+                    GND |A25   B25| 8255 PB3 (output)
+                        +---------+
+
+ A01 = This is common to pin 1 of all three 1K resistor arrays that pull up
+       the input port bits. It should be connected to a +12V source.
+
+ Pins B17-B20 are TTL outputs driven directly by the 8255.
+
+ Pins B22-B25 are open collector outputs driven by a ULN2003. Pins B22 and
+ B23 each use two darlington transistors paired together.
+
+ ----------------------------------------------------------------------------
+ CN2 - 2x25 pin connector
+ ----------------------------------------------------------------------------
+
+ This connector is for the ROM board.
+    
+                            +---------+
+                        +5V |A01   B01| +5V
+                        +5V |A02   B02| +5V
+                   Z80 /CLK |A03   B03| Z80 /M1
+                   Z80 /RST |A04   B04| Z80 /NMI (VDP #2 IRQ)
+     (VDP #1 IRQ)  Z80 /INT |A05   B05| Z80 /RFSH
+                    Z80 A15 |A06   B06| Z80 A14
+                    Z80 A13 |A07   B07| Z80 A12
+                    Z80 A11 |A08   B08| Z80 A10
+                     Z80 A9 |A09   B09| Z80 A8
+                     Z80 A7 |A10   B10| Z80 A6
+                     Z80 A5 |A11   B11| Z80 A4
+                     Z80 A3 |A12   B12| Z80 A2
+                     Z80 A1 |A13   B13| Z80 A0
+                     Z80 D7 |A14   B14| Z80 D6
+                     Z80 D5 |A15   B15| Z80 D4
+                     Z80 D3 |A16   B16| Z80 D2
+                     Z80 D1 |A17   B17| Z80 D0
+                    Z80 /RD |A18   B18| Z80 /WR
+                  Z80 /MREQ |A19   B19| Z80 /IORQ
+   (8000-BFFF) VDP #1 EXM1# |A20   B20| VDP #1 EXM2# (0000-7FFF)
+                   LATCH D0 |A21   B21| LATCH D1
+                   LATCH D2 |A22   B22| LATCH D3
+          I/O EXPANSION CS# |A23   B23| (N.C.)
+                        GND |A24   B24| GND
+                        GND |A25   B25| GND
+                            +---------+
+
+ The design of the system is Z80-centric so other processors cannot be
+ used on the ROM board without some difficulty.
+
+ ----------------------------------------------------------------------------
+ CN3 - 2x17 pin connector
+ ----------------------------------------------------------------------------
+
+ This connector is for additional I/O.
+
+                        +---------+
+                    GND |A01   B01| PA7
+                    GND |A02   B02| PA6
+                    GND |A03   B03| PA5
+                    GND |A04   B04| PA4
+                    GND |A05   B05| PA3
+                    GND |A06   B06| PA2
+                    GND |A07   B07| PA1
+                    GND |A08   B08| PA0 
+                    GND |A09   B09| PC7 
+                    GND |A10   B10| PC6 
+                    GND |A11   B11| PC5 
+                    GND |A12   B12| PC4 
+                    GND |A13   B13| PC3 
+                    GND |A14   B14| PC2 
+                    GND |A15   B15| PC1 
+                    GND |A16   B16| PC0 
+                    +5V |A17   B17| +5V 
+                        +---------+
+
+ Ports A and C have 10K ohm pull resistors to +5V.
+
+ ----------------------------------------------------------------------------
+ CN4 - 2x8 pin connector with latch
+ ----------------------------------------------------------------------------
+
+ This connector is for the power supply.
+
+                        +---------+
+                    +5V |A01   B01| +5V
+                    +5V |A02   B02| +5V
+                    GND |A03   B03| GND
+                    GND |A04   B04| GND 
+                    GND |A05   B05| GND
+                        |A06   B06| 
+                   +12V |A07   B07| +12V
+                        |A08   B08| 
+                        +---------+
+
+ Pins A06 and B06 are connected together but don't go anywhere on the board.
+ This is also true of A08 and B08.
+
+ ----------------------------------------------------------------------------
+ Miscellaneous
+ ----------------------------------------------------------------------------
+
+ VDP #1 inputs Z80 MREQ#, A15, A14 and generates three chip selects:
+
+ EXM1#  = !MREQ &  A15 & !A14 (8000-BFFF)
+ EXM2#  = !MREQ & !A15        (0000-7FFF)
+ CSRAM# = !MREQ &  A15 &  A14 (C000-FFFF)
+
+ The work RAM is connected as follows:
+
+ RFSH# = !MREQ & !RFSH (Asserted during Z80 refresh cycles)
+   CE# = CSRAM#
+   OE# = Buffered Z80 RD#
+   WE# = Buffered Z80 WR#
+
+ Memory mapped VRAM is disabled during Z80 read and refresh cycles to
+ 8000-BFFF so there is no conflict with the banked ROM which the ROM board
+ can map to that area.
+
+ The I/O port decoding is enabled when M1# is high such that I/O ports
+ do not respond to Z80 interrupt acknowledge cycles.
+
+ VDP #2 KBSEL# is used to generate the chip select for the 8255 PPI.
+
+ The T1 pin of both VDP is grounded. Because they use an external clock
+ signal at XTAL1 instead of an oscillator, the XTAL2 pin is left floating.
+
+ ----------------------------------------------------------------------------
+ Component list
+ ----------------------------------------------------------------------------
+
+ Main board is 171-5323
+
+  IC1 - NEC uPD4168C-15             8Kx8 NMOS XRAM
+  IC2 - NEC uPD4168C-15         
+  IC4 - NEC uPD4168C-15
+  IC5 - NEC uPD4168C-15
+  IC6 - NEC uPD4168C-15
+  IC7 - NEC uPD4168C-15
+  IC8 - NEC uPD4168C-15
+  IC9 - 74LS257
+ IC10 - 74LS244
+ IC11 - 74LS244
+ IC12 - 74LS244
+ IC13 - 74LS244
+ IC14 - 74LS257
+ IC15 - 74LS244
+ IC16 - 74LS244
+ IC17 - 74LS244
+ IC18 - 74LS244
+ IC19 - 74LS257
+ IC20 - 74LS245
+ IC21 - 74LS245
+ IC22 - 74LS245
+ IC23 - 74LS245
+ IC24 - 74LS257
+ IC25 - 74LS245
+ IC26 - 74LS245
+ IC27 - 74LS245
+ IC28 - 74LS245
+ IC29 - NEC uPA2003C                Open collector Darlington transistor array
+ IC30 - Texas Instruments 74145     Open collector 1-of-10 decoder
+ IC31 - 74LS257
+ IC32 - 74LS257
+ IC33 - SEGA 315-5124               Sega Master System VDP (64-pin SDIP)
+ IC34 - 74LS257
+ IC35 - SEGA 315-5124
+ IC36 - No markings (8255 PPI)
+ IC37 - NEC 74HC4066C               Quad bilateral switch
+ IC38 - NEC 74HC4066C
+ IC39 - 74LS257
+ IC40 - 74LS74
+ IC41 - 74LS00 
+ IC42 - 74LS123
+ IC43 - 74HC74
+ IC44 - 74LS257
+ IC45 - 74LS257
+ IC46 - 74LS244
+ IC47 - 74LS32
+ IC48 - 74LS244
+ IC49 - NEC uPD4168C-15
+ IC50 - 74HC04
+ IC51 - 74LS257
+ IC52 - 74LS257
+ IC53 - 74LS245
+ IC54 - 74LS273
+ IC55 - NEC uPD4168C-15
+ IC56 - 74LS163A
+ IC57 - 74LS139
+ IC58 - 74LS138
+ IC59 - AN608                       Video amplifier (TO-220, 4 pins)
+ IC60 - AN608
+ IC61 - AN608
+ IC62 - LA4460                      Speaker amplifier (SIP)
+
+  PC1 - TLP521-4                    Four channel optocoupler
+  PC2 - TLP521-4
+  PC3 - TLP521-4
+  PC4 - TLP521-4
+  PC5 - TLP521-4
+  PC6 - TLP521-4
+
+  TR1 - C945                        NPN transistor
+  TR2 - C945
+  TR3 - C945
+
+ XTAL - 10.7386 MHz                 Oscillator, 2 pins
+
+ ----------------------------------------------------------------------------
+ Programming notes
+ ----------------------------------------------------------------------------
+
+ I/O ports
+
+ E0 : Input port #0     (r/o)
+ E1 : Input port #1     (r/o)
+ E2 : Input port #2     (r/o)
+ F2 : DIP switch #1     (r/o)
+ F3 : DIP switch #2     (r/o)
+ F7 : Bank latch        (w/o)
+ F8 : PPI port A        (r/w)
+ F9 : PPI port B        (r/w)
+ FA : PPI port C        (r/w)
+ FB : PPI control reg.  (r/w)
+
+ 7A : VDP #2 V-counter  ( /r)
+ 7A : VDP #2 PSG        (w/ )
+ 7B : VDP #2 H-counter  ( /r)
+ 7B : VDP #2 PSG        (w/ )
+ BA : VDP #2 data port  (r/w)
+ BB : VDP #2 ctrl port  (r/w)
+
+ 7E : VDP #1 V-counter  ( /r)
+ 7E : VDP #1 PSG        (w/ )
+ 7F : VDP #1 H-counter  ( /r)
+ 7F : VDP #1 PSG        (w/ )
+ BE : VDP #1 data port  (r/w)
+ BF : VDP #1 ctrl port  (r/w)
+
+ Memory map
+
+ 0000-7FFF : ROM (IC6)  (r/o)
+ 8000-BFFF : Banked ROM (r/ )
+ 8000-BFFF : VRAM bank  ( /w)
+ C000-FFFF : Work RAM   (r/w)
+
+ Interrupts
+
+ INT - VDP #1 frame and line interrupts. Read port $BF to acknowledge
+       otherwise an INT will be generated after every instruction.
+
+ NMI - VDP #2 frame and line interrupts. Read port $BB to acknowledge
+       otherwise no further NMIs will be generated.
+
+ Timing
+
+ - If you change the bank latch during V-Blank, do some dummy VRAM I/O
+   from port VDP #1 if you changed bit 6, VDP #2 if you changed bit 7,
+   or both if you changed bits 7 and 6. Note that the I/O in question
+   will go the previously selected bank so do something non-destructive
+   such as issue a read command and discard the data.
+
+ - Don't touch any VDP 1/2 or PPI registers for the eight cycles after
+   reset.
+
+ ----------------------------------------------------------------------------
+ Credits and Acknowledgements
+ ----------------------------------------------------------------------------
+
+ - Omar Cornut for the System E board.
+ - Guru for his System E readme.
+
+ ----------------------------------------------------------------------------
+ End
+ ----------------------------------------------------------------------------

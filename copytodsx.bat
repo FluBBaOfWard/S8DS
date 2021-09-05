@@ -1,0 +1,1 @@
+copy S8DS.nds h:\apps
