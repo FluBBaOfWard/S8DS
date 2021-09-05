@@ -7,3 +7,4 @@ S8DS.xcodeproj/project.xcworkspace/xcuserdata
 build
 *.elf
 *.nds
+*.zip
