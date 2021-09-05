@@ -27,7 +27,7 @@ Missing:
 	EEPROM save for the few GG games that use it.
 
 Check your roms!
-http://www.smspower.org/maxim/smschecker/
+https://www.smspower.org/maxim/Software/SMSChecker
 
 ## How to use:
 
