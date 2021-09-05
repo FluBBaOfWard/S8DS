@@ -1,34 +1,36 @@
 # S8DS V1.1.1
 
 This is a SEGA 8Bit emulator for the NDS, it support the following systems:
-SEGA SG-1000 / SG-1000 II
-SEGA SC-3000
-SEGA Mark III
-SEGA Master System J, 1 & 2
-SEGA Game Gear
-SEGA System-E
-Coleco
-MSX 1
-Sord M5
+
+	SEGA SG-1000 / SG-1000 II
+	SEGA SC-3000
+	SEGA Mark III
+	SEGA Master System J, 1 & 2
+	SEGA Game Gear
+	SEGA System-E
+	Coleco
+	MSX 1
+	Sord M5
 
 Some systems require you to add their Bios'es to function correctly.
 
 Features:
- Most things you'd expect from an SMS emulator.
- Except these...
+
+	Most things you'd expect from an SMS emulator.
+	Except these...
 
 Missing:
- Correct sprite collision.
- Speech samples.
- YM2413 emulation.
- EEPROM save for the few GG games that use it.
+
+	Correct sprite collision.
+	Speech samples.
+	YM2413 emulation.
+	EEPROM save for the few GG games that use it.
 
 Check your roms!
 http://www.smspower.org/maxim/smschecker/
 
---------------------------------------------------------------------------------
-How to use:
---------------------------------------------------------------------------------
+## How to use:
+
 Depending on your flashcart you might have to DLDI patch the emulator.
 You should also create a "S8DS" directory either in the root of your card or in
 the data directory (eg h:\data\S8DS).
@@ -52,11 +54,8 @@ Now load up a game and you should be good to go.
 When playing SMS 3D games you might want to turn down the color a bit for
 better 3D effect, I have only tested with red/cyan glasses.
 
---------------------------------------------------------------------------------
-Menu:
---------------------------------------------------------------------------------
-File:
------
+## Menu:
+### File:
 	Load Game:
 	Load State: Select which state you want to load.
 	Save State: Select if you want to overwrite an old state or create a new.
@@ -67,8 +66,7 @@ File:
 	Reset Game:
 	Exit: (If your card supports it.)
 
-Options:
---------
+### Options:
 	Controller:
 		Autofire: Select if you want autofire.
 		Controller: 2P control player 2.
@@ -119,8 +117,7 @@ Options:
 
 	Dipswitches: For arcade games
 
-About:
-------
+### About:
 	Some dumb info...
 
 Sleep: Put the NDS into sleepmode.
@@ -129,13 +126,7 @@ Sleep: Put the NDS into sleepmode.
 
 
 
---------------------------------------------------------------------------------
-
-	
-
---------------------------------------------------------------------------------
-Credits:
---------------------------------------------------------------------------------
+## Credits:
 
 Thanks to:
 Reesy for help with the Z80 emu core.
@@ -143,12 +134,7 @@ Some MAME people + Maxim for the SN76496 info.
 Charles MacDonald (http://cgfm2.emuviews.com/) for VDP info.
 Omar Cornut (http://www.smspower.org/) for help with various SMS stuff.
 The crew at PocketHeaven for their support.
-Check out the SMSAdvance forum there.
-http://boards.pocketheaven.com/viewforum.php?f=40
 
--------------------------------
 Fredrik Olsson
 Twitter @TheRealFluBBa
 http://www.github.com/FluBBaOfWard
--------------------------------
-
