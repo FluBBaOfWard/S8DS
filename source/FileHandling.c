@@ -11,6 +11,8 @@
 #include "Emubase.h"
 #include "Main.h"
 #include "Shared/EmuMenu.h"
+#include "Shared/EmuSettings.h"
+#include "Shared/FileHelper.h"
 #include "Gui.h"
 #include "RomLoading.h"
 #include "Equates.h"
@@ -64,9 +66,9 @@ int loadSettings() {
 	g_flicker     = cfg.flicker & 1;
 	g_gammaValue  = cfg.gammaValue & 0x7;
 	g_colorValue  = (cfg.gammaValue>>4) & 0x7;
-	emuSettings   = cfg.emuSettings &~ 0xC0;			// Clear speed setting.
+	emuSettings   = cfg.emuSettings & ~EMUSPEED_MASK;	// Clear speed setting.
 	sleepTime     = cfg.sleepTime;
-	joyCfg        = (joyCfg &~ 0x400) | ((cfg.controller & 1)<<10);
+	joyCfg        = (joyCfg & ~0x400) | ((cfg.controller & 1)<<10);
 	strlcpy(currentDir, cfg.currentPath, sizeof(currentDir));
 
 	infoOutput("Settings loaded.");
@@ -84,7 +86,7 @@ void saveSettings() {
 	cfg.scaling     = g_scalingSet & 3;
 	cfg.flicker     = g_flicker & 1;
 	cfg.gammaValue  = (g_gammaValue & 0x7)|((g_colorValue & 0x7)<<4);
-	cfg.emuSettings = emuSettings & ~0xC0;			// Clear speed setting.
+	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK;		// Clear speed setting.
 	cfg.sleepTime   = sleepTime;
 	cfg.controller  = (joyCfg>>10) & 1;
 	strlcpy(cfg.currentPath, currentDir, sizeof(cfg.currentPath));
@@ -257,9 +259,9 @@ static bool selectBios(const char *fileTypes, char *dest) {
 		strlcpy(dest, currentDir, FILEPATHMAXLENGTH);
 		strlcat(dest, "/", FILEPATHMAXLENGTH);
 		strlcat(dest, biosName, FILEPATHMAXLENGTH);
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 void selectUSBios() {

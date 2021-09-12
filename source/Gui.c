@@ -3,6 +3,7 @@
 #include "Emubase.h"
 #include "Gui.h"
 #include "Shared/EmuMenu.h"
+#include "Shared/EmuSettings.h"
 #include "Shared/AsmExtra.h"
 #include "Main.h"
 #include "SG1000.h"
@@ -30,11 +31,10 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.1 2021-09-05"
+#define EMUVERSION "V1.1.1 2021-09-12"
 
 extern u8 sordM5Input;		// SordM5.s
 
-int emuSettings = 0x0031;
 u8 g_gammaValue = 0;
 
 static void nullUISG1000(int key);
@@ -211,6 +211,7 @@ static char *const languageTxt[] = {"English","Japanese","English"};
 //----------------------------------------------------------------------
 
 void setupGUI() {
+	emuSettings = AUTOPAUSE_EMULATION | AUTOSLEEP_OFF;
 	keysSetRepeat(25, 4);	// Delay, repeat.
 	menuXitems[1] = ARRSIZE(fnList1) - (enableExit?0:1);
 	openMenu();

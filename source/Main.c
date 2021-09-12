@@ -2,9 +2,9 @@
 
 #include <maxmod9.h>
 
-#include "Emubase.h"
 #include "Main.h"
 #include "Shared/EmuMenu.h"
+#include "Shared/FileHelper.h"
 #include "Shared/AsmExtra.h"
 #include "Gui.h"
 #include "YM2413.h"
@@ -24,13 +24,10 @@ static void checkTimeOut(void);
 static void setupGraphics(void);
 static void setupStream(void);
 
-bool enableExit = false;
 bool powerButton = false;
 bool gameInserted = false;
-bool pauseEmulation = false;
-int sleepTime = 0x7FFFFFFF;				// 5 min
 static int sleepTimer = 0x7FFFFFFF;		// 5 min
-static bool vBlankOverflow = FALSE;
+static bool vBlankOverflow = false;
 
 static mm_ds_system sys;
 static mm_stream myStream;
@@ -54,7 +51,7 @@ static const u8 guiPalette[] = {
 //---------------------------------------------------------------------------------
 static void myVblank(void) {
 //---------------------------------------------------------------------------------
-	vBlankOverflow = TRUE;
+	vBlankOverflow = true;
 	DC_FlushRange(EMUPALBUFF, 0x400);
 	vblIrqHandler();
 }
@@ -63,7 +60,7 @@ static void myVblank(void) {
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
 	if (argc > 1) {
-		enableExit = TRUE;
+		enableExit = true;
 	}
 	setupGraphics();
 	soundInit();

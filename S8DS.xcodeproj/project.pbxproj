@@ -72,6 +72,7 @@
 		9C8F3401248ACBDB00996E5A /* nds_asm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nds_asm.h; sourceTree = "<group>"; };
 		9C8F3404248B982F00996E5A /* SN76496.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = SN76496.i; sourceTree = "<group>"; };
 		9C8F3405248B982F00996E5A /* SN76496.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SN76496.h; sourceTree = "<group>"; };
+		9CBEE0D326EE24A50095347A /* EmuSettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EmuSettings.h; sourceTree = "<group>"; };
 		9CC0AADA259FA95B009020F3 /* SegaVDP.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = SegaVDP.i; sourceTree = "<group>"; };
 		9CC0AADB259FA95B009020F3 /* SegaVDP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SegaVDP.h; sourceTree = "<group>"; };
 		A40EA24C1CB000AA002807DB /* OmvBgr.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = OmvBgr.grit; sourceTree = "<group>"; };
@@ -276,6 +277,7 @@
 				9C7BB9652600BBEB00EA9C9C /* graphics */,
 				A47F093720876332004E1DA6 /* unzip */,
 				9C8F3401248ACBDB00996E5A /* nds_asm.h */,
+				9CBEE0D326EE24A50095347A /* EmuSettings.h */,
 				A47F09222085FDBF004E1DA6 /* EmuMenu.h */,
 				A47F09232085FDBF004E1DA6 /* EmuMenu.c */,
 				A47F0934208731E9004E1DA6 /* FileHelper.h */,

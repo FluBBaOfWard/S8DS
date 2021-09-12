@@ -1,5 +1,4 @@
 #include <nds.h>
-#include <fat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +9,7 @@
 #include "RomLoading.h"
 #include "FileHandling.h"
 #include "Gui.h"
+#include "Shared/FileHelper.h"
 #include "Shared/unzip/unzipnds.h"
 #include "Equates.h"
 #include "Cart.h"

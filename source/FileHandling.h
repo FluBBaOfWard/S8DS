@@ -5,8 +5,6 @@
 extern "C" {
 #endif
 
-#include "Shared/FileHelper.h"
-
 #define FILEEXTENSIONS ".sms.gg.sg.sc.col.rom.mx1.mx2"
 
 int loadSettings(void);
