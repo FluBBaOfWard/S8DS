@@ -234,7 +234,7 @@ void loadGame(const char *gameName) {
 			setEmuSpeed(0);
 			loadCart(g_emuFlags);
 			loadSRAM();
-			if ( emuSettings & 4 ) {
+			if ( emuSettings & AUTOLOAD_STATE ) {
 				loadState();
 			}
 			gameInserted = true;

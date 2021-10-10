@@ -1,10 +1,8 @@
 #include <nds.h>
 
-#include "Emubase.h"
 #include "Gui.h"
 #include "Shared/EmuMenu.h"
 #include "Shared/EmuSettings.h"
-#include "Shared/AsmExtra.h"
 #include "Main.h"
 #include "SG1000.h"
 #include "OmvBgr.h"
@@ -31,7 +29,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.1 2021-09-12"
+#define EMUVERSION "V1.1.1 2021-10-10"
 
 extern u8 sordM5Input;		// SordM5.s
 
@@ -563,7 +561,7 @@ void nullUINormal(int keyHit) {
 			nullUISordM5(keyHit);
 			break;
 		default:
-			if (emuSettings & 8) {
+			if (g_debugSet) {
 				nullUIDebug(keyHit);
 			} else if (keyHit&KEY_TOUCH) {
 				openMenu();

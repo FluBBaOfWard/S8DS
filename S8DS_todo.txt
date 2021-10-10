@@ -2,7 +2,7 @@ S8DS To do
 ------------
 
 	Add Casio PV-2000? http://www43.tok2.com/home/cmpslv/Pv2000/EnrPV.htm
-	Add TOMY PuyTa?
+	Add TOMY PuyTa? Tomy Tutor?
 	VDP Test crashes in MegaDrive test?
 	Check size of used SRAM 8kB, 16kB, 24kB & 32kB.
 		Try to save SRAM if it exists?

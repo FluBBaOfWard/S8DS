@@ -40,6 +40,7 @@ static char *const megatechFiles[] ={"mt_ggolf.zip",    "mt_gsocr.zip",    "mt_o
 static char *const megatechGames[] ={"mp11129f.ic1",    "mp10747f.ic1",    "mpr-11078.ic1",   "mpr-11194.ic1",   "mp11706.ic1",     "mpr-10118.ic1",   "mp11271.ic1",     "ep13817.ic2",     "mpr-10576f.ic1",   "mp11404.ic1"};
 static char *const megatechGuides[]={"epr-12368-04.ic2","epr-12368-05.ic2","epr-12368-06.ic2","epr-12368-07.ic2","epr-12368-08.ic2","epr-12368-09.bin","epr-12368-10.ic2","epr-12368-13.ic1","epr-12368-19.ic2", "epr-12368-29.ic2"};
 static const int   megatechSizes[] ={0x20000,           0x20000,           0x40000,           0x40000,           0x40000,           0x20000,           0x80000,           0x20000,           0x20000,            0x20000};
+
 int loadArcadeROM(void *dest, const char *fName) {
 	int i;
 	int size = 0;
