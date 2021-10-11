@@ -98,9 +98,9 @@ tmLoop:
 	bne tmLoop
 
 	mov r0,r4
-	ldr r1,=0x03000300
+	ldr r1,=0x02000200
 	mov r2,#0x800/4
-	bl memset_					;@ BG2 clear
+	bl memset_					;@ BG1/BG3 clear
 
 	ldr r0,=BG_GFX+0x04100
 	ldr r3,antSeed
@@ -163,6 +163,7 @@ ppi:
 	adds r1,r1,#1
 	bne ppi
 
+	bl gfxReset
 	ldmfd sp!,{lr}
 	bx lr
 ;@----------------------------------------------------------------------------
