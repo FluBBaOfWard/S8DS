@@ -163,7 +163,8 @@ ppi:
 	adds r1,r1,#1
 	bne ppi
 
-	bl gfxReset
+	bl setupScaling
+	bl VDP0ApplyScaling
 	ldmfd sp!,{lr}
 	bx lr
 ;@----------------------------------------------------------------------------

@@ -217,7 +217,7 @@ loadCart: 		;@ Called from C:  r0=emuFlags
 
 	ldr z80optbl,=Z80OpTable
 
-	ldr r3,=rawBios
+//	ldr r3,=rawBios
 //	str r3,g_BIOSBASE_US
 //	str r3,g_BIOSBASE_JP
 //	str r3,g_BIOSBASE_COLECO
@@ -318,8 +318,9 @@ tbLoop1:
 	ldreq r1,g_BIOSBASE_GG		;@ GG
 	bicne r2,r2,#0x40			;@ X as Start/Pause only on HW_GG
 	bicne r0,r0,#GG_MODE
+	cmpne r9,#HW_SMS2
 	cmpne r9,#HW_MEGADRIVE
-	biceq r2,r2,#0x20			;@ Reset unavailable on HW_GG & HW_MD (& HW_SMS2)
+	biceq r2,r2,#0x20			;@ Reset unavailable on HW_GG, HW_SMS2 & HW_MEGADRIVE
 	str r0,g_emuFlags
 	strb r2,g_config
 	cmp r1,#0

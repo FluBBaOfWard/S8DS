@@ -1,4 +1,4 @@
-# S8DS V1.1.2
+# S8DS V1.1.3
 
 This is a SEGA 8Bit emulator for the NDS, it support the following systems:
 
@@ -96,6 +96,7 @@ better 3D effect, I have only tested with red/cyan glasses.
 			Select GameGear Bios: Browse for GameGear bios.
 			Select Coleco Bios: Browse for Coleco bios.
 			Select MSX Bios: Browse for MSX bios.
+		YM2413: Enable YM2413 emulation for SMS1 & Mark 3.
 
 	Settings:
 		Speed: Switch between speed modes, can also be toggled with L+START.

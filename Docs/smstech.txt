@@ -194,7 +194,7 @@
            Writes to odd addresses go to the VDP control port.
            Reads from even addresses return the VDP data port contents.
            Reads from odd address return the VDP status flags.
- $C0-$FF : Writes have no effect.
+ $C0-$FF : Writes have no effect, except 0xF2 which goes to the YM2413.
            Reads from even addresses return the I/O port A/B register.
            Reads from odd address return the I/O port B/misc. register.
 

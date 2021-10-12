@@ -10,6 +10,7 @@
 	.global Z80Out
 	.global joyCfg
 	.global inputHW
+	.global ym2413Enabled
 	.global joy0State
 	.global joy1State
 	.global acExtra
@@ -58,7 +59,7 @@ IO_Params_SG1000_R:
 	.long 0x00410063, PPI1PortBR		;@ 0x41-0x5D, 0xC1-0xDD
 	.long 0x00420063, PPI1PortCR		;@ 0x42-0x5E, 0xC2-0xDE
 	.long 0x00430063, PPI1PortDR		;@ 0x43-0x5F, 0xC3-0xDF
-	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x9F, 0xE0-0xFF
+	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x1F, 0x60-0x9F, 0xE0-0xFF
 IO_Params_SG1000_W:
 	.long 0x006000E0, SN76496_W			;@ 0x60-0x7F
 	.long 0x00A000E1, VDP0DataTMSW		;@ 0xA0-0xBE
@@ -81,7 +82,7 @@ IO_Params_OMV_R:
 	.long 0x00E100E7, OMVPort2_R		;@ 0xE1-0xF9
 	.long 0x00E200E7, OMVPort3_R		;@ 0xE2-0xFA
 	.long 0x00E300E7, OMVPort4_R		;@ 0xE3-0xFB
-	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x9F, 0xE0-0xFF
+	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x1F, 0x40-0x9F, 0xFC-0xFF
 IO_Params_OMV_W:
 	.long 0x006000E0, SN76496_W			;@ 0x60-0x7F
 	.long 0x00A000E1, VDP0DataTMSW		;@ 0xA0-0xBE
@@ -96,17 +97,17 @@ IO_Params_Mark3_R:
 	.long 0x004100C1, VDP0HCounterR		;@ 0x41-0x7F
 	.long 0x008000C1, VDP0DataR			;@ 0x80-0xBE
 	.long 0x008100C1, VDP0StatR			;@ 0x81-0xBF
+	.long 0x00F000FC, ExternalIO_R		;@ 0xF0-0xF2
 	.long 0x00C000C1, ExtIO_0_SMS_R		;@ 0xC0-0xFE
 	.long 0x00C100C1, ExtIO_1_SMS_R		;@ 0xC1-0xFF
 	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x3F
 IO_Params_Mark3_W:
-//	.long 0x000000C1, MemCtrl_SMS_W		;@ 0x00-0x3E
 	.long 0x004000C0, SN76496_W			;@ 0x40-0x7F
 	.long 0x008000C1, VDP0DataSMSW		;@ 0x80-0xBE
 	.long 0x008100C1, VDP0CtrlW			;@ 0x81-0xBF
 	.long 0x00FD00FF, SDSC_Debug_W		;@ 0xFD
 	.long 0x00C000C0, ExternalIO_W		;@ 0xC0-0xFF
-	.long 0x00000000, empty_W			;@ 0x01-0x3F
+	.long 0x00000000, empty_W			;@ 0x00-0x3F
 
 ;@----------------------------------------------------------------------------
 ;@ SMS1
@@ -608,7 +609,8 @@ joy1Extra:		.byte 0
 joyMode:		.byte 0
 colecoKey:		.byte 0
 inputHW:		.byte 0
-				.byte 0
+ym2413Enabled:	.byte 1
+
 sc3Keyboard:
 keyboardRows:
 keyboardRow0:	.byte 0xFF
@@ -917,12 +919,11 @@ StereoCtrl_GG_W:			;@ GG stereo control, 0x06
 ;@------------------------------------------------------------------------------
 IOCtrl_GG_W:				;@ GG com port stuff, 0x00-0x07
 ;@------------------------------------------------------------------------------
-	adr r1,GGIO
-	strb r0,[r1,addy]
+	strb r0,[pc,addy]
 	bx lr
-GGIO_Default:
-	.byte 0xC0,0x7F,0xFF,0x00,0xFF,0x00,0xFF,0xFF
 GGIO:
+	.byte 0xC0,0x7F,0xFF,0x00,0xFF,0x00,0xFF,0xFF
+GGIO_Default:
 	.byte 0xC0,0x7F,0xFF,0x00,0xFF,0x00,0xFF,0xFF
 ;@------------------------------------------------------------------------------
 IOCtrl_SMS_W:
@@ -963,6 +964,9 @@ IOCtrl_SMS_W:
 ;@----------------------------------------------------------------------------
 ExternalIO_R:
 ;@----------------------------------------------------------------------------
+	ldrb r1,ym2413Enabled
+	cmp r1,#0
+	ldreq pc,emptyReadPtr
 	cmp addy,#0xF1				;@ FM Unit
 	beq YM2413_0_StatusR
 	cmp addy,#0xF2				;@ FM/PSG enable/disable?
@@ -971,6 +975,9 @@ ExternalIO_R:
 ;@----------------------------------------------------------------------------
 ExternalIO_W:
 ;@----------------------------------------------------------------------------
+	ldrb r1,ym2413Enabled
+	cmp r1,#0
+	beq empty_W
 	cmp addy,#0xF0				;@ FM Unit
 	beq YM2413_0_AddressW
 	cmp addy,#0xF1				;@ FM Unit

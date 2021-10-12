@@ -29,7 +29,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.2 2021-10-11"
+#define EMUVERSION "V1.1.3 2021-10-12"
 
 extern u8 sordM5Input;		// SordM5.s
 
@@ -82,6 +82,7 @@ static void glassesSet(void);
 static void countrySet(void);
 static void machineSet(void);
 static void biosSet(void);
+static void ym2413Set(void);
 
 static void dip0Set0_1(void);
 static void dip0Set1_1(void);
@@ -149,7 +150,7 @@ static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui9};
 static const fptr fnList3[] = {uiDummy};
 static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
 static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet, bgrLayerSet, sprLayerSet};
-static const fptr fnList6[] = {countrySet, machineSet, ui8};
+static const fptr fnList6[] = {countrySet, machineSet, ui8, ym2413Set};
 static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, debugTextSet, sleepSet};
 static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
 static const fptr fnList9[] = {uiDummy};
@@ -401,6 +402,7 @@ static void uiMachine() {
 	drawSubItem("Region: ",cntrTxt[g_region]);
 	drawSubItem("Machine: ",machTxt[g_machineSet]);
 	drawMenuItem(" Bios Settings ->");
+	drawSubItem("YM2413: ",biosTxt[ym2413Enabled&1]);
 }
 
 static void uiSettings() {
@@ -1505,6 +1507,10 @@ void glassesSet() {
 }
 
 
+void biosSet() {
+	g_configSet ^= 0x80;
+}
+
 void countrySet() {
 	int i;
 	g_region = (g_region+1)&3;
@@ -1530,8 +1536,8 @@ void machineSet() {
 	}
 }
 
-void biosSet() {
-	g_configSet ^= 0x80;
+void ym2413Set() {
+	ym2413Enabled ^= 0x01;
 }
 
 

@@ -145,8 +145,8 @@ ram1S_W:					;@ Write ram ($E000-$FFFF), mirror. Bankswitch
 	bhi BankSwitch2_W			;@ $FFFF
 	beq BankSwitch1_W			;@ $FFFE
 	bmi BankSwitch0_W			;@ $FFFD
-;	mov r11,r11
-;	bx lr
+	mov r11,r11
+	bx lr
 ;@----------------------------------------------------------------------------
 LCDGlasses:
 ;@----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ LCDGlasses:
 	ldrb r1,[r1]
 	cmp r1,#HW_MARK3
 	cmpne r1,#HW_SMS1
-	cmpne r1,#HW_SMS2
+	cmpne r1,#HW_MEGADRIVE
 	bxne lr
 	ldr r1,=g_3DEnable
 	ldrb r1,[r1]
