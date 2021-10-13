@@ -157,7 +157,7 @@ void loadState() {
 	if ( (file = fopen(stateName, "r")) ) {
 		if ( (statePtr = malloc(STATESIZE)) ) {
 			cls(0);
-			drawText("        Loading state...", 12, 0);
+			drawText("        Loading state...", 11, 0);
 			fread(statePtr, 1, STATESIZE, file);
 			loadCart(g_emuFlags);
 			unpackState(statePtr);
@@ -184,7 +184,7 @@ void saveState() {
 	if ( (file = fopen(stateName, "w")) ) {
 		if ( (statePtr = malloc(STATESIZE)) ) {
 			cls(0);
-			drawText("        Saving state...", 12, 0);
+			drawText("        Saving state...", 11, 0);
 			packState(statePtr);
 			fwrite(statePtr, 1, STATESIZE, file);
 			free(statePtr);
@@ -198,11 +198,11 @@ void saveState() {
 	}
 }
 
-void loadGame(const char *gameName) {
+bool loadGame(const char *gameName) {
 	char fileExt[8];
 	if ( gameName ) {
 		cls(0);
-		drawText("   Please wait, loading.", 12, 0);
+		drawText("   Please wait, loading.", 11, 0);
 		g_emuFlags &= ~(MD_MODE|GG_MODE|SG_MODE|SC_MODE|COL_MODE|MSX_MODE|SORDM5_MODE|SGAC_MODE|SYSE_MODE|MT_MODE);
 		g_ROM_Size = loadROM(ROM_Space, gameName, 0x100000);
 		if ( !g_ROM_Size ) {
@@ -240,15 +240,19 @@ void loadGame(const char *gameName) {
 			gameInserted = true;
 			powerButton = true;
 			closeMenu();
+			return false;
 		}
 	}
+	return true;
 }
 
 void selectGame() {
 	pauseEmulation = true;
+	setSelectedMenu(10);
 	const char *gameName = browseForFileType(FILEEXTENSIONS".zip");
-	cls(0);
-	loadGame(gameName);
+	if ( loadGame(gameName) ) {
+		backOutOfMenu();
+	}
 }
 
 static bool selectBios(const char *fileTypes, char *dest) {

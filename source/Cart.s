@@ -86,6 +86,7 @@ rawRom:
 //	.incbin "sms/Ace of Aces (UE) [!].sms"
 //	.incbin "sms/Action Fighter (TW).sms"
 //	.incbin "sms/After Burner (UE).sms"
+//	.incbin "sms/Aladdin (UE) [!].sms"
 //	.incbin "sms/Alex Kidd in Miracle World [v1].sms"
 //	.incbin "sms/Back to the Future 2 (UE) [!].sms"
 //	.incbin "sms/Back to the Future 3 (E) [!].sms"

@@ -9,7 +9,7 @@ extern "C" {
 
 int loadSettings(void);
 void saveSettings(void);
-void loadGame(const char *gameName);
+bool loadGame(const char *gameName);
 void loadState(void);
 void saveState(void);
 int loadNVRAM(void);

@@ -919,11 +919,12 @@ StereoCtrl_GG_W:			;@ GG stereo control, 0x06
 ;@------------------------------------------------------------------------------
 IOCtrl_GG_W:				;@ GG com port stuff, 0x00-0x07
 ;@------------------------------------------------------------------------------
-	strb r0,[pc,addy]
+	adr r1,GGIO
+	strb r0,[r1,addy]
 	bx lr
-GGIO:
-	.byte 0xC0,0x7F,0xFF,0x00,0xFF,0x00,0xFF,0xFF
 GGIO_Default:
+	.byte 0xC0,0x7F,0xFF,0x00,0xFF,0x00,0xFF,0xFF
+GGIO:
 	.byte 0xC0,0x7F,0xFF,0x00,0xFF,0x00,0xFF,0xFF
 ;@------------------------------------------------------------------------------
 IOCtrl_SMS_W:

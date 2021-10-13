@@ -139,33 +139,34 @@ static void uiDipSwitchesTetris(void);
 static void uiDipSwitchesMegaTech(void);
 
 static void ui9(void);
-static void ui10(void);
+static void ui11(void);
 
 
 const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
 
 static const fptr fnList0[] = {uiDummy};
-static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui10};
-static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui9};
+static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui9};
+static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui11};
 static const fptr fnList3[] = {uiDummy};
 static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
 static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet, bgrLayerSet, sprLayerSet};
 static const fptr fnList6[] = {countrySet, machineSet, ui8, ym2413Set};
 static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, debugTextSet, sleepSet};
 static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
-static const fptr fnList9[] = {uiDummy};
-static const fptr fnList10[] = {exitEmulator, backOutOfMenu};
-static const fptr fnList11[] = {dip0Set4_2,dip0Set6_1,dip0Set7_1};
-static const fptr fnList12[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_2,dip1Set3_2};
-static const fptr fnList13[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList14[] = {dip0Set0_4,dip0Set4_4,dip1Set0_2,dip1Set3_1,dip1Set5_2};
-static const fptr fnList15[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
+static const fptr fnList9[] = {exitEmulator, backOutOfMenu};
+static const fptr fnList10[] = {uiDummy};
+static const fptr fnList11[] = {uiDummy};
+static const fptr fnList12[] = {dip0Set4_2,dip0Set6_1,dip0Set7_1};
+static const fptr fnList13[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_2,dip1Set3_2};
+static const fptr fnList14[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
+static const fptr fnList15[] = {dip0Set0_4,dip0Set4_4,dip1Set0_2,dip1Set3_1,dip1Set5_2};
 static const fptr fnList16[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
-static const fptr fnList18[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
+static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
+static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
+static const fptr fnList19[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
 const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18};
-u8 menuXitems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18)};
-const fptr drawuiX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiDipSwitches,uiYesNo,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegaTech};
+u8 menuXitems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19)};
+const fptr drawuiX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegaTech};
 const u8 menuXback[] = {0,0,0,0,2,2,2,2,6,2,1,2,2,2,2,2,2,2,2};
 
 static int sdscPtr = 0;
@@ -501,30 +502,30 @@ static void uiDipSwitchesMegaTech() {
 	drawSubItem("Time per credit: ", mtTimerTxt[(dipSwitch1>>4) & 0xF]);
 }
 
-void ui9() {
-	int ds = 9;
+void ui11() {
+	int ds = 11;
 	if (gArcadeGameSet == AC_CHAMPION_BOXING || gArcadeGameSet == AC_CHAMPION_WRESTLING || gArcadeGameSet == AC_DOKI_DOKI_PENGUIN) {
-		ds = 11;
-	} else if (gArcadeGameSet == AC_HANG_ON_JR) {
 		ds = 12;
-	} else if (gArcadeGameSet == AC_TRANSFORMER || gArcadeGameSet == AC_ASTRO_FLASH) {
+	} else if (gArcadeGameSet == AC_HANG_ON_JR) {
 		ds = 13;
-	} else if (gArcadeGameSet == AC_RIDDLE_OF_PYTHAGORAS) {
+	} else if (gArcadeGameSet == AC_TRANSFORMER || gArcadeGameSet == AC_ASTRO_FLASH) {
 		ds = 14;
-	} else if (gArcadeGameSet == AC_OPA_OPA) {
+	} else if (gArcadeGameSet == AC_RIDDLE_OF_PYTHAGORAS) {
 		ds = 15;
-	} else if (gArcadeGameSet == AC_FANTASY_ZONE_2) {
+	} else if (gArcadeGameSet == AC_OPA_OPA) {
 		ds = 16;
-	} else if (gArcadeGameSet == AC_TETRIS) {
+	} else if (gArcadeGameSet == AC_FANTASY_ZONE_2) {
 		ds = 17;
-	} else if (g_emuFlags & MT_MODE || g_machine == HW_MEGATECH) {
+	} else if (gArcadeGameSet == AC_TETRIS) {
 		ds = 18;
+	} else if (g_emuFlags & MT_MODE || g_machine == HW_MEGATECH) {
+		ds = 19;
 	}
 
 	setSelectedMenu(ds);
 }
-void ui10() {
-	setSelectedMenu(10);
+void ui9() {
+	setSelectedMenu(9);
 }
 
 void nullUINormal(int keyHit) {
@@ -1407,10 +1408,13 @@ void setupSordM5Background(void) {
 //---------------------------------------------------------------------------------
 
 void powerOnOff() {
-	if ( (powerButton = !powerButton) ) {
-		loadCart(g_emuFlags);
-	}
+	powerButton = !powerButton;
+	loadCart(g_emuFlags);			// This resets the graphics.
 	setMuteSoundGUI();
+	if (!isMenuOpen()) {
+		cls(0);
+		uiNullNormal();
+	}
 }
 
 void ejectGame() {

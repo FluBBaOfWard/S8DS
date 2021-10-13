@@ -8,3 +8,10 @@ build
 *.elf
 *.nds
 *.zip
+include/ac
+include/col
+include/mt
+include/PV-2000
+include/sc
+include/saves
+*.sav
