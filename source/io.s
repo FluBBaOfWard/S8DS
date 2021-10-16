@@ -457,6 +457,10 @@ refreshSMSJoypads:
 	cmp r1,#HW_SYSE
 	cmpne r1,#HW_SGAC
 	beq noPause
+	ldr r0,=g_config
+	ldrb r0,[r0]
+	tst r0,#0x20
+	biceq r4,r4,#0x04			;@ Remove Reset if disabled
 	ldr r0,=g_emuFlags
 	ldrb r0,[r0]
 	tst r0,#GG_MODE
@@ -900,6 +904,9 @@ Low0_IO_R:					;@ GG start button & country, 0x00
 	and r0,r0,#0x04				;@ NDS X
 	mov r0,r0,lsl#5
 	orr r0,r0,r1,lsl#5
+	ldrb r1,joy0State
+	tst r1,#0x80
+	orrne r0,r0,#0x80
 ;@	orr r0,r0,#0x40				;@ JAP/EXPORT
 ;@	orr r0,r0,#0x20				;@ NTSC/PAL
 	eor r0,r0,#0xC0

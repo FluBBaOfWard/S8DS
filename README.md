@@ -1,4 +1,4 @@
-# S8DS V1.1.3
+# S8DS V1.1.4
 
 This is a SEGA 8Bit emulator for the NDS, it support the following systems:
 
@@ -121,10 +121,29 @@ better 3D effect, I have only tested with red/cyan glasses.
 ### About:
 	Some dumb info...
 
-Sleep: Put the NDS into sleepmode.
-	START+SELECT wakes up from sleep mode (activated from this menu or from
-	5/10/30	minutes of inactivity). !!! Doesn't work !!!
+## Arcade roms
+After Burner MT - mt_aftrb.zip
+Alien Syndrom MT - mt_asyn.zip
+Astro Warrior MT - mt_astro.zip
+Fantasy Zone MT - mt_fz.zip
+Great Football MT - mt_gfoot.zip
+Great Golf MT - mt_ggolf.zip
+Great Soccer MT - mt_gsocr.zip
+Out Run MT - mt_orun.zip
+Parlour Games MT - mt_parlg.zip
+Shinobi MT - mt_shnbi.zip
 
+Champion Boxing SG-AC - chboxing.zip
+Champion Wrestling SG-AC - chwrestl.zip (encrypted)
+Doki Doki Penguin SG-AC - dokidoki.zip
+
+Astro Flash System-E - astrofl.zip (encrypted)
+Fantasy Zone 2 System-E - fantzn2.zip (encrypted)
+Hang On Jr System-E - hangonjr.zip
+Opa Opa System-E - opaopa.zip (encrypted)
+Riddle Of Pythagoras System-E - ridleofp.zip
+Tetris System-E - tetrisse.zip
+Transformer System-E - transfrm.zip
 
 
 ## Credits:
@@ -137,5 +156,7 @@ Omar Cornut (http://www.smspower.org/) for help with various SMS stuff.
 The crew at PocketHeaven for their support.
 
 Fredrik Olsson
+
 Twitter @TheRealFluBBa
+
 http://www.github.com/FluBBaOfWard

@@ -29,7 +29,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.3 2021-10-12"
+#define EMUVERSION "V1.1.4 2021-10-16"
 
 extern u8 sordM5Input;		// SordM5.s
 
@@ -83,6 +83,7 @@ static void countrySet(void);
 static void machineSet(void);
 static void biosSet(void);
 static void ym2413Set(void);
+static void selectMachine(void);
 
 static void dip0Set0_1(void);
 static void dip0Set1_1(void);
@@ -106,18 +107,6 @@ static void dip1Set6_2(void);
 static void dip1Sub0_4(void);
 static void dip1Set4_4(void);
 
-static void uiNullSG1000(void);
-static void uiNullOMV(void);
-static void uiNullSC3000(void);
-static void uiNullSG1000II(void);
-static void uiNullMark3(void);
-static void uiNullSMS1(void);
-static void uiNullSMS2(void);
-static void uiNullGG(void);
-static void uiNullMD(void);
-static void uiNullColeco(void);
-static void uiNullMSX(void);
-static void uiNullSordM5(void);
 static void uiFile(void);
 static void uiSettings(void);
 static void uiAbout(void);
@@ -125,10 +114,12 @@ static void uiOptions(void);
 static void uiController(void);
 static void uiDisplay(void);
 static void uiMachine(void);
+static void uiSelectMachine(void);
 static void uiSettings(void);
 static void uiBios(void);
 static void uiDipSwitches(void);
 
+static void touchConsoleSet(void);
 static void uiDipSwitchesSGAC(void);
 static void uiDipSwitchesHangOnJr(void);
 static void uiDipSwitchesTransformer(void);
@@ -140,9 +131,10 @@ static void uiDipSwitchesMegaTech(void);
 
 static void ui9(void);
 static void ui11(void);
+static void ui20(void);
 
 
-const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
+const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
 
 static const fptr fnList0[] = {uiDummy};
 static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui9};
@@ -150,8 +142,8 @@ static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui11};
 static const fptr fnList3[] = {uiDummy};
 static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
 static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet, bgrLayerSet, sprLayerSet};
-static const fptr fnList6[] = {countrySet, machineSet, ui8, ym2413Set};
-static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, debugTextSet, sleepSet};
+static const fptr fnList6[] = {countrySet, ui20, ui8, ym2413Set};
+static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, debugTextSet, touchConsoleSet};
 static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
 static const fptr fnList9[] = {exitEmulator, backOutOfMenu};
 static const fptr fnList10[] = {uiDummy};
@@ -164,10 +156,11 @@ static const fptr fnList16[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1
 static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
 static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
 static const fptr fnList19[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
-const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18};
-u8 menuXitems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19)};
-const fptr drawuiX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegaTech};
-const u8 menuXback[] = {0,0,0,0,2,2,2,2,6,2,1,2,2,2,2,2,2,2,2};
+static const fptr fnList20[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
+const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20};
+u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20)};
+const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegaTech,uiSelectMachine};
+const u8 menuXBack[] = {0,0,0,0,2,2,2,2,6,2,1,2,2,2,2,2,2,2,2,2,6};
 
 static int sdscPtr = 0;
 static char sdscBuffer[80];
@@ -211,9 +204,9 @@ static char *const languageTxt[] = {"English","Japanese","English"};
 //----------------------------------------------------------------------
 
 void setupGUI() {
-	emuSettings = AUTOPAUSE_EMULATION | AUTOSLEEP_OFF;
+	emuSettings = AUTOPAUSE_EMULATION | AUTOSLEEP_OFF | (1<<12);
 	keysSetRepeat(25, 4);	// Delay, repeat.
-	menuXitems[1] = ARRSIZE(fnList1) - (enableExit?0:1);
+	menuXItems[1] = ARRSIZE(fnList1) - (enableExit?0:1);
 	openMenu();
 }
 
@@ -233,91 +226,33 @@ void quickSelectGame(void) {
 
 void uiNullNormal() {
 	if (g_machine == HW_SMS1) {
-		uiNullSMS1();
+		setupSMS1Background();
 	} else if (g_machine == HW_SMS2) {
-		uiNullSMS2();
+		setupSMS2Background();
 	} else if (g_machine == HW_GG) {
-		uiNullGG();
+		setupGGBackground();
 	} else if (g_machine == HW_MEGADRIVE) {
-		uiNullMD();
+		setupMDBackground();
 	} else if (g_machine == HW_OMV) {
-		uiNullOMV();
+		setupOMVBackground();
 	} else if (g_machine == HW_SC3000) {
-		uiNullSC3000();
+		setupSC3000Background();
 	} else if (g_machine == HW_SG1000) {
-		uiNullSG1000();
+		setupSG1000Background();
 	} else if (g_machine == HW_SG1000II) {
-		uiNullSG1000II();
+		setupSG1000IIBackground();
 	} else if (g_machine == HW_MARK3) {
-		uiNullMark3();
+		setupMARK3Background();
 	} else if (g_machine == HW_COLECO) {
-		uiNullColeco();
+		setupColecoBackground();
 	} else if (g_machine == HW_MSX) {
-		uiNullMSX();
+		setupMSXBackground();
 	} else if (g_machine == HW_SORDM5) {
-		uiNullSordM5();
+		setupSordM5Background();
 	} else {
 		uiNullDefault();
+		return;
 	}
-}
-
-static void uiNullSG1000() {
-	setupSG1000Background();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullSG1000II() {
-	setupSG1000IIBackground();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullOMV() {
-	setupOMVBackground();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullSC3000() {
-	setupSC3000Background();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullMark3() {
-	setupMARK3Background();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullSMS1() {
-	setupSMS1Background();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullSMS2() {
-	setupSMS2Background();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullGG() {
-	setupGGBackground();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullMD() {
-	setupMDBackground();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullColeco() {
-	setupColecoBackground();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullMSX() {
-	setupMSXBackground();
-	drawItem("Menu",27,1,0);
-}
-
-static void uiNullSordM5() {
-	setupSordM5Background();
 	drawItem("Menu",27,1,0);
 }
 
@@ -406,6 +341,24 @@ static void uiMachine() {
 	drawSubItem("YM2413: ",biosTxt[ym2413Enabled&1]);
 }
 
+static void uiSelectMachine() {
+	setupSubMenu("Select Machine");
+	drawMenuItem(" Auto");
+	drawMenuItem(" SG-1000");
+	drawMenuItem(" SC-3000");
+	drawMenuItem(" Othello Multi Vision");
+	drawMenuItem(" SG-1000 II");
+	drawMenuItem(" Mark III");
+	drawMenuItem(" Master System");
+	drawMenuItem(" Master System 2");
+	drawMenuItem(" Game Gear");
+	drawMenuItem(" Mega Drive + PBC");
+	drawMenuItem(" Coleco");
+	drawMenuItem(" MSX");
+	drawMenuItem(" Sord M5");
+	drawMenuItem("");			// Cheating to remove last row.
+}
+
 static void uiSettings() {
 	setupSubMenu("Settings");
 	drawSubItem("Speed: ", speedTxt[(emuSettings>>6)&3]);
@@ -415,8 +368,8 @@ static void uiSettings() {
 	drawSubItem("Autopause Game: ", autoTxt[emuSettings&1]);
 	drawSubItem("Powersave 2nd Screen: ", autoTxt[(emuSettings>>1)&1]);
 	drawSubItem("Emulator on Bottom: ", autoTxt[(emuSettings>>8)&1]);
-	drawSubItem("Debug Output: ", autoTxt[g_debugSet&1]);
-	drawSubItem("Autosleep: ", sleepTxt[(emuSettings>>4)&3]);
+	drawSubItem("Debug Output: ", autoTxt[gDebugSet&1]);
+	drawSubItem("Console Touch: ", autoTxt[(emuSettings>>12)&1]);
 }
 
 static void uiBios() {
@@ -502,6 +455,9 @@ static void uiDipSwitchesMegaTech() {
 	drawSubItem("Time per credit: ", mtTimerTxt[(dipSwitch1>>4) & 0xF]);
 }
 
+void ui9() {
+	setSelectedMenu(9);
+}
 void ui11() {
 	int ds = 11;
 	if (gArcadeGameSet == AC_CHAMPION_BOXING || gArcadeGameSet == AC_CHAMPION_WRESTLING || gArcadeGameSet == AC_DOKI_DOKI_PENGUIN) {
@@ -524,11 +480,16 @@ void ui11() {
 
 	setSelectedMenu(ds);
 }
-void ui9() {
-	setSelectedMenu(9);
+void ui20() {
+	setSelectedMenu(20);
+	selected = g_machineSet;
 }
 
 void nullUINormal(int keyHit) {
+	if (!(emuSettings & (1<<12))) {
+		nullUIDebug(keyHit);		// Just check touch, open menu.
+		return;
+	}
 	switch (g_machine) {
 		case HW_SMS1:
 			nullUISMS1(keyHit);
@@ -564,9 +525,7 @@ void nullUINormal(int keyHit) {
 			nullUISordM5(keyHit);
 			break;
 		default:
-			if (g_debugSet) {
-				nullUIDebug(keyHit);
-			} else if (keyHit&KEY_TOUCH) {
+			if (keyHit&KEY_TOUCH) {
 				openMenu();
 			}
 			break;
@@ -580,7 +539,7 @@ void nullUIDebug(int keyHit) {
 }
 
 static void cartridgePortTouched(int keyHit) {
-	if (keyHit&KEY_TOUCH) {
+	if (keyHit & KEY_TOUCH) {
 		if (gameInserted) {
 			ejectGame();
 		} else {
@@ -592,7 +551,7 @@ static void cartridgePortTouched(int keyHit) {
 void nullUISG1000(int keyHit) {
 	int xpos, ypos;
 
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -613,7 +572,7 @@ void nullUIOMV(int keyHit) {
 	int xpos, ypos;
 
 	sc3Keyboard = 0xFF;				// 0xFF = nokey
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>3);
@@ -684,7 +643,7 @@ void nullUISC3000(int keyHit) {
 	int xpos, ypos;
 
 	sc3Keyboard = 0xFF;				// 0xFF = nokey
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -839,7 +798,7 @@ void nullUISC3000(int keyHit) {
 void nullUISG1000II(int keyHit) {
 	int xpos, ypos;
 
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -859,7 +818,7 @@ void nullUISG1000II(int keyHit) {
 void nullUIMark3(int keyHit) {
 	int xpos, ypos;
 
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -880,7 +839,7 @@ void nullUISMS1(int keyHit) {
 	int xpos, ypos;
 	static bool prePower = false;
 
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -918,7 +877,7 @@ void nullUISMS1(int keyHit) {
 void nullUISMS2(int keyHit) {
 	int xpos, ypos;
 
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -943,7 +902,7 @@ void nullUISMS2(int keyHit) {
 void nullUIMD(int keyHit) {
 	int xpos, ypos;
 	
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -972,7 +931,7 @@ void nullUIColeco(int keyHit) {
 	int xpos, ypos;
 	
 	colecoKey = 0;
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>3);
@@ -1017,7 +976,7 @@ void nullUIMSX(int keyHit) {
 	int xpos, ypos;
 
 	sc3Keyboard = 0xFF;				// 0xFF = nokey
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -1202,7 +1161,7 @@ void nullUISordM5(int keyHit) {
 	keyboardRows[6] = 0;
 	keyboardRows[7] = 0;
 	sordM5Input &= ~0x80;
-	if (EMUinput&KEY_TOUCH) {
+	if (EMUinput & KEY_TOUCH) {
 		touchPosition myTouch;
 		touchRead(&myTouch);
 		xpos = (myTouch.px>>2);
@@ -1540,8 +1499,17 @@ void machineSet() {
 	}
 }
 
+void selectMachine() {
+	g_machineSet = selected;
+	backOutOfMenu();
+}
+
 void ym2413Set() {
 	ym2413Enabled ^= 0x01;
+}
+
+void touchConsoleSet() {
+	emuSettings ^= (1<<12);
 }
 
 

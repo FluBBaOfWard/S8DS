@@ -67,7 +67,7 @@
 	.align 2
 
 antSeed:
-	.long 0x8000
+	.long 0x800000
 ;@----------------------------------------------------------------------------
 antWars:
 	.type antWars STT_FUNC
@@ -109,7 +109,7 @@ antLoop0:
 	mov r2,#8
 antLoop1:
 	movs r3,r3,lsr#1
-	eorcs r3,r3,#0x90000
+	eorcs r3,r3,#0xE10000
 	mov r4,r4,lsl#4
 	orrcs r4,r4,#0xF
 	subs r2,r2,#1

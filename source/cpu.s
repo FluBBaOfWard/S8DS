@@ -46,9 +46,9 @@ runStart:
 	movpl r1,#224-SCREEN_HEIGHT
 @	strb r1,[r2]
 
+	ldr z80optbl,=Z80OpTable
 	bl refreshEMUjoypads		;@ Z=1 if communication ok
 
-	ldr z80optbl,=Z80OpTable
 	add r0,z80optbl,#z80Regs
 	ldmia r0,{z80f-z80pc,z80sp}	;@ Restore Z80 state
 

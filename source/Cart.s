@@ -15,7 +15,7 @@
 	.global g_cartFlags
 	.global g_machine
 	.global g_machineSet
-//	.global g_config
+	.global g_config
 	.global g_configSet
 	.global g_region
 	.global gArcadeGameSet
