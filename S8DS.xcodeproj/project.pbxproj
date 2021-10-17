@@ -63,6 +63,8 @@
 		9C4C21D026E4EF13007D0280 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9C4DF1E224BB5F6F00FB4EB0 /* AY38910.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AY38910.h; sourceTree = "<group>"; };
 		9C4DF1E324BB5F6F00FB4EB0 /* AY38910.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = AY38910.i; sourceTree = "<group>"; };
+		9C4EB1C1271C3A840072D38E /* MasterSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MasterSystem.h; sourceTree = "<group>"; };
+		9C4EB1C2271C3A840072D38E /* MasterSystem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MasterSystem.c; sourceTree = "<group>"; };
 		9C5082C425E2C4B400A8E1BA /* ARMZ80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ARMZ80.h; sourceTree = "<group>"; };
 		9C5082C525E2C4B400A8E1BA /* ARMZ80.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = ARMZ80.s; sourceTree = "<group>"; };
 		9C5082C625E2C4B400A8E1BA /* ARMZ80mac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ARMZ80mac.h; sourceTree = "<group>"; };
@@ -329,6 +331,8 @@
 				A49D34451757E54900BD9B4B /* Main.c */,
 				A49D343F1757E54900BD9B4B /* Gui.h */,
 				A49D343E1757E54900BD9B4B /* Gui.c */,
+				9C4EB1C1271C3A840072D38E /* MasterSystem.h */,
+				9C4EB1C2271C3A840072D38E /* MasterSystem.c */,
 				35E683AC1C663E9B00FCFE8A /* Cart.h */,
 				A49D34371757E54900BD9B4B /* Cart.s */,
 				35E683AD1C66453300FCFE8A /* cpu.h */,

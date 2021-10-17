@@ -6,7 +6,9 @@ extern "C" {
 #endif
 
 #include <maxmod9.h>
+#include "SN76496/SN76496.h"
 
+extern SN76496 SN76496_0;
 void soundInit(void);
 void soundSetFrequency(void);
 void setMuteSoundGUI(void);

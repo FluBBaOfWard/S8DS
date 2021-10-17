@@ -14,6 +14,7 @@
 #include "Shared/EmuSettings.h"
 #include "Shared/FileHelper.h"
 #include "Gui.h"
+#include "MasterSystem.h"
 #include "RomLoading.h"
 #include "Equates.h"
 #include "SegaVDP/SegaVDP.h"
@@ -21,7 +22,6 @@
 #include "Gfx.h"
 #include "io.h"
 
-#define STATESIZE (0x8000+0x2000+0x4000+12+104+VDPSTATESIZE+60+24)
 static const char *const folderName = "s8ds";
 static const char *const settingName = "settings.cfg";
 
@@ -154,12 +154,12 @@ void loadState() {
 	}
 	strlcpy(stateName, currentFilename, sizeof(stateName));
 	strlcat(stateName, ".sta", sizeof(stateName));
+	int stateSize = getStateSize();
 	if ( (file = fopen(stateName, "r")) ) {
-		if ( (statePtr = malloc(STATESIZE)) ) {
+		if ( (statePtr = malloc(stateSize)) ) {
 			cls(0);
 			drawText("        Loading state...", 11, 0);
-			fread(statePtr, 1, STATESIZE, file);
-			loadCart(g_emuFlags);
+			fread(statePtr, 1, stateSize, file);
 			unpackState(statePtr);
 			free(statePtr);
 			infoOutput("Loaded state.");
@@ -181,12 +181,13 @@ void saveState() {
 	}
 	strlcpy(stateName, currentFilename, sizeof(stateName));
 	strlcat(stateName, ".sta", sizeof(stateName));
+	int stateSize = getStateSize();
 	if ( (file = fopen(stateName, "w")) ) {
-		if ( (statePtr = malloc(STATESIZE)) ) {
+		if ( (statePtr = malloc(stateSize)) ) {
 			cls(0);
 			drawText("        Saving state...", 11, 0);
 			packState(statePtr);
-			fwrite(statePtr, 1, STATESIZE, file);
+			fwrite(statePtr, 1, stateSize, file);
 			free(statePtr);
 			infoOutput("Saved state.");
 		} else {

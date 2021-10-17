@@ -6,8 +6,9 @@
 
 	.global loadCart
 	.global ejectCart
-	.global packState
-	.global unpackState
+	.global cartSaveState
+	.global cartLoadState
+	.global cartGetStateSize
 	.global g_emuFlags
 	.global cartBase
 //	.global scaling
@@ -991,34 +992,29 @@ mdE:
 	addeq r0,r0,#2
 	b mdE2
 ;@----------------------------------------------------------------------------
-packState:	;@ Called from ui.c.
-;@int packState(u32 *statePtr), copy state to <here>, return size
-	.type   packState STT_FUNC
+cartSaveState:	;@ Called from C code.
+	.type   cartSaveState STT_FUNC
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r5,z80pc,z80optbl,lr}
-	ldr z80optbl,=Z80OpTable
+	stmfd sp!,{r4-r5,lr}
 
 	mov r5,r0					;@ r5=where to copy state
-	bl fixCpuPCSave				;@ Adjust z80pc so it isn't based on rombase
 
 	mov r0,#0					;@ r0 holds total size (return value)
 
-	adr r4,saveLst				;@ r4=list of stuff to copy
-	mov r3,#(lstEnd-saveLst)/8	;@ r3=items in list
+	mov r12,#(lstEnd-saveLst)/8	;@ r4=items in list
+	adr r3,saveLst				;@ r3=list of stuff to copy
 ss1:
-	ldmia r4!,{r1,r2}			;@ r1=what to copy, r2=how much to copy
+	ldmia r3!,{r1,r2}			;@ r1=what to copy, r2=how much to copy
 	add r0,r0,r2
 ss0:
-	ldr r12,[r1],#4
-	str r12,[r5],#4
+	ldr r4,[r1],#4
+	str r4,[r5],#4
 	subs r2,r2,#4
 	bne ss0
-	subs r3,r3,#1
+	subs r12,r12,#1
 	bne ss1
 
-	bl fixCpuPCLoad
-
-	ldmfd sp!,{r4-r5,z80pc,z80optbl,lr}
+	ldmfd sp!,{r4-r5,lr}
 	bx lr
 
 saveLst:
@@ -1026,45 +1022,29 @@ saveLst:
 	.long EMU_RAM,0x2000
 	.long VDPRAM,0x4000
 	.long romInfo,12
-//	.long z80State,72
-	.long VDP0+vdpState,VDPSTATESIZE,
-	.long SoundVariables,60
+	.long VDP0+vdpState,VDPSTATESIZE
 	.long BankState,24
 lstEnd:
 
-fixCpuPCSave:
-	loadLastBank r1
-	ldr r2,[z80optbl,#z80Regs+6*4]	;@ Z80 PC
-	sub r2,r2,r1
-	str r2,[z80optbl,#z80Regs+6*4]	;@ Z80 PC
-	bx lr
-
-fixCpuPCLoad:
-	stmfd sp!,{r0,lr}
-	ldr z80pc,[z80optbl,#z80Regs+6*4]	;@ Z80 PC
-	encodePC
-	str z80pc,[z80optbl,#z80Regs+6*4]	;@ Z80 PC
-	ldmfd sp!,{r0,lr}
-	bx lr
-
 ;@----------------------------------------------------------------------------
-unpackState:	;@ Called from ui.c
-;@ void unpackState(u32 *stateptr)	 (stateptr must be word aligned)
-	.type   unpackState STT_FUNC
+cartLoadState:	;@ Called from C code.
+	.type   cartLoadState STT_FUNC
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r5,z80optbl,lr}
+	stmfd sp!,{r4-r5,z80pc,z80optbl,lr}
 	ldr z80optbl,=Z80OpTable
 
-	mov r4,#(lstEnd-saveLst)/8	;@ Read entire state
+	mov r12,#(lstEnd-saveLst)/8	;@ Read entire state
 	adr r3,saveLst
+	mov r5,#0
 ls1:
 	ldmia r3!,{r1,r2}
+	add r5,r5,r2
 ls0:
-	ldr r5,[r0],#4
-	str r5,[r1],#4
+	ldr r4,[r0],#4
+	str r4,[r1],#4
 	subs r2,r2,#4
 	bne ls0
-	subs r4,r4,#1
+	subs r12,r12,#1
 	bne ls1
 
 	ldrb r0,BankMap4
@@ -1081,13 +1061,26 @@ ls0:
 	bl reBankSwitch1_W
 	bl reBankSwitch2_W
 
-	bl fixCpuPCLoad
-
 	bl paletteTxAll
 	ldr vdpptr,=VDP0
 	bl VDPClearDirtyTiles
 
-	ldmfd sp!,{r4-r5,z80optbl,lr}
+	mov r0,r5
+	ldmfd sp!,{r4-r5,z80pc,z80optbl,lr}
+	bx lr
+;@----------------------------------------------------------------------------
+cartGetStateSize:	;@ Called from C code.
+	.type   cartGetStateSize STT_FUNC
+;@----------------------------------------------------------------------------
+	mov r12,#(lstEnd-saveLst)/8	;@ Read entire state
+	adr r3,saveLst
+	mov r0,#0
+sizeLoop1:
+	ldmia r3!,{r1,r2}
+	add r0,r0,r2
+	subs r12,r12,#1
+	bne sizeLoop1
+
 	bx lr
 
 
@@ -1621,7 +1614,7 @@ romMask:
 romMaskBackup:
 	.long 0
 
-romInfo:						;@ Keep emuflags/BGmirror together for savestate/loadstate
+romInfo:						;@ Keep emuflags together for savestate/loadstate
 g_emuFlags:
 	.long 0						;@ emuflags      (label this so UI.C can take a peek) see equates.h for bitfields
 g_scalingSet:

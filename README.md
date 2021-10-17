@@ -1,4 +1,4 @@
-# S8DS V1.1.4
+# S8DS V1.1.5
 
 This is a SEGA 8Bit emulator for the NDS, it support the following systems:
 
@@ -23,7 +23,7 @@ Missing:
 
 	Correct sprite collision.
 	Speech samples.
-	YM2413 emulation.
+	Good YM2413 emulation.
 	EEPROM save for the few GG games that use it.
 
 Check your roms!

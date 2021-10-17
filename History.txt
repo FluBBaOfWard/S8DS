@@ -2,6 +2,9 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
+V1.1.5 - 2021-10-17 (FluBBa)
+	Fixed load/save state.
+
 V1.1.4 - 2021-10-16 (FluBBa)
 	Reverted a GG_IO optimization.
 	Fixed TV noise graphics after Power off.

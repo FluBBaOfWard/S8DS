@@ -32,8 +32,26 @@ extern void *g_BIOSBASE_SORDM5;
 
 void loadCart(int);
 void ejectCart(void);
-int packState(u32 *statePtr);
-void unpackState(u32 *statePtr);
+
+/**
+* Saves the state of cart to the destination.
+* @param  *destination: Where to save the state.
+* @return The size of the state.
+*/
+int cartSaveState(void *destination);
+
+/**
+* Loads the state of cart from the source.
+* @param  *source: Where to load the state from.
+* @return The size of the state.
+*/
+int cartLoadState(const void *source);
+
+/**
+ * Gets the state size of cart state.
+ * @return The size of the state.
+ */
+int cartGetStateSize(void);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -12,6 +12,7 @@
 	.global VblSound2
 	.global SMSJSoundControlW
 	.global SMSJSoundControlR
+	.global SN76496_0
 	.global SN76496_W
 	.global SN76496_0_W
 	.global SN76496_1_W
