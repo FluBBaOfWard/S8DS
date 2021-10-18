@@ -1020,9 +1020,7 @@ ss0:
 saveLst:
 	.long EMU_SRAM,0x8000
 	.long EMU_RAM,0x2000
-	.long VDPRAM,0x4000
 	.long romInfo,12
-	.long VDP0+vdpState,VDPSTATESIZE
 	.long BankState,24
 lstEnd:
 
@@ -1047,6 +1045,14 @@ ls0:
 	subs r12,r12,#1
 	bne ls1
 
+	ldrb r0,g_machine
+	cmp r0,#HW_MARK3
+	cmpne r0,#HW_SMS1
+	cmpne r0,#HW_SMS2
+	cmpne r0,#HW_GG
+	cmpne r0,#HW_MEGADRIVE
+	bne dontInitMappers
+
 	ldrb r0,BankMap4
 	ldr r1,biosBase
 	tst r0,#0x40				;@ ROM?
@@ -1060,11 +1066,7 @@ ls0:
 	bl reBankSwitch0_W
 	bl reBankSwitch1_W
 	bl reBankSwitch2_W
-
-	bl paletteTxAll
-	ldr vdpptr,=VDP0
-	bl VDPClearDirtyTiles
-
+dontInitMappers:
 	mov r0,r5
 	ldmfd sp!,{r4-r5,z80pc,z80optbl,lr}
 	bx lr

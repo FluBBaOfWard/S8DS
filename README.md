@@ -1,4 +1,4 @@
-# S8DS V1.1.5
+# S8DS V1.1.6
 
 This is a SEGA 8Bit emulator for the NDS, it support the following systems:
 

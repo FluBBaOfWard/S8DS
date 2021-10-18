@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include "SegaVDP/SegaVDP.h"
+
 extern u8 g_flicker;
 extern u8 g_twitch;
 extern u8 g_gfxMask;
@@ -13,6 +15,7 @@ extern u8 g_3DEnable;
 extern u8 bColor;
 extern u8 SPRS;
 
+extern SegaVDP VDP0;
 extern u16 EMUPALBUFF[200];
 
 void gfxInit(void);
