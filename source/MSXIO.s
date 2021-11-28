@@ -93,9 +93,9 @@ PSlot_W:					;@ MSX PSLOT, PPI_PortA
 	ldmfd sp!,{r3,lr}
 	bx lr
 ;@----------------------------------------------------------------------------
-MSXJoyReadCallBack:
+MSXJoyReadCallBack:			;@ r0=ayptr
 ;@----------------------------------------------------------------------------
-	ldrb r1,[ayptr,#ayPortBOut]
+	ldrb r1,[r0,#ayPortBOut]
 	tst r1,#0x40
 	ldreq r0,=joy0State
 	ldrne r0,=joy1State
