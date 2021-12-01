@@ -29,7 +29,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.6 2021-10-18"
+#define EMUVERSION "V1.1.7 2021-12-01"
 
 extern u8 sordM5Input;		// SordM5.s
 

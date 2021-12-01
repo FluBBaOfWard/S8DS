@@ -2,6 +2,9 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
+V1.1.7 - 2021-12-01 (FluBBa)
+	Fixed envelope handling on the AY38910.
+
 V1.1.6 - 2021-10-18 (FluBBa)
 	Fixed load/save state for Coleco.
 
