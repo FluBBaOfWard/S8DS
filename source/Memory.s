@@ -150,13 +150,13 @@ ram1S_W:					;@ Write ram ($E000-$FFFF), mirror. Bankswitch
 ;@----------------------------------------------------------------------------
 LCDGlasses:
 ;@----------------------------------------------------------------------------
-	ldr r1,=g_machine
+	ldr r1,=gMachine
 	ldrb r1,[r1]
 	cmp r1,#HW_MARK3
 	cmpne r1,#HW_SMS1
 	cmpne r1,#HW_MEGADRIVE
 	bxne lr
-	ldr r1,=g_3DEnable
+	ldr r1,=g3DEnable
 	ldrb r1,[r1]
 	cmp r1,#0
 	bxeq lr

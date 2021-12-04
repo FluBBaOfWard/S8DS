@@ -57,18 +57,18 @@ int loadSettings() {
 		return 1;
 	}
 
-//	g_dipswitch0 = cfg.dipswitch0;
-//	g_dipswitch1 = cfg.dipswitch1;
-	SPRS          = cfg.sprites;
-	g_3DEnable    = cfg.glasses;
-	g_configSet   = cfg.config;
-	g_scalingSet  = cfg.scaling & 3;
-	g_flicker     = cfg.flicker & 1;
-	g_gammaValue  = cfg.gammaValue & 0x7;
-	g_colorValue  = (cfg.gammaValue>>4) & 0x7;
-	emuSettings   = cfg.emuSettings & ~EMUSPEED_MASK;	// Clear speed setting.
-	sleepTime     = cfg.sleepTime;
-	joyCfg        = (joyCfg & ~0x400) | ((cfg.controller & 1)<<10);
+//	gDipSwitch0 = cfg.dipSwitch0;
+//	gDipSwitch1 = cfg.dipSwitch1;
+	SPRS         = cfg.sprites;
+	g3DEnable    = cfg.glasses;
+	gConfigSet   = cfg.config;
+	gScalingSet  = cfg.scaling & 3;
+	gFlicker     = cfg.flicker & 1;
+	gGammaValue  = cfg.gammaValue & 0x7;
+	gColorValue  = (cfg.gammaValue>>4) & 0x7;
+	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK;	// Clear speed setting.
+	sleepTime    = cfg.sleepTime;
+	joyCfg       = (joyCfg & ~0x400) | ((cfg.controller & 1)<<10);
 	strlcpy(currentDir, cfg.currentPath, sizeof(currentDir));
 
 	infoOutput("Settings loaded.");
@@ -79,13 +79,13 @@ void saveSettings() {
 	FILE *file;
 
 	strcpy(cfg.magic, "cfg");
-//	cfg.dipswitch0  = g_dipswitch0;
+//	cfg.dipSwitch0  = gDipSwitch0;
 	cfg.sprites     = SPRS;
-	cfg.glasses     = g_3DEnable;
-	cfg.config      = g_configSet;
-	cfg.scaling     = g_scalingSet & 3;
-	cfg.flicker     = g_flicker & 1;
-	cfg.gammaValue  = (g_gammaValue & 0x7)|((g_colorValue & 0x7)<<4);
+	cfg.glasses     = g3DEnable;
+	cfg.config      = gConfigSet;
+	cfg.scaling     = gScalingSet & 3;
+	cfg.flicker     = gFlicker & 1;
+	cfg.gammaValue  = (gGammaValue & 0x7)|((gColorValue & 0x7)<<4);
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK;		// Clear speed setting.
 	cfg.sleepTime   = sleepTime;
 	cfg.controller  = (joyCfg>>10) & 1;
@@ -204,7 +204,7 @@ bool loadGame(const char *gameName) {
 	if ( gameName ) {
 		cls(0);
 		drawText("   Please wait, loading.", 11, 0);
-		g_emuFlags &= ~(MD_MODE|GG_MODE|SG_MODE|SC_MODE|COL_MODE|MSX_MODE|SORDM5_MODE|SGAC_MODE|SYSE_MODE|MT_MODE);
+		gEmuFlags &= ~(MD_MODE|GG_MODE|SG_MODE|SC_MODE|COL_MODE|MSX_MODE|SORDM5_MODE|SGAC_MODE|SYSE_MODE|MT_MODE);
 		g_ROM_Size = loadROM(ROM_Space, gameName, 0x100000);
 		if ( !g_ROM_Size ) {
 			g_ROM_Size = loadArcadeROM(ROM_Space, gameName);
@@ -212,28 +212,28 @@ bool loadGame(const char *gameName) {
 		if ( g_ROM_Size ) {
 			getFileExtension(fileExt, currentFilename);
 			if ( strstr(fileExt, ".gg") ) {
-				g_emuFlags |= GG_MODE;
+				gEmuFlags |= GG_MODE;
 			}
 			else if ( strstr(fileExt, ".sg") ) {
-				g_emuFlags |= SG_MODE;
+				gEmuFlags |= SG_MODE;
 			}
 			else if ( strstr(fileExt, ".sc") ) {
-				g_emuFlags |= SC_MODE;
+				gEmuFlags |= SC_MODE;
 			}
 			else if ( ( strstr(fileExt, ".mx1") || strstr(fileExt, ".mx2") || strstr(fileExt, ".rom") )
 					 && ( (ROM_Space[0] == 0x41 && ROM_Space[1] == 0x42) || (ROM_Space[0x4000] == 0x41 && ROM_Space[0x4001] == 0x42) ) ) {
-				g_emuFlags |= MSX_MODE;
+				gEmuFlags |= MSX_MODE;
 			}
 			else if ( ( strstr(fileExt, ".col") || strstr(fileExt, ".rom") )
 					 && ( (ROM_Space[0] == 0xAA && ROM_Space[1] == 0x55) || (ROM_Space[0] == 0x55 && ROM_Space[1] == 0xAA) ) ) {
-				g_emuFlags |= COL_MODE;
+				gEmuFlags |= COL_MODE;
 			}
 			else if ( strstr(fileExt, ".rom")
 					 && (ROM_Space[0] == 0x00 || ROM_Space[0] == 0x02) ) {
-				g_emuFlags |= SORDM5_MODE;
+				gEmuFlags |= SORDM5_MODE;
 			}
 			setEmuSpeed(0);
-			loadCart(g_emuFlags);
+			loadCart(gEmuFlags);
 			loadSRAM();
 			if ( emuSettings & AUTOLOAD_STATE ) {
 				loadState();

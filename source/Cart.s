@@ -9,22 +9,22 @@
 	.global cartSaveState
 	.global cartLoadState
 	.global cartGetStateSize
-	.global g_emuFlags
 	.global cartBase
+	.global gEmuFlags
 //	.global scaling
-	.global g_scalingSet
-	.global g_cartFlags
-	.global g_machine
-	.global g_machineSet
-	.global g_config
-	.global g_configSet
-	.global g_region
+	.global gScalingSet
+	.global gCartFlags
+	.global gMachine
+	.global gMachineSet
+	.global gConfig
+	.global gConfigSet
+	.global gRegion
 	.global gArcadeGameSet
 	.global BankMap0
 	.global BankMap4
-	.global g_dipSwitch0
-	.global g_dipSwitch1
-	.global g_dipSwitch2
+	.global gDipSwitch0
+	.global gDipSwitch1
+	.global gDipSwitch2
 	
 	.global BankSwitchR_W
 	.global BankSwitch0_W
@@ -235,17 +235,17 @@ loadCart: 		;@ Called from C:  r0=emuFlags
 //	orr r0,r0,#SORDM5_MODE
 //	orr r0,r0,#SGAC_MODE
 //	orr r0,r0,#SYSE_MODE
-	str r0,g_emuFlags
+	str r0,gEmuFlags
 
-	ldrb r0,g_machineSet
+	ldrb r0,gMachineSet
 //	mov r0,#HW_MSX
 //	mov r0,#HW_SORDM5
 //	mov r0,#HW_SGAC
 //	mov r0,#HW_SYSE
 //	mov r0,#HW_MEGATECH
-	strb r0,g_machine
-	ldrb r0,g_configSet
-	strb r0,g_config
+	strb r0,gMachine
+	ldrb r0,gConfigSet
+	strb r0,gConfig
 								;@ r3=romBase til end of loadCart so DON'T FUCK IT UP
 	str r3,romBase				;@ Set romBase
 	str r3,cartBase				;@ Set cartBase
@@ -302,8 +302,8 @@ tbLoop1:
 	ldreq r0,=SystemEVDPRAMWrite
 	streq r0,[r6]
 
-	ldr r0,g_emuFlags
-	ldrb r2,g_config
+	ldr r0,gEmuFlags
+	ldrb r2,gConfig
 	mov r1,#0
 	cmp r9,#HW_SMS1
 	cmpne r9,#HW_SMS2
@@ -323,8 +323,8 @@ tbLoop1:
 	cmpne r9,#HW_SMS2
 	cmpne r9,#HW_MEGADRIVE
 	biceq r2,r2,#0x20			;@ Reset unavailable on HW_GG, HW_SMS2 & HW_MEGADRIVE
-	str r0,g_emuFlags
-	strb r2,g_config
+	str r0,gEmuFlags
+	strb r2,gConfig
 	cmp r1,#0
 	ldreq r1,=miniBios
 	str r1,biosBase
@@ -376,7 +376,7 @@ isSGRam:
 	str r8,[r6,r0,lsl#2]		;@ WrMem
 
 
-	ldrb r1,g_config
+	ldrb r1,gConfig
 	tst r1,#0x80				;@ BIOS on/off
 	cmpne r9,#HW_SG1000
 	cmpne r9,#HW_SGAC
@@ -397,7 +397,7 @@ isSGRam:
 	bl reBankSwitch2_W
 	bl reBankSwitchB_W
 
-	ldrb r9,g_machine
+	ldrb r9,gMachine
 	cmp r9,#HW_COLECO
 	bleq WRAMColeco
 	cmp r9,#HW_MSX
@@ -481,7 +481,7 @@ memReset:
 	mov r2,#0x8000/4
 	bl memset_
 
-	ldrb r11,g_machineSet
+	ldrb r11,gMachineSet
 	cmp r11,#HW_AUTO
 	moveq r6,#0
 	movne r6,#-1
@@ -530,10 +530,10 @@ checkMachine:				;@ Returns machine in r0.
 	add r0,r0,#0x8000
 	ldrb r2,[r0,#-1]
 	and r2,r2,#0xF0
-	ldrb r0,g_machine
+	ldrb r0,gMachine
 	cmp r0,#HW_AUTO
 	bne cmNoCheck
-	ldr r1,g_emuFlags
+	ldr r1,gEmuFlags
 	tst r1,#SG_MODE
 	movne r0,#HW_SG1000
 	bne cmSetMachine
@@ -579,28 +579,28 @@ cmNoGGCheck:
 	moveq r0,#HW_SMS2
 	movne r0,#HW_SMS1
 cmSetMachine:
-	strb r0,g_machine
+	strb r0,gMachine
 cmNoCheck:
-	ldrb r1,g_region
+	ldrb r1,gRegion
 	cmp r1,#REGION_AUTO
 	beq cmCheckRegion
 	sub r1,r1,#1
 	cmp r0,#HW_GG
 	biceq r1,r1,#PALTIMING
-	ldrb r2,g_emuFlags
+	ldrb r2,gEmuFlags
 	bic r2,r2,#3
 	orr r2,r2,r1
-	strb r2,g_emuFlags
+	strb r2,gEmuFlags
 	bx lr
 cmCheckRegion:
-	ldrb r1,g_emuFlags
+	ldrb r1,gEmuFlags
 	cmp r2,#0x40				;@ SMS Export
 	bicne r1,r1,#PALTIMING		;@ Clear PAL bit
 	cmpne r2,#0x60				;@ GG Export
 	cmpne r2,#0x70				;@ GG International
 	orrne r1,r1,#COUNTRY		;@ Set JP bit
 	biceq r1,r1,#COUNTRY		;@ Clear JP bit
-	strb r1,g_emuFlags
+	strb r1,gEmuFlags
 
 	bx lr
 
@@ -608,7 +608,7 @@ cmCheckRegion:
 checkForHeader:				;@ Returns r0=0 if header found.
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r3}
-	ldrb r3,g_cartFlags
+	ldrb r3,gCartFlags
 	bic r3,#SRAMFLAG
 
 	ldr r1,romBase
@@ -630,7 +630,7 @@ checkForHeader:				;@ Returns r0=0 if header found.
 	cmp r1,#0x15
 	orreq r3,#SRAMFLAG
 headerCheckExit:
-	strb r3,g_cartFlags
+	strb r3,gCartFlags
 
 	ldmfd sp!,{r3}
 	bx lr
@@ -701,7 +701,7 @@ WRAMEnable:					;@ Internal RAM enable/disable.
 	ldr r0,[r2,#32+3*4]			;@ MEMMAPTBL_
 	sub r0,r0,#0xC000
 
-	ldrb r2,g_machine
+	ldrb r2,gMachine
 	cmp r2,#HW_SG1000
 	cmpne r2,#HW_SGAC
 	cmpne r2,#HW_SG1000II
@@ -758,7 +758,7 @@ initM2Loop:
 ;@----------------------------------------------------------------------------
 setupMDBios:	;@ This needs to run after cpu reset, enables MD Bios without bankswitch
 ;@----------------------------------------------------------------------------
-	ldrb r1,g_config
+	ldrb r1,gConfig
 	tst r1,#0x80				;@ BIOS on/off
 	bxeq lr
 	ldr r0,=mdBios
@@ -1045,7 +1045,7 @@ ls0:
 	subs r12,r12,#1
 	bne ls1
 
-	ldrb r0,g_machine
+	ldrb r0,gMachine
 	cmp r0,#HW_MARK3
 	cmpne r0,#HW_SMS1
 	cmpne r0,#HW_SMS2
@@ -1105,7 +1105,7 @@ reBankSwitchB_W:			;@ Bankswitch BIOS
 ;@------------------------------------------------------------------------------
 BankSwitchB_W:				;@ Switch to BIOS
 ;@------------------------------------------------------------------------------
-	ldrb r1,g_machine
+	ldrb r1,gMachine
 	cmp r1,#HW_GG
 	beq BankSwitchB_GG_W
 
@@ -1617,21 +1617,21 @@ romMaskBackup:
 	.long 0
 
 romInfo:						;@ Keep emuflags together for savestate/loadstate
-g_emuFlags:
+gEmuFlags:
 	.long 0						;@ emuflags      (label this so UI.C can take a peek) see equates.h for bitfields
-g_scalingSet:
+gScalingSet:
 	.byte SCALED_FIT			;@ scalemode(saved display type), default scale to fit
-g_cartFlags:
+gCartFlags:
 	.byte 0 					;@ cartflags
-g_machine:
+gMachine:
 	.byte 0
-g_machineSet:
+gMachineSet:
 	.byte 0
-g_config:
+gConfig:
 	.byte 0						;@ config, bit 7=BIOS on/off, bit 6=X as GG Start, bit 5=Select as Reset, bit 4=R as FastForward
-g_configSet:
+gConfigSet:
 	.byte 0x80
-g_region:
+gRegion:
 	.byte 0						;@ 0=Auto, 1=USA, 2=Euro, 3=Japan.
 gArcadeGameSet:
 	.byte 0						;@ see equates for defines, 0 = none.

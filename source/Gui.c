@@ -29,11 +29,11 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2021-12-01"
+#define EMUVERSION "V1.1.7 2021-12-04"
 
 extern u8 sordM5Input;		// SordM5.s
 
-u8 g_gammaValue = 0;
+u8 gGammaValue = 0;
 
 static void nullUISG1000(int key);
 static void nullUIOMV(int key);
@@ -225,29 +225,29 @@ void quickSelectGame(void) {
 }
 
 void uiNullNormal() {
-	if (g_machine == HW_SMS1) {
+	if (gMachine == HW_SMS1) {
 		setupSMS1Background();
-	} else if (g_machine == HW_SMS2) {
+	} else if (gMachine == HW_SMS2) {
 		setupSMS2Background();
-	} else if (g_machine == HW_GG) {
+	} else if (gMachine == HW_GG) {
 		setupGGBackground();
-	} else if (g_machine == HW_MEGADRIVE) {
+	} else if (gMachine == HW_MEGADRIVE) {
 		setupMDBackground();
-	} else if (g_machine == HW_OMV) {
+	} else if (gMachine == HW_OMV) {
 		setupOMVBackground();
-	} else if (g_machine == HW_SC3000) {
+	} else if (gMachine == HW_SC3000) {
 		setupSC3000Background();
-	} else if (g_machine == HW_SG1000) {
+	} else if (gMachine == HW_SG1000) {
 		setupSG1000Background();
-	} else if (g_machine == HW_SG1000II) {
+	} else if (gMachine == HW_SG1000II) {
 		setupSG1000IIBackground();
-	} else if (g_machine == HW_MARK3) {
+	} else if (gMachine == HW_MARK3) {
 		setupMARK3Background();
-	} else if (g_machine == HW_COLECO) {
+	} else if (gMachine == HW_COLECO) {
 		setupColecoBackground();
-	} else if (g_machine == HW_MSX) {
+	} else if (gMachine == HW_MSX) {
 		setupMSXBackground();
-	} else if (g_machine == HW_SORDM5) {
+	} else if (gMachine == HW_SORDM5) {
 		setupSordM5Background();
 	} else {
 		uiNullDefault();
@@ -316,27 +316,27 @@ static void uiController() {
 	drawSubItem("Controller: ",ctrlTxt[(joyCfg>>30)&1]);
 	drawSubItem("Swap A-B:   ",autoTxt[(~joyCfg>>10)&1]);
 	drawSubItem("Joypad Type: ",joypadTxt[inputHW&3]);
-	drawSubItem("Use Select as Reset: ",autoTxt[(g_configSet>>5)&1]);
-	drawSubItem("Use R as FastForward: ",autoTxt[(g_configSet>>4)&1]);
+	drawSubItem("Use Select as Reset: ",autoTxt[(gConfigSet>>5)&1]);
+	drawSubItem("Use R as FastForward: ",autoTxt[(gConfigSet>>4)&1]);
 }
 
 static void uiDisplay() {
 	setupSubMenu("Display Settings");
-	drawSubItem("Display: ",dispTxt[g_scalingSet]);
-	drawSubItem("Scaling: ",flickTxt[g_flicker]);
-	drawSubItem("Gamma: ",brighTxt[g_gammaValue]);
-	drawSubItem("Color: ",brighTxt[g_colorValue]);
+	drawSubItem("Display: ",dispTxt[gScalingSet]);
+	drawSubItem("Scaling: ",flickTxt[gFlicker]);
+	drawSubItem("Gamma: ",brighTxt[gGammaValue]);
+	drawSubItem("Color: ",brighTxt[gColorValue]);
 	drawSubItem("GG Border: ",bordTxt[bColor]);
 	drawSubItem("Perfect Sprites: ",autoTxt[SPRS&1]);
-	drawSubItem("3D Display: ",biosTxt[g_3DEnable&1]);
-	drawSubItem("Disable Background: ",autoTxt[g_gfxMask&1]);
-	drawSubItem("Disable Sprites: ",autoTxt[(g_gfxMask>>4)&1]);
+	drawSubItem("3D Display: ",biosTxt[g3DEnable&1]);
+	drawSubItem("Disable Background: ",autoTxt[gGfxMask&1]);
+	drawSubItem("Disable Sprites: ",autoTxt[(gGfxMask>>4)&1]);
 }
 
 static void uiMachine() {
 	setupSubMenu("Machine Settings");
-	drawSubItem("Region: ",cntrTxt[g_region]);
-	drawSubItem("Machine: ",machTxt[g_machineSet]);
+	drawSubItem("Region: ",cntrTxt[gRegion]);
+	drawSubItem("Machine: ",machTxt[gMachineSet]);
 	drawMenuItem(" Bios Settings ->");
 	drawSubItem("YM2413: ",biosTxt[ym2413Enabled&1]);
 }
@@ -374,7 +374,7 @@ static void uiSettings() {
 
 static void uiBios() {
 	setupSubMenu("Bios Settings");
-	drawSubItem("Use BIOS: ",biosTxt[(g_configSet>>7)&1]);
+	drawSubItem("Use BIOS: ",biosTxt[(gConfigSet>>7)&1]);
 	drawMenuItem(" Select Export Bios ->");
 	drawMenuItem(" Select Japanese Bios ->");
 	drawMenuItem(" Select GameGear Bios ->");
@@ -474,7 +474,7 @@ void ui11() {
 		ds = 17;
 	} else if (gArcadeGameSet == AC_TETRIS) {
 		ds = 18;
-	} else if (g_emuFlags & MT_MODE || g_machine == HW_MEGATECH) {
+	} else if (gEmuFlags & MT_MODE || gMachine == HW_MEGATECH) {
 		ds = 19;
 	}
 
@@ -482,7 +482,7 @@ void ui11() {
 }
 void ui20() {
 	setSelectedMenu(20);
-	selected = g_machineSet;
+	selected = gMachineSet;
 }
 
 void nullUINormal(int keyHit) {
@@ -490,7 +490,7 @@ void nullUINormal(int keyHit) {
 		nullUIDebug(keyHit);		// Just check touch, open menu.
 		return;
 	}
-	switch (g_machine) {
+	switch (gMachine) {
 		case HW_SMS1:
 			nullUISMS1(keyHit);
 			break;
@@ -1368,7 +1368,7 @@ void setupSordM5Background(void) {
 
 void powerOnOff() {
 	powerButton = !powerButton;
-	loadCart(g_emuFlags);			// This resets the graphics.
+	loadCart(gEmuFlags);			// This resets the graphics.
 	setMuteSoundGUI();
 	if (!isMenuOpen()) {
 		cls(0);
@@ -1382,7 +1382,7 @@ void ejectGame() {
 }
 
 void resetGame() {
-	loadCart(g_emuFlags);
+	loadCart(gEmuFlags);
 }
 
 //---------------------------------------------------------------------------------
@@ -1395,15 +1395,15 @@ void swapABSet() {
 }
 
 void rffSet() {
-	g_configSet ^= 0x10;
+	gConfigSet ^= 0x10;
 	settingsChanged = 1;
 }
 /*
 void xStartSet() {
-	g_config_set ^= 0x40;
+	gConfigSet ^= 0x40;
 }
 */
-void joypadSet(){
+void joypadSet() {
 	inputHW++;
 	if (inputHW >= 3) {
 		inputHW = 0;
@@ -1411,37 +1411,37 @@ void joypadSet(){
 }
 
 void selectSet() {
-	g_configSet ^= 0x20;
+	gConfigSet ^= 0x20;
 }
 
 
-void scalingSet(){
-	g_scalingSet++;
-	if (g_scalingSet >= 3) {
-		g_scalingSet = 0;
+void scalingSet() {
+	gScalingSet++;
+	if (gScalingSet >= 3) {
+		gScalingSet = 0;
 	}
 	setupScaling();
 	VDP0ApplyScaling();
 }
 
 void brightSet() {
-	g_gammaValue++;
-	if (g_gammaValue > 4) {
-		g_gammaValue = 0;
+	gGammaValue++;
+	if (gGammaValue > 4) {
+		gGammaValue = 0;
 	}
-	paletteInit(g_gammaValue);
-	mapSGPalette(g_gammaValue);
+	paletteInit(gGammaValue);
+	mapSGPalette(gGammaValue);
 	paletteTxAll();					// Make new palette visible
 	setupMenuPalette();
 }
 
 void colorSet() {
-	g_colorValue++;
-	if (g_colorValue > 4) {
-		g_colorValue = 0;
+	gColorValue++;
+	if (gColorValue > 4) {
+		gColorValue = 0;
 	}
-	paletteInit(g_gammaValue);
-	mapSGPalette(g_gammaValue);
+	paletteInit(gGammaValue);
+	mapSGPalette(gGammaValue);
 	paletteTxAll();					// Make new palette visible
 }
 
@@ -1454,11 +1454,11 @@ void borderSet() {
 }
 
 void bgrLayerSet() {
-	g_gfxMask ^= 0x03;
+	gGfxMask ^= 0x03;
 }
 
 void sprLayerSet() {
-	g_gfxMask ^= 0x10;
+	gGfxMask ^= 0x10;
 }
 
 void spriteSet() {
@@ -1466,25 +1466,25 @@ void spriteSet() {
 }
 
 void glassesSet() {
-	g_3DEnable ^= 1;
+	g3DEnable ^= 1;
 }
 
 
 void biosSet() {
-	g_configSet ^= 0x80;
+	gConfigSet ^= 0x80;
 }
 
 void countrySet() {
 	int i;
-	g_region = (g_region+1)&3;
-	i = (g_region)-1;
+	gRegion = (gRegion+1)&3;
+	i = (gRegion)-1;
 	if (i < 0) {
 		i = 0;
 	}
-	if (g_machine == HW_GG) {
+	if (gMachine == HW_GG) {
 		i &= ~PALTIMING;
 	}
-	g_emuFlags = (g_emuFlags & ~3) | i;
+	gEmuFlags = (gEmuFlags & ~3) | i;
 	soundSetFrequency();
 	VDP0ScanlineBPReset();
 	setupScaling();
@@ -1493,14 +1493,14 @@ void countrySet() {
 }
 
 void machineSet() {
-	g_machineSet++;
-	if (g_machineSet >= HW_SELECT_END){
-		g_machineSet = 0;
+	gMachineSet++;
+	if (gMachineSet >= HW_SELECT_END) {
+		gMachineSet = 0;
 	}
 }
 
 void selectMachine() {
-	g_machineSet = selected;
+	gMachineSet = selected;
 	backOutOfMenu();
 }
 

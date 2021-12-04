@@ -53,7 +53,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 			if (loadFileInZip(dest, fName, megatechGames[i], megatechSizes[i]) == 0) {
 				size = cenHead.ucSize;
 				strlcpy(currentFilename, megatechNames[i], sizeof(currentFilename));
-				g_emuFlags |= MT_MODE;
+				gEmuFlags |= MT_MODE;
 				return size;
 			}
 		}
@@ -65,7 +65,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 				if (loadFileInZip(dest+0x8000, fName, "cb6107.bin", 0x2000) == 0) {
 					size = 0x10000;
 					strlcpy(currentFilename, "Champion Boxing SG-AC", sizeof(currentFilename));
-					g_emuFlags |= SGAC_MODE;
+					gEmuFlags |= SGAC_MODE;
 					gArcadeGameSet = AC_CHAMPION_BOXING;
 					dipSwitch0 = 0x40;
 				}
@@ -77,7 +77,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 				if (loadFileInZip(dest+0x8000, fName, "5734", 0x4000) == 0) {
 					size = 0x10000;
 					strlcpy(currentFilename, "Champion Wrestling SG-AC", sizeof(currentFilename));
-					g_emuFlags |= SGAC_MODE;
+					gEmuFlags |= SGAC_MODE;
 					gArcadeGameSet = AC_CHAMPION_WRESTLING;
 					dipSwitch0 = 0xC0;
 				}
@@ -89,7 +89,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 				if (loadFileInZip(dest+0x8000, fName, "epr-7358.ic3", 0x4000) == 0) {
 					size = 0x10000;
 					strlcpy(currentFilename, "Doki Doki Penguin SG-AC", sizeof(currentFilename));
-					g_emuFlags |= SGAC_MODE;
+					gEmuFlags |= SGAC_MODE;
 					gArcadeGameSet = AC_DOKI_DOKI_PENGUIN;
 					dipSwitch0 = 0xC0;
 				}
@@ -103,7 +103,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 						if (loadFileInZip(dest+0x20000, fName, "rom1.ic2", 0x8000) == 0) {
 							size = 0x40000;
 							strlcpy(currentFilename, "Hang On Jr System-E", sizeof(currentFilename));
-							g_emuFlags |= SYSE_MODE;
+							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_HANG_ON_JR;
 						}
 					}
@@ -118,7 +118,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 						if (loadFileInZip(dest+0x20000, fName, "epr10422.bin", 0x8000) == 0) {
 							size = 0x40000;
 							strlcpy(currentFilename, "Riddle Of Pythagoras System-E", sizeof(currentFilename));
-							g_emuFlags |= SYSE_MODE;
+							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_RIDDLE_OF_PYTHAGORAS;
 						}
 					}
@@ -131,7 +131,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 				if (loadFileInZip(dest+0x10000, fName, "epr12211.4", 0x8000) == 0) {
 					size = 0x20000;
 					strlcpy(currentFilename, "Tetris System-E", sizeof(currentFilename));
-					g_emuFlags |= SYSE_MODE;
+					gEmuFlags |= SYSE_MODE;
 					gArcadeGameSet = AC_TETRIS;
 				}
 			}
@@ -144,7 +144,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 						if (loadFileInZip(dest+0x20000, fName, "epr-7350.ic2", 0x8000) == 0) {
 							size = 0x40000;
 							strlcpy(currentFilename, "Transformer System-E", sizeof(currentFilename));
-							g_emuFlags |= SYSE_MODE;
+							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_TRANSFORMER;
 						}
 					}
@@ -159,7 +159,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 						if (loadFileInZip(dest+0x20000, fName, "epr-7350.ic2", 0x8000) == 0) {
 							size = 0x40000;
 							strlcpy(currentFilename, "Astro Flash System-E", sizeof(currentFilename));
-							g_emuFlags |= SYSE_MODE;
+							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_ASTRO_FLASH;
 						}
 					}
@@ -174,7 +174,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 						if (loadFileInZip(dest+0x38000, fName, "epr-11412.ic2", 0x10000) == 0) {
 							size = 0x80000;
 							strlcpy(currentFilename, "Fantasy Zone 2 System-E", sizeof(currentFilename));
-							g_emuFlags |= SYSE_MODE;
+							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_FANTASY_ZONE_2;
 						}
 					}
@@ -189,7 +189,7 @@ int loadArcadeROM(void *dest, const char *fName) {
 						if (loadFileInZip(dest+0x20000, fName, "epr11220.ic2", 0x8000) == 0) {
 							size = 0x40000;
 							strlcpy(currentFilename, "Opa Opa System-E", sizeof(currentFilename));
-							g_emuFlags |= SYSE_MODE;
+							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_OPA_OPA;
 						}
 					}

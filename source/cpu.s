@@ -86,7 +86,7 @@ FrameLoopEnd:
 	add r0,r0,#1
 	str r0,[r1]
 
-	ldr r1,=g_configSet
+	ldr r1,=gConfigSet
 	ldrb r1,[r1]
 	ldr r2,=EMUinput
 	ldr r2,[r2]
@@ -119,7 +119,7 @@ cpuReset:		;@ Called by loadCart/resetGame
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4,lr}
 
-	ldr r4,=g_machine
+	ldr r4,=gMachine
 	ldrb r4,[r4]
 	cmp r4,#HW_SYSE
 	mov r0,#CYCLE_PSL

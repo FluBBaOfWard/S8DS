@@ -18,11 +18,11 @@
 	.global makeBorder
 	.global earlyFrame
 	.global endFrame
-	.global g_colorValue
-	.global g_3DEnable
-	.global g_twitch
-	.global g_flicker
-	.global g_gfxMask
+	.global gColorValue
+	.global g3DEnable
+	.global gTwitch
+	.global gFlicker
+	.global gGfxMask
 	.global vblIrqHandler
 	.global SysEVBlHandler
 	.global yStart
@@ -199,10 +199,10 @@ gfxReset:					;@ Called with cpuReset
 	ldr r1,=paletteMask
 	str r0,[r1]
 
-	ldr r0,=g_gammaValue
+	ldr r0,=gGammaValue
 	ldrb r0,[r0]
 	bl mapSGPalette
-	ldr r0,=g_gammaValue
+	ldr r0,=gGammaValue
 	ldrb r0,[r0]
 	bl paletteInit				;@ Do palette mapping
 	bl paletteTxAll				;@ Transfer it
@@ -211,14 +211,14 @@ gfxReset:					;@ Called with cpuReset
 	bl setupScaling
 
 	mov r1,#0
-	ldr r0,=g_machine
+	ldr r0,=gMachine
 	ldrb r0,[r0]
 	cmp r0,#HW_SYSE
 //	cmpne r0,#HW_MEGATECH
 	moveq r1,#1
 	strb r1,doubleVDP
 
-	ldr r0,=g_emuFlags
+	ldr r0,=gEmuFlags
 	ldr r0,[r0]
 	tst r0,#PALTIMING
 	moveq r0,#59				;@ NTSC
@@ -246,7 +246,7 @@ VDP0Reset:
 	ldr vdpptr,=VDP0
 	ldr r0,=VDPRAM
 	str r0,[vdpptr,#VRAMPtr]	;@ This needs to be set before reset.
-	ldr r3,=g_machine
+	ldr r3,=gMachine
 	ldrb r3,[r3]
 	adr r1,HWToVDP
 	ldrb r0,[r1,r3]
@@ -256,7 +256,7 @@ VDP0Reset:
 	ldreq r1,=Z80SetNMIPin
 	cmp r3,#HW_SORDM5
 	ldreq r1,=CTC0SetTrg3
-	ldr r3,=g_emuFlags
+	ldr r3,=gEmuFlags
 	ldr r3,[r3]
 	tst r3,#PALTIMING
 	orrne r0,r0,#TVTYPEPAL
@@ -288,7 +288,7 @@ VDP1Reset:
 	ldr vdpptr,=VDP1
 	ldr r0,=VDPRAM+0x8000
 	str r0,[vdpptr,#VRAMPtr]	;@ This needs to be set before reset.
-	ldr r3,=g_machine
+	ldr r3,=gMachine
 	ldrb r3,[r3]
 	adr r1,HWToVDP
 	ldrb r0,[r1,r3]
@@ -351,14 +351,14 @@ makeBorder:					;@ Also called from UI.c, r0 = border type.
 	cmp r0,#2
 	beq setBorderValues
 
-	ldr r0,=g_machine
+	ldr r0,=gMachine
 	ldrb r0,[r0]
 	cmp r0,#HW_GG
 
 	moveq r1,#0x08C0			;@ H start-end
 	ldreq r12,=0xC0F8			;@ H start-end Win1
 
-	ldr r0,=g_emuFlags
+	ldr r0,=gEmuFlags
 	ldrb r0,[r0]
 	tst r0,#GG_MODE
 
@@ -382,12 +382,12 @@ setupScaling:		;@ r0-r3, r12 modified.
 ;@----------------------------------------------------------------------------
 	ldrb r0,bColor
 	cmp r0,#2
-	ldr r3,=g_emuFlags
+	ldr r3,=gEmuFlags
 	ldrb r3,[r3]
 	biceq r3,r3,#GG_MODE
-	ldr r2,=g_machine
+	ldr r2,=gMachine
 	ldrb r2,[r2]
-	ldr r1,=g_scalingSet
+	ldr r1,=gScalingSet
 	ldrb r1,[r1]
 	adr r0,BG_SCALING_1_1
 
@@ -534,7 +534,7 @@ applyScaling:		;@ r0-r3, r12 modified.
 	and r0,r0,#VDPMODE_HEIGHTMASK	;@ 224 and/or 240 height
 	ldr r2,=BG_SCALING_TBL
 	ldr r1,[r2,r0,lsr#2]
-	str r1,bg_scaleValue
+	str r1,bgScaleValue
 	ldr r2,=BG_SCALING_WIN
 	ldr r1,[r2,r0,lsr#2]
 	str r1,WindowVValue
@@ -552,7 +552,7 @@ paletteInit:		;@ r0-r3 modified.
 	mov r7,r0					;@ Gamma value = 0 -> 4
 	ldr vdpptr,=VDP0
 	ldr r6,=mappedRGB
-	ldrb r8,g_colorValue		;@ Color value = 0 -> 4
+	ldrb r8,gColorValue			;@ Color value = 0 -> 4
 	mov r4,#4096*2
 	sub r4,r4,#2
 noMap:							;@ Map BGR12  ->  BGR15
@@ -597,7 +597,7 @@ mapSGPalette:
 mapSGLoop:						;@ Map RGB24  ->  BGR15
 	rsb r0,r4,#16
 	bl VDPGetRGBFromIndexSG
-	ldrb r1,g_colorValue
+	ldrb r1,gColorValue
 	bl yConvert
 	mov r11,r0
 
@@ -697,7 +697,7 @@ paletteTxAll:				;@ Called from ui.c
 	mov r2,#0x40
 	bl copyPalette
 
-	ldr r2,=g_machine
+	ldr r2,=gMachine
 	ldrb r2,[r2]
 	cmp r2,#HW_SYSE
 //	cmpne r2,#HW_MEGATECH
@@ -1158,7 +1158,7 @@ vblIrqHandler:
 	adds r3,r3,r4
 	addmi r3,r3,r7
 
-	ldr r6,bg_scaleValue
+	ldr r6,bgScaleValue
 
 	mul r1,r6,r3
 	beq noLoop
@@ -1174,10 +1174,10 @@ vblIrqHandler:
 @	bmi setLoop					;@ r1 will come out as 0 or 1.
 noLoop:
 
-	ldrb r0,g_flicker
-	ldrb r2,g_twitch
+	ldrb r0,gFlicker
+	ldrb r2,gTwitch
 	eors r2,r2,r0
-	strb r2,g_twitch
+	strb r2,gTwitch
 	beq noJump
 	subs r6,r6,r6,lsl#16
 	movcs r1,#1
@@ -1249,7 +1249,7 @@ scrolLoop2:
 	strh r0,[r6,#REG_BG2CNT]
 
 	mov r0,#0x001F
-	ldrb r1,g_gfxMask
+	ldrb r1,gGfxMask
 	bic r0,r0,r1
 	ldrb r1,[vdpptr,#vdpMode2Bak2]
 	tst r1,#0x40
@@ -1319,13 +1319,13 @@ Window1HValue:
 WindowVValue:
 	.long 0x00C0
 ;@----------------------------------------------------------------------------
-bg_scaleValue:	.long 0x00002B10			;@ was 0x2AAB
-g_twitch:		.byte 0
-g_flicker:		.byte 1
-g_colorValue:	.byte 4
-g_gfxMask:		.byte 0
+bgScaleValue:	.long 0x00002B10			;@ was 0x2AAB
+gTwitch:		.byte 0
+gFlicker:		.byte 1
+gColorValue:	.byte 4
+gGfxMask:		.byte 0
 bColor:			.byte 0
-g_3DEnable:		.byte 1
+g3DEnable:		.byte 1
 doubleVDP:		.byte 0
 				.byte 0
 ;@----------------------------------------------------------------------------
@@ -1345,7 +1345,7 @@ SysEVBlHandler:
 	adds r3,r3,r4
 	addmi r3,r3,r7
 
-	ldr r6,bg_scaleValue
+	ldr r6,bgScaleValue
 	mul r1,r6,r3
 	beq noELoop
 	sub r6,r6,r1,lsl#16
@@ -1354,10 +1354,10 @@ SysEVBlHandler:
 	movcc r1,#1
 noELoop:
 
-	ldrb r0,g_flicker
-	ldrb r2,g_twitch
+	ldrb r0,gFlicker
+	ldrb r2,gTwitch
 	eors r2,r2,r0
-	strb r2,g_twitch
+	strb r2,gTwitch
 	beq noEJump
 	subs r6,r6,r6,lsl#16
 	movcs r1,#1
@@ -1440,7 +1440,7 @@ scrolELoop2:
 	strh r0,[r6,#REG_BG2CNT]
 
 	mov r0,#0x001F
-	ldrb r1,g_gfxMask
+	ldrb r1,gGfxMask
 	bic r0,r0,r1
 	ldrb r1,[vdpptr,#vdpMode2Bak2]
 	tst r1,#0x40
@@ -1513,7 +1513,7 @@ endFrame:					;@ Called just before screen end (~line 192)	(r0 & r2 safe to use)
 	beq sprDMADo1
 sDMARet:
 ;@--------------------------
-	ldr r0,=g_machine
+	ldr r0,=gMachine
 	ldrb r0,[r0]
 	cmp r0,#HW_GG
 	bleq paletteTxGGSG
@@ -1523,7 +1523,7 @@ sDMARet:
 	ldr r1,=bColor
 	ldrb r0,[r1]
 	cmp r0,#0
-	ldreq r1,=g_machine
+	ldreq r1,=gMachine
 	ldrbeq r1,[r1]
 	cmpeq r1,#HW_GG
 	beq setBc
@@ -1732,7 +1732,7 @@ sprPassDoM4:
 	orrcs r6,r6,#0x00008000		;@ 8x16 shape
 	orrcs r6,r6,#0x02000000		;@ Scaling param
 
-	ldr r5,bg_scaleValue
+	ldr r5,bgScaleValue
 	add r5,r5,#1
 dm4_1:
 	add r9,r10,#0x80
@@ -1806,7 +1806,7 @@ pSprDo:
 	orrcs r6,r6,#0x00008000		;@ 8x16 shape
 	orrcs r6,r6,#0x02000000		;@ Scaling param
 
-	ldr r5,bg_scaleValue
+	ldr r5,bgScaleValue
 	add r5,r5,#1
 pSpr1:
 	add r9,r10,#0x80
@@ -1882,7 +1882,7 @@ sprDMADoM2:					;@ Called from endFrame.
 	orrcs r6,r6,#0x00008000		;@ 8x16 shape
 	orrcs r6,r6,#0x02000000		;@ Scaling param
 
-	ldr r5,bg_scaleValue
+	ldr r5,bgScaleValue
 	add r5,r5,#1
 
 	tst r6,r6,lsl#11			;@ 16x16 size + scaling?

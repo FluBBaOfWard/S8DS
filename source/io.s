@@ -298,7 +298,7 @@ ioReset:
 	mov r1,#0xFF
 	strb r1,sc3Keyboard
 
-	ldr r4,=g_machine
+	ldr r4,=gMachine
 	ldrb r4,[r4]
 
 	ldr r2,=joypadA2ButtonR
@@ -327,7 +327,7 @@ ioReset:
 	ldreq r1,=empty_R_SMS1
 	str r1,emptyReadPtr
 
-	ldr r3,=g_emuFlags
+	ldr r3,=gEmuFlags
 	ldrb r3,[r3]
 	tst r3,#GG_MODE
 	addne r4,r4,#8
@@ -340,7 +340,7 @@ ioReset:
 
 	cmp r4,#HW_SMS1
 	cmpne r4,#HW_SMS2
-	ldreq r2,=g_machineSet
+	ldreq r2,=gMachineSet
 	ldrbeq r2,[r2]
 	cmpeq r2,#HW_AUTO
 
@@ -442,7 +442,7 @@ refreshEMUjoypads:			;@ Call every frame
 	orr r4,r4,r0
 	and r3,r4,#0xf0
 
-	ldr r1,=g_machine
+	ldr r1,=gMachine
 	ldrb r1,[r1]
 	cmp r1,#HW_COLECO
 	beq refreshColJoypads
@@ -457,11 +457,11 @@ refreshSMSJoypads:
 	cmp r1,#HW_SYSE
 	cmpne r1,#HW_SGAC
 	beq noPause
-	ldr r0,=g_config
+	ldr r0,=gConfig
 	ldrb r0,[r0]
 	tst r0,#0x20
 	biceq r4,r4,#0x04			;@ Remove Reset if disabled
-	ldr r0,=g_emuFlags
+	ldr r0,=gEmuFlags
 	ldrb r0,[r0]
 	tst r0,#GG_MODE
 	bne noPause
@@ -518,20 +518,20 @@ refreshColJoypads:
 	orr r0,r0,r4,lsl#5			;@ Button 1
 	mov r1,r4,lsl#6				;@ Button 2
 	tst r4,#0x4					;@ Select
-//	ldrb r3,g_keymap_Select
+//	ldrb r3,gKeymapSelect
 	mov r3,#0x03
 	orrne r1,r1,r3				;@ (3)
 	tst r4,#0x8					;@ Start
-//	ldrb r3,g_keymap_Start
+//	ldrb r3,gKeymapStart
 	mov r3,#0x02
 	orrne r1,r1,r3				;@ (1)
 
 	tst r4,#0x200				;@ L
-//	ldrb r3,g_keymap_L
+//	ldrb r3,gKeymapL
 	mov r3,#0x09
 	orrne r1,r1,r3				;@ (#)
 	tst r4,#0x100				;@ R
-//	ldrb r3,g_keymap_R
+//	ldrb r3,gKeymapR
 	mov r3,#0x06
 	orrne r1,r1,r3				;@ (*)
 	ldrb r3,colecoKey
@@ -850,7 +850,7 @@ joypadB3ButtonR:					;@ 3 button MD pad
 	and r1,r1,#0x7C
 	orr r0,r0,r1
 
-	ldr r1,=g_emuFlags
+	ldr r1,=gEmuFlags
 	ldrb r1,[r1]
 	tst r1,#COUNTRY				;@ Jap bit
 	ldrb r1,joy1Extra
@@ -897,7 +897,7 @@ ColecoPortB_R:				;@ Player 2...
 ;@----------------------------------------------------------------------------
 Low0_IO_R:					;@ GG start button & country, 0x00
 ;@----------------------------------------------------------------------------
-	ldr r1,=g_emuFlags
+	ldr r1,=gEmuFlags
 	ldrb r1,[r1]
 	and r1,r1,#3				;@ Jap / PAL bits
 	ldrb r0,joy0Extra			;@ Port 0x00

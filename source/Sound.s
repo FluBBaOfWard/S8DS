@@ -61,7 +61,7 @@ soundReset:
 	strb r0,muteSoundGUI
 	mov r0,#2
 	strb r0,SMSJSoundControl
-	ldr r4,=g_machine
+	ldr r4,=gMachine
 	ldrb r4,[r4]
 	cmp r4,#HW_MSX
 	beq isMSX
@@ -112,7 +112,7 @@ soundSetFrequency:
 	.type soundSetFrequency STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{lr}
-	ldr r1,=g_emuFlags
+	ldr r1,=gEmuFlags
 	ldrb r1,[r1]
 	tst r1,#PALTIMING
 	ldr r1,=3579545				;@ NTSC freq
@@ -149,7 +149,7 @@ VblSound2:					;@ r0=length, r1=pointer
 	mov r0,r0,lsl#2
 	ldr r1,=mixSpace0
 
-	ldr r2,=g_machine
+	ldr r2,=gMachine
 	ldrb r2,[r2]
 	cmp r2,#HW_SYSE
 	beq sysEMix

@@ -7,11 +7,11 @@ extern "C" {
 
 #include "SegaVDP/SegaVDP.h"
 
-extern u8 g_flicker;
-extern u8 g_twitch;
-extern u8 g_gfxMask;
-extern u8 g_colorValue;
-extern u8 g_3DEnable;
+extern u8 gFlicker;
+extern u8 gTwitch;
+extern u8 gGfxMask;
+extern u8 gColorValue;
+extern u8 g3DEnable;
 extern u8 bColor;
 extern u8 SPRS;
 
