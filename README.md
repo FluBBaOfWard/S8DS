@@ -31,9 +31,10 @@ https://www.smspower.org/maxim/Software/SMSChecker
 
 ## How to use:
 
-Depending on your flashcart you might have to DLDI patch the emulator.
-You should also create a "S8DS" directory either in the root of your card or in
-the data directory (eg h:\data\S8DS).
+1. Create a "S8DS" directory either in the root of your card or in the data directory
+(eg h:\data\S8DS). This is where settings and save files end up.
+2. Now put game/bios files into a folder where you have roms.
+3. Depending on your flashcart you might have to DLDI patch the emulator.
 
 Put your games on your flash card, max 768 games per folder (though shouldn't be
 a problem if you separate SMS, GG, SG & Coleco games into different folders).
@@ -64,7 +65,7 @@ better 3D effect, I have only tested with red/cyan glasses.
 	Eject Game:
 	Power On/Off:
 	Reset Game:
-	Exit: (If your card supports it.)
+	Quit Emulator: (If your card supports it.)
 
 ### Options:
 	Controller:
@@ -140,6 +141,7 @@ better 3D effect, I have only tested with red/cyan glasses.
 	Astro Flash System-E - astrofl.zip (encrypted)
 	Fantasy Zone 2 System-E - fantzn2.zip (encrypted)
 	Hang On Jr System-E - hangonjr.zip
+	Megumi Rescue System-E - megrescu.zip
 	Opa Opa System-E - opaopa.zip (encrypted)
 	Riddle Of Pythagoras System-E - ridleofp.zip
 	Tetris System-E - tetrisse.zip
@@ -155,7 +157,7 @@ Charles MacDonald (http://cgfm2.emuviews.com/) for VDP info.
 Omar Cornut (http://www.smspower.org/) for help with various SMS stuff.
 The crew at PocketHeaven for their support.
 
-Fredrik Olsson
+Fredrik Ahlström
 
 Twitter @TheRealFluBBa
 

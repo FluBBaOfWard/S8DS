@@ -129,6 +129,7 @@ SysEAnalogW:				;@ 0xFA
 	ldr r2,=gArcadeGameSet
 	ldrb r2,[r2]
 	cmp r2,#AC_RIDDLE_OF_PYTHAGORAS
+	cmpne r2,#AC_MEGUMI_RESCUE
 	ldr r2,=joy0State
 	ldrb r2,[r2]
 	beq pythagoras

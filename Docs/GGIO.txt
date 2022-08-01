@@ -47,7 +47,8 @@ low to do this. The Genesis and Saturn are the same way.
 Port $01 returns the state of the EXT connector pins in D6-D0 when read;
 and sets their output level (to be used when/if any of the pins are configured
 as outputs) when written to. Bit 7 can be read and written and does not
-correspond to any pin or any other part of the I/O hardware. 
+correspond to any pin or any other part of the I/O hardware, at reset it
+is set on VA0 and clear on VA1 HW.
 
 Write: 
 D6 : TH output level is 0=low, 1=high 

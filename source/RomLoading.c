@@ -46,6 +46,10 @@ int loadArcadeROM(void *dest, const char *fName) {
 	int size = 0;
 	char fNameLowercase[16];
 
+	gArcadeGameSet = AC_NONE;
+	dipSwitch0 = 0;
+	dipSwitch1 = 0;
+
 //	drawtext("Checking for Arcade Roms", 23, 0);
 	strcasel(fNameLowercase, fName);
 	for (i = 0; i < 10; i++) {
@@ -191,6 +195,21 @@ int loadArcadeROM(void *dest, const char *fName) {
 							strlcpy(currentFilename, "Opa Opa System-E", sizeof(currentFilename));
 							gEmuFlags |= SYSE_MODE;
 							gArcadeGameSet = AC_OPA_OPA;
+						}
+					}
+				}
+			}
+		}
+	} else if (strstr(fNameLowercase, "megrescu.zip")) {
+		if (loadFileInZip(dest, fName, "megumi_rescue_version_10.30_final_version_ic-7.ic7", 0x8000) == 0) {
+			if (loadFileInZip(dest+0x8000, fName, "megumi_rescue_version_10.30_final_version_ic-5.ic5", 0x8000) == 0) {
+				if (loadFileInZip(dest+0x10000, fName, "megumi_rescue_version_10.30_final_version_ic-4.ic4", 0x8000) == 0) {
+					if (loadFileInZip(dest+0x18000, fName, "megumi_rescue_version_10.30_final_version_ic-3.ic3", 0x8000) == 0) {
+						if (loadFileInZip(dest+0x20000, fName, "megumi_rescue_version_10.30_final_version_ic-2.ic2", 0x8000) == 0) {
+							size = 0x40000;
+							strlcpy(currentFilename, "Megumi Rescue System-E", sizeof(currentFilename));
+							gEmuFlags |= SYSE_MODE;
+							gArcadeGameSet = AC_MEGUMI_RESCUE;
 						}
 					}
 				}

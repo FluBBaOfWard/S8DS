@@ -1,6 +1,15 @@
 S8DS To do
 ------------
 
+	crash the emulator when machine is set to 'auto' :
+	master of darkness
+	vampire
+	dragon's trap
+	ninja gaiden
+	ak miracle world (jap)
+	ak shinobi world
+	makai retsuden
+
 	Add Casio PV-2000? http://www43.tok2.com/home/cmpslv/Pv2000/EnrPV.htm
 	Add TOMY PuyTa? Tomy Tutor?
 	VDP Test crashes in MegaDrive test?
@@ -62,6 +71,7 @@ Arcade:
 	astrofl
 	fantzn2
 	hangonjr
+	megrescu
 	opaopa
 	ridleofp
 	tetrisse

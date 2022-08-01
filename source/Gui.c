@@ -29,7 +29,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2021-12-04"
+#define EMUVERSION "V1.1.7 2022-08-01"
 
 extern u8 sordM5Input;		// SordM5.s
 
@@ -127,14 +127,15 @@ static void uiDipSwitchesPythagoras(void);
 static void uiDipSwitchesOpaOpa(void);
 static void uiDipSwitchesFantasyZone2(void);
 static void uiDipSwitchesTetris(void);
+static void uiDipSwitchesMegumiRescue(void);
 static void uiDipSwitchesMegaTech(void);
 
 static void ui9(void);
 static void ui11(void);
-static void ui20(void);
+static void ui21(void);
 
 
-const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
+const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
 
 static const fptr fnList0[] = {uiDummy};
 static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui9};
@@ -142,7 +143,7 @@ static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui11};
 static const fptr fnList3[] = {uiDummy};
 static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
 static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet, bgrLayerSet, sprLayerSet};
-static const fptr fnList6[] = {countrySet, ui20, ui8, ym2413Set};
+static const fptr fnList6[] = {countrySet, ui21, ui8, ym2413Set};
 static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, debugTextSet, touchConsoleSet};
 static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
 static const fptr fnList9[] = {exitEmulator, backOutOfMenu};
@@ -155,12 +156,13 @@ static const fptr fnList15[] = {dip0Set0_4,dip0Set4_4,dip1Set0_2,dip1Set3_1,dip1
 static const fptr fnList16[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
 static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
 static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
-static const fptr fnList19[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
-static const fptr fnList20[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
-const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20};
-u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20)};
-const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegaTech,uiSelectMachine};
-const u8 menuXBack[] = {0,0,0,0,2,2,2,2,6,2,1,2,2,2,2,2,2,2,2,2,6};
+static const fptr fnList19[] = {dip0Set0_4,dip0Set4_4,dip1Set2_2,dip1Set4_2};
+static const fptr fnList20[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
+static const fptr fnList21[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
+const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21};
+u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21)};
+const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech,uiSelectMachine};
+const u8 menuXBack[] = {0,0,0,0,2,2,2,2,6,1,1,2,2,2,2,2,2,2,2,2,2,6};
 
 static int sdscPtr = 0;
 static char sdscBuffer[80];
@@ -191,6 +193,7 @@ static char *const mtCoin3Txt[] = {"1Coin 1Credit","2Coins 1Credit","3Coins 1Cre
 static char *const creditsSGTxt[] = {"1Coin 1Credit","1Coin 2Credits","1Coin 3Credits","2Coins 1Credit"};
 static char *const livesTxt[] = {"3","4","5","Infinite (Cheat)"};
 static char *const livesFZ2Txt[] = {"3","4","5","2"};
+static char *const livesMRTxt[] = {"2","3","4","Cheat"};
 static char *const bonusTxt[] = {"50k 150k 250k","30k 80k 130k 180k","10k 30k 50k 70k","20k 60k 100k 140k"};
 static char *const bonusOpaTxt[] = {"40k 60k 90k","25k 45k 70k","50k 90k","None"};
 static char *const bonusPyTxt[] = {"50K 100K 200K 1M 2M 10M 20M 50M","100K 200K 1M 2M 10M 20M 50M","200K 1M 2M 10M 20M 50M","None"};
@@ -200,6 +203,7 @@ static char *const difficultyFZ2Txt[] = {"Normal","Easy","Hard","Hardest"};
 static char *const timerTxt[] = {"80","90","70","60"};
 static char *const mtTimerTxt[] = {"0:30","1:00","1:30","2:00","2:30","3:00","3:30","4:00","4:30","5:00","5:30","6:00","6:30","7:00","7:30","Free Play"};
 static char *const languageTxt[] = {"English","Japanese","English"};
+static char *const cabinetTxt[] = {"Cocktail","Upright"};
 
 //----------------------------------------------------------------------
 
@@ -445,6 +449,12 @@ static void uiDipSwitchesTetris() {
 	drawSubItem("Difficulty: ", difficultyFZ2Txt[(dipSwitch1>>4) & 3]);
 }
 
+static void uiDipSwitchesMegumiRescue() {
+	setupSysEMenu();
+	drawSubItem("Lives: ",livesMRTxt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Cabinet: ", cabinetTxt[(dipSwitch1>>4) & 1]);
+}
+
 static void uiDipSwitchesMegaTech() {
 	setupSubMenu("Dip Switches");
 	drawSubItem("Coin slot 1: ",mtCoin1Txt[~dipSwitch1 & 0xF]);
@@ -474,14 +484,16 @@ void ui11() {
 		ds = 17;
 	} else if (gArcadeGameSet == AC_TETRIS) {
 		ds = 18;
-	} else if (gEmuFlags & MT_MODE || gMachine == HW_MEGATECH) {
+	} else if (gArcadeGameSet == AC_MEGUMI_RESCUE) {
 		ds = 19;
+	} else if (gEmuFlags & MT_MODE || gMachine == HW_MEGATECH) {
+		ds = 20;
 	}
 
 	setSelectedMenu(ds);
 }
-void ui20() {
-	setSelectedMenu(20);
+void ui21() {
+	setSelectedMenu(21);
 	selected = gMachineSet;
 }
 

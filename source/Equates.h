@@ -58,6 +58,7 @@
 #define AC_OPA_OPA				(0x14)
 #define AC_FANTASY_ZONE_2		(0x15)
 #define AC_TETRIS				(0x16)
+#define AC_MEGUMI_RESCUE		(0x17)
 #define AC_MT_GREAT_GOLF		(0x20)
 #define AC_MT_GREAT_SOCCER		(0x21)
 #define AC_MT_OUT_RUN			(0x22)

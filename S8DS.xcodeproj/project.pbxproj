@@ -47,6 +47,7 @@
 		9C35484E24BB837B00CCD030 /* YM2413.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YM2413.h; sourceTree = "<group>"; };
 		9C3D5AD825E2C54400E8CD56 /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
 		9C3D5AD925E2C54400E8CD56 /* History.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = History.txt; sourceTree = "<group>"; };
+		9C443D78278AD36A0029EE11 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9C4C21C326E4EDF8007D0280 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9C4C21C426E4EE0A007D0280 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9C4C21C526E4EE19007D0280 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -277,7 +278,7 @@
 			isa = PBXGroup;
 			children = (
 				9C7BB9652600BBEB00EA9C9C /* graphics */,
-				A47F093720876332004E1DA6 /* unzip */,
+				A47F093720876332004E1DA6 /* Unzip */,
 				9C8F3401248ACBDB00996E5A /* nds_asm.h */,
 				9CBEE0D326EE24A50095347A /* EmuSettings.h */,
 				A47F09222085FDBF004E1DA6 /* EmuMenu.h */,
@@ -292,15 +293,16 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
-		A47F093720876332004E1DA6 /* unzip */ = {
+		A47F093720876332004E1DA6 /* Unzip */ = {
 			isa = PBXGroup;
 			children = (
+				9C443D78278AD36A0029EE11 /* README.md */,
 				A47F093920876332004E1DA6 /* puff.h */,
 				A47F093B20876332004E1DA6 /* puff.c */,
 				A47F093A20876332004E1DA6 /* unzipnds.h */,
 				A47F093820876332004E1DA6 /* unzipnds.c */,
 			);
-			path = unzip;
+			path = Unzip;
 			sourceTree = "<group>";
 		};
 		A48CC01C1618E64700465E20 /* Resources */ = {
@@ -499,7 +501,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				DEVKITARM = $DEVKITPRO/devkitarm;
-				DEVKITPRO = /opt/devkitpro_old;
+				DEVKITPRO = /opt/devkitpro;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;

@@ -145,8 +145,8 @@ void saveSRAM() {
 }
 
 void loadState() {
-	u32 *statePtr;
 	FILE *file;
+	u32 *statePtr;
 	char stateName[FILENAMEMAXLENGTH];
 
 	if (findFolder(folderName)) {
@@ -172,8 +172,8 @@ void loadState() {
 	}
 }
 void saveState() {
-	u32 *statePtr;
 	FILE *file;
+	u32 *statePtr;
 	char stateName[FILENAMEMAXLENGTH];
 
 	if ( findFolder(folderName) ) {
