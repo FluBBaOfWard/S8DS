@@ -25,11 +25,11 @@
 #include "Sound.h"
 #include "ARMZ80/Version.h"
 #include "SN76496/Version.h"
-#include "SegaVDP/version.h"
+#include "SegaVDP/Version.h"
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2022-08-07"
+#define EMUVERSION "V1.1.7 2022-08-23"
 
 extern u8 sordM5Input;		// SordM5.s
 

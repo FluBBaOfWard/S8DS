@@ -7,7 +7,7 @@
 #include "Shared/FileHelper.h"
 #include "Shared/AsmExtra.h"
 #include "Gui.h"
-#include "YM2413.h"
+#include "ym2413.h"
 #include "FileHandling.h"
 #include "EmuFont.h"
 #include "Cart.h"
