@@ -29,7 +29,9 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2022-08-23"
+#define EMUVERSION "V1.1.7 2023-06-27"
+
+#define ENABLE_LIVE_UI		(1<<12)
 
 extern u8 sordM5Input;		// SordM5.s
 
@@ -130,7 +132,6 @@ static void uiDipSwitchesTetris(void);
 static void uiDipSwitchesMegumiRescue(void);
 static void uiDipSwitchesMegaTech(void);
 
-static void ui9(void);
 static void ui11(void);
 static void ui21(void);
 
@@ -162,24 +163,24 @@ static const fptr fnList21[] = {selectMachine,selectMachine,selectMachine,select
 const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21};
 u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21)};
 const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech,uiSelectMachine};
-const u8 menuXBack[] = {0,0,0,0,2,2,2,2,6,1,1,2,2,2,2,2,2,2,2,2,2,6};
 
 static int sdscPtr = 0;
 static char sdscBuffer[80];
 
 
-static char *const autoTxt[] = {"Off","On","With R"};
-static char *const speedTxt[] = {"Normal","Fast","Max","Slowmo"};
-static char *const sleepTxt[] = {"5min","10min","30min","Off"};
-static char *const brighTxt[] = {"I","II","III","IIII","IIIII"};
-static char *const ctrlTxt[] = {"1P","2P"};
-static char *const bordTxt[] = {"Black","Border Color","None"};
-static char *const dispTxt[] = {"Scaled 1:1","Scaled to fit","Scaled to aspect"};
-static char *const flickTxt[] = {"No Flicker","Flicker"};
-static char *const cntrTxt[] = {"Auto","US (NTSC)","Europe (PAL)","Japan (NTSC)"};
-static char *const machTxt[] = {"Auto","SG-1000","SC-3000","OMV","SG-1000 II","Mark III","Master System","Master System 2","Game Gear","Mega Drive","Coleco","MSX","Sord M5"};
-static char *const joypadTxt[] = {"Auto","SMS 2 Buttton","MD 3 Button","MD 6 Button"};
-static char *const biosTxt[] = {"Off","Auto"};
+static char *const autoTxt[] = {"Off", "On", "With R"};
+static char *const speedTxt[] = {"Normal", "Fast", "Max", "Slowmo"};
+static char *const brighTxt[] = {"I", "II", "III", "IIII", "IIIII"};
+static char *const sleepTxt[] = {"5min", "10min", "30min", "Off"};
+static char *const ctrlTxt[] = {"1P", "2P"};
+static char *const dispTxt[] = {"Scaled 1:1", "Scaled to fit", "Scaled to aspect"};
+static char *const flickTxt[] = {"No Flicker", "Flicker"};
+
+static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"};
+static char *const bordTxt[] = {"Black", "Border Color", "None"};
+static char *const cntrTxt[] = {"Auto", "US (NTSC)", "Europe (PAL)", "Japan (NTSC)"};
+static char *const joypadTxt[] = {"Auto", "SMS 2 Buttton", "MD 3 Button", "MD 6 Button"};
+static char *const biosTxt[] = {"Off", "Auto"};
 
 static char *const sysECreditsTxt[] = {"1Coin 1Credit","1Coin 2Credits","1Coin 3Credits","1Coin 4Credits","1Coin 5Credits","1Coin 6Credits","2Coins 1Credit","3Coins 1Credit",
 							  "4Coins 1Credit","2Coins 3Credits","?Coins ?Credits","?Coins ?Credits","?Coins ?Credits","?Coins ?Credits","?Coins ?Credits","Free Play"};
@@ -208,7 +209,7 @@ static char *const cabinetTxt[] = {"Cocktail","Upright"};
 //----------------------------------------------------------------------
 
 void setupGUI() {
-	emuSettings = AUTOPAUSE_EMULATION | AUTOSLEEP_OFF | (1<<12);
+	emuSettings = AUTOPAUSE_EMULATION | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
 	keysSetRepeat(25, 4);	// Delay, repeat.
 	menuXItems[1] = ARRSIZE(fnList1) - (enableExit?0:1);
 	openMenu();
@@ -290,95 +291,86 @@ static void uiAbout() {
 
 	cls(1);
 	drawTabs();
-	drawSubText("S8DS - Sega 8bit emulator", 4, 0);
+	drawMenuText("S8DS - Sega 8bit emulator", 4, 0);
 
-	drawSubText("B:      Button 1", 6, 0);
-	drawSubText("A:      Button 2", 7, 0);
-	drawSubText("DPad:   Move character", 8, 0);
-	drawSubText("Start:  Pause button", 9, 0);
-	drawSubText("Select: Reset", 10, 0);
+	drawMenuText("B:      Button 1", 6, 0);
+	drawMenuText("A:      Button 2", 7, 0);
+	drawMenuText("DPad:   Move character", 8, 0);
+	drawMenuText("Start:  Pause button", 9, 0);
+	drawMenuText("Select: Reset", 10, 0);
 
 	strcpy(str,"Coin counter0:       ");
 	int2Str(coinCounter0,s);
-	drawSubText(str, 13, 0);
+	drawMenuText(str, 13, 0);
 	strcpy(str,"Coin counter1:       ");
 	int2Str(coinCounter1,s);
-	drawSubText(str, 14, 0);
+	drawMenuText(str, 14, 0);
 
-	drawSubText("S8DS         " EMUVERSION, 18, 0);
-	drawSubText("ARMZ80       " ARMZ80VERSION, 19, 0);
-	drawSubText("SEGAVDP      " SEGAVDPVERSION, 20, 0);
-	drawSubText("ARMSNGG76496 " ARMSNGGVERSION, 21, 0);
-	drawSubText("ARMAY38910   " ARMAY38910VERSION, 22, 0);
-	drawSubText("ARMSCC       " ARMSCCVERSION, 23, 0);
+	drawMenuText("S8DS         " EMUVERSION, 18, 0);
+	drawMenuText("ARMZ80       " ARMZ80VERSION, 19, 0);
+	drawMenuText("SEGAVDP      " SEGAVDPVERSION, 20, 0);
+	drawMenuText("ARMSNGG76496 " ARMSNGGVERSION, 21, 0);
+	drawMenuText("ARMAY38910   " ARMAY38910VERSION, 22, 0);
+	drawMenuText("ARMSCC       " ARMSCCVERSION, 23, 0);
 }
 
 static void uiController() {
 	setupSubMenu("Controller Settings");
-	drawSubItem("B Autofire: ",autoTxt[autoB]);
-	drawSubItem("A Autofire: ",autoTxt[autoA]);
-	drawSubItem("Controller: ",ctrlTxt[(joyCfg>>30)&1]);
-	drawSubItem("Swap A-B:   ",autoTxt[(~joyCfg>>10)&1]);
-	drawSubItem("Joypad Type: ",joypadTxt[inputHW&3]);
-	drawSubItem("Use Select as Reset: ",autoTxt[(gConfigSet>>5)&1]);
-	drawSubItem("Use R as FastForward: ",autoTxt[(gConfigSet>>4)&1]);
+	drawSubItem("B Autofire:",autoTxt[autoB]);
+	drawSubItem("A Autofire:",autoTxt[autoA]);
+	drawSubItem("Controller:",ctrlTxt[(joyCfg>>30)&1]);
+	drawSubItem("Swap A-B:  ",autoTxt[(~joyCfg>>10)&1]);
+	drawSubItem("Joypad Type:",joypadTxt[inputHW&3]);
+	drawSubItem("Use Select as Reset:",autoTxt[(gConfigSet>>5)&1]);
+	drawSubItem("Use R as FastForward:",autoTxt[(gConfigSet>>4)&1]);
 }
 
 static void uiDisplay() {
 	setupSubMenu("Display Settings");
-	drawSubItem("Display: ",dispTxt[gScalingSet]);
-	drawSubItem("Scaling: ",flickTxt[gFlicker]);
-	drawSubItem("Gamma: ",brighTxt[gGammaValue]);
-	drawSubItem("Color: ",brighTxt[gColorValue]);
-	drawSubItem("GG Border: ",bordTxt[bColor]);
-	drawSubItem("Perfect Sprites: ",autoTxt[SPRS&1]);
-	drawSubItem("3D Display: ",biosTxt[g3DEnable&1]);
-	drawSubItem("Disable Background: ",autoTxt[gGfxMask&1]);
-	drawSubItem("Disable Sprites: ",autoTxt[(gGfxMask>>4)&1]);
+	drawSubItem("Display:",dispTxt[gScalingSet]);
+	drawSubItem("Scaling:",flickTxt[gFlicker]);
+	drawSubItem("Gamma:",brighTxt[gGammaValue]);
+	drawSubItem("Color:",brighTxt[gColorValue]);
+	drawSubItem("GG Border:",bordTxt[bColor]);
+	drawSubItem("Perfect Sprites:",autoTxt[SPRS&1]);
+	drawSubItem("3D Display:",biosTxt[g3DEnable&1]);
+	drawSubItem("Disable Background:",autoTxt[gGfxMask&1]);
+	drawSubItem("Disable Sprites:",autoTxt[(gGfxMask>>4)&1]);
 }
 
 static void uiMachine() {
 	setupSubMenu("Machine Settings");
-	drawSubItem("Region: ",cntrTxt[gRegion]);
-	drawSubItem("Machine: ",machTxt[gMachineSet]);
-	drawMenuItem(" Bios Settings ->");
-	drawSubItem("YM2413: ",biosTxt[ym2413Enabled&1]);
+	drawSubItem("Region:",cntrTxt[gRegion]);
+	drawSubItem("Machine:",machTxt[gMachineSet]);
+	drawSubItem("Bios Settings ->", NULL);
+	drawSubItem("YM2413:",biosTxt[ym2413Enabled&1]);
 }
 
 static void uiSelectMachine() {
 	setupSubMenu("Select Machine");
-	drawMenuItem(" Auto");
-	drawMenuItem(" SG-1000");
-	drawMenuItem(" SC-3000");
-	drawMenuItem(" Othello Multi Vision");
-	drawMenuItem(" SG-1000 II");
-	drawMenuItem(" Mark III");
-	drawMenuItem(" Master System");
-	drawMenuItem(" Master System 2");
-	drawMenuItem(" Game Gear");
-	drawMenuItem(" Mega Drive + PBC");
-	drawMenuItem(" Coleco");
-	drawMenuItem(" MSX");
-	drawMenuItem(" Sord M5");
+	int i;
+	for (i=0; i<ARRSIZE(machTxt); i++) {
+		drawSubItem(machTxt[i], NULL);
+	}
 	drawMenuItem("");			// Cheating to remove last row.
 }
 
 static void uiSettings() {
 	setupSubMenu("Settings");
-	drawSubItem("Speed: ", speedTxt[(emuSettings>>6)&3]);
-	drawSubItem("Autoload State: ", autoTxt[(emuSettings>>2)&1]);
-	drawSubItem("Autosave Settings: ", autoTxt[(emuSettings>>9)&1]);
-	drawSubItem("Autosave SRAM: ", autoTxt[(emuSettings>>10)&1]);
-	drawSubItem("Autopause Game: ", autoTxt[emuSettings&1]);
-	drawSubItem("Powersave 2nd Screen: ", autoTxt[(emuSettings>>1)&1]);
-	drawSubItem("Emulator on Bottom: ", autoTxt[(emuSettings>>8)&1]);
-	drawSubItem("Debug Output: ", autoTxt[gDebugSet&1]);
-	drawSubItem("Console Touch: ", autoTxt[(emuSettings>>12)&1]);
+	drawSubItem("Speed:", speedTxt[(emuSettings>>6)&3]);
+	drawSubItem("Autoload State:", autoTxt[(emuSettings>>2)&1]);
+	drawSubItem("Autosave Settings:", autoTxt[(emuSettings>>9)&1]);
+	drawSubItem("Autosave SRAM:", autoTxt[(emuSettings>>10)&1]);
+	drawSubItem("Autopause Game:", autoTxt[emuSettings&1]);
+	drawSubItem("Powersave 2nd Screen:", autoTxt[(emuSettings>>1)&1]);
+	drawSubItem("Emulator on Bottom:", autoTxt[(emuSettings>>8)&1]);
+	drawSubItem("Debug Output:", autoTxt[gDebugSet&1]);
+	drawSubItem("Console Touch:", autoTxt[(emuSettings>>12)&1]);
 }
 
 static void uiBios() {
 	setupSubMenu("Bios Settings");
-	drawSubItem("Use BIOS: ",biosTxt[(gConfigSet>>7)&1]);
+	drawSubItem("Use BIOS:",biosTxt[(gConfigSet>>7)&1]);
 	drawMenuItem(" Select Export Bios ->");
 	drawMenuItem(" Select Japanese Bios ->");
 	drawMenuItem(" Select GameGear Bios ->");
@@ -393,81 +385,78 @@ static void uiDipSwitches() {
 
 static void uiDipSwitchesSGAC() {
 	setupSubMenu("Dip Switches");
-	drawSubItem("Coin slot 1: ",creditsSGTxt[(dipSwitch0>>4) & 3]);
-	drawSubItem("Demo sound: ",autoTxt[(dipSwitch0>>6) & 1]);
-	drawSubItem("Language: ",languageTxt[((dipSwitch0>>7) & 1) + 1]);
+	drawSubItem("Coin slot 1:",creditsSGTxt[(dipSwitch0>>4) & 3]);
+	drawSubItem("Demo sound:",autoTxt[(dipSwitch0>>6) & 1]);
+	drawSubItem("Language:",languageTxt[((dipSwitch0>>7) & 1) + 1]);
 }
 
 static void setupSysEMenu() {
 	setupSubMenu("Dip Switches");
-	drawSubItem("Coin slot 1: ",sysECreditsTxt[dipSwitch0 & 0xF]);
-	drawSubItem("Coin slot 2: ",sysECreditsTxt[(dipSwitch0>>4) & 0xF]);
+	drawSubItem("Coin slot 1:",sysECreditsTxt[dipSwitch0 & 0xF]);
+	drawSubItem("Coin slot 2:",sysECreditsTxt[(dipSwitch0>>4) & 0xF]);
 }
 
 static void uiDipSwitchesHangOnJr() {
 	setupSysEMenu();
-	drawSubItem("Demo sound: ",autoTxt[dipSwitch1 & 1]);
-	drawSubItem("Enemies: ",difficultyTxt[(dipSwitch1>>1) & 3]);
-	drawSubItem("Time Adj: ",difficultyTxt[(dipSwitch1>>3) & 3]);
+	drawSubItem("Demo sound:",autoTxt[dipSwitch1 & 1]);
+	drawSubItem("Enemies:",difficultyTxt[(dipSwitch1>>1) & 3]);
+	drawSubItem("Time Adj:",difficultyTxt[(dipSwitch1>>3) & 3]);
 }
 
 static void uiDipSwitchesTransformer() {
 	setupSysEMenu();
-	drawSubItem("2 Player: ",autoTxt[dipSwitch1 & 1]);
-	drawSubItem("Demo sound: ",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Lives: ",livesTxt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Bonus Life: ",bonusTxt[(dipSwitch1>>4) & 3]);
-	drawSubItem("Difficulty: ", difficultyTrTxt[(dipSwitch1>>6) & 3]);
+	drawSubItem("2 Player:",autoTxt[dipSwitch1 & 1]);
+	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Lives:",livesTxt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Bonus Life:",bonusTxt[(dipSwitch1>>4) & 3]);
+	drawSubItem("Difficulty:", difficultyTrTxt[(dipSwitch1>>6) & 3]);
 }
 
 static void uiDipSwitchesPythagoras() {
 	setupSysEMenu();
-	drawSubItem("Lives: ",livesTxt[dipSwitch1 & 3]);
-	drawSubItem("Ball Speed: ",difficultyTxt[(dipSwitch1>>2) & 2]);
-	drawSubItem("Bonus Life: ",bonusPyTxt[(dipSwitch1>>5) & 3]);
+	drawSubItem("Lives:",livesTxt[dipSwitch1 & 3]);
+	drawSubItem("Ball Speed:",difficultyTxt[(dipSwitch1>>2) & 2]);
+	drawSubItem("Bonus Life:",bonusPyTxt[(dipSwitch1>>5) & 3]);
 }
 
 static void uiDipSwitchesOpaOpa() {
 	setupSysEMenu();
-	drawSubItem("Demo sound: ",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Lives: ",livesFZ2Txt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Bonus Life: ",bonusOpaTxt[(dipSwitch1>>4) & 3]);
-	drawSubItem("Difficulty: ", difficultyFZ2Txt[(dipSwitch1>>6) & 3]);
+	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Lives:",livesFZ2Txt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Bonus Life:",bonusOpaTxt[(dipSwitch1>>4) & 3]);
+	drawSubItem("Difficulty:", difficultyFZ2Txt[(dipSwitch1>>6) & 3]);
 }
 
 static void uiDipSwitchesFantasyZone2() {
 	setupSysEMenu();
-	drawSubItem("Demo sound: ",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Lives: ",livesFZ2Txt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Timer: ",timerTxt[(dipSwitch1>>4) & 3]);
-	drawSubItem("Difficulty: ", difficultyFZ2Txt[(dipSwitch1>>6) & 3]);
+	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Lives:",livesFZ2Txt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Timer:",timerTxt[(dipSwitch1>>4) & 3]);
+	drawSubItem("Difficulty:", difficultyFZ2Txt[(dipSwitch1>>6) & 3]);
 }
 
 static void uiDipSwitchesTetris() {
 	setupSysEMenu();
-	drawSubItem("Demo sound: ",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Difficulty: ", difficultyFZ2Txt[(dipSwitch1>>4) & 3]);
+	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Difficulty:", difficultyFZ2Txt[(dipSwitch1>>4) & 3]);
 }
 
 static void uiDipSwitchesMegumiRescue() {
 	setupSysEMenu();
-	drawSubItem("Lives: ",livesMRTxt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Cabinet: ", cabinetTxt[(dipSwitch1>>4) & 1]);
+	drawSubItem("Lives:",livesMRTxt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Cabinet:", cabinetTxt[(dipSwitch1>>4) & 1]);
 }
 
 static void uiDipSwitchesMegaTech() {
 	setupSubMenu("Dip Switches");
-	drawSubItem("Coin slot 1: ",mtCoin1Txt[~dipSwitch1 & 0xF]);
-	drawSubItem("Coin slot 2: ",mtCoin2Txt[~(dipSwitch0>>5) & 0x7]);
-	drawSubItem("Coin slot 3: ",mtAcceptTxt[(dipSwitch0>>1) & 0x1]);
-	drawSubItem("Coin slot 4: ",mtAcceptTxt[(dipSwitch0) & 0x1]);
-	drawSubItem("Coin slot 3/4: ",mtCoin3Txt[(dipSwitch0>>2) & 0x7]);
-	drawSubItem("Time per credit: ", mtTimerTxt[(dipSwitch1>>4) & 0xF]);
+	drawSubItem("Coin slot 1:",mtCoin1Txt[~dipSwitch1 & 0xF]);
+	drawSubItem("Coin slot 2:",mtCoin2Txt[~(dipSwitch0>>5) & 0x7]);
+	drawSubItem("Coin slot 3:",mtAcceptTxt[(dipSwitch0>>1) & 0x1]);
+	drawSubItem("Coin slot 4:",mtAcceptTxt[(dipSwitch0) & 0x1]);
+	drawSubItem("Coin slot 3/4:",mtCoin3Txt[(dipSwitch0>>2) & 0x7]);
+	drawSubItem("Time per credit:", mtTimerTxt[(dipSwitch1>>4) & 0xF]);
 }
 
-void ui9() {
-	setSelectedMenu(9);
-}
 void ui11() {
 	int ds = 11;
 	if (gArcadeGameSet == AC_CHAMPION_BOXING || gArcadeGameSet == AC_CHAMPION_WRESTLING || gArcadeGameSet == AC_DOKI_DOKI_PENGUIN) {
@@ -490,15 +479,15 @@ void ui11() {
 		ds = 20;
 	}
 
-	setSelectedMenu(ds);
+	enterMenu(ds);
 }
 void ui21() {
-	setSelectedMenu(21);
+	enterMenu(21);
 	selected = gMachineSet;
 }
 
 void nullUINormal(int keyHit) {
-	if (!(emuSettings & (1<<12))) {
+	if (!(emuSettings & ENABLE_LIVE_UI)) {
 		nullUIDebug(keyHit);		// Just check touch, open menu.
 		return;
 	}
@@ -1398,6 +1387,7 @@ void resetGame() {
 }
 
 //---------------------------------------------------------------------------------
+/// Switch between Player 1 & Player 2 controls
 void controllerSet() {				// See io.s: refreshEMUjoypads
 	joyCfg ^= 0x40000000;
 }
@@ -1521,7 +1511,7 @@ void ym2413Set() {
 }
 
 void touchConsoleSet() {
-	emuSettings ^= (1<<12);
+	emuSettings ^= ENABLE_LIVE_UI;
 }
 
 

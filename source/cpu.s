@@ -46,13 +46,13 @@ runStart:
 	movpl r1,#224-SCREEN_HEIGHT
 @	strb r1,[r2]
 
-	ldr z80optbl,=Z80OpTable
 	bl refreshEMUjoypads		;@ Z=1 if communication ok
 
-	add r0,z80optbl,#z80Regs
+	ldr z80ptr,=Z80OpTable
+	add r0,z80ptr,#z80Regs
 	ldmia r0,{z80f-z80pc,z80sp}	;@ Restore Z80 state
 
-	ldr pc,[z80optbl,#z80NextTimeout]
+	ldr pc,selectedFrameLoop
 
 ;@----------------------------------------
 SM5FrameLoop:
@@ -62,7 +62,8 @@ SM5FrameLoop:
 	bl VDPDoScanline
 	cmp r0,#0
 	ldreq r0,scanlineCycles
-	beq Z80RunXCycles
+	bleq Z80RunXCycles
+	ldr pc,selectedFrameLoop
 	b FrameLoopEnd
 
 ;@----------------------------------------
@@ -74,11 +75,13 @@ SMSFrameLoop:
 	ldr vdpptr,=VDP0
 	bl VDPDoScanline
 	cmp r0,#0
+	bne FrameLoopEnd
 	ldreq r0,scanlineCycles
-	beq Z80RunXCycles
+	bl Z80RunXCycles
+	ldr pc,selectedFrameLoop
 ;@----------------------------------------------------------------------------
 FrameLoopEnd:
-	add r0,z80optbl,#z80Regs
+	add r0,z80ptr,#z80Regs
 	stmia r0,{z80f-z80pc,z80sp}	;@ Save Z80 state
 
 	ldr r1,=fpsValue
@@ -104,6 +107,7 @@ FrameLoopEnd:
 
 
 ;@----------------------------------------------------------------------------
+selectedFrameLoop:	.long 0
 scanlineCycles:		.long CYCLE_PSL
 waitCountIn:		.byte 0
 waitMaskIn:			.byte 0
@@ -132,25 +136,24 @@ cpuReset:		;@ Called by loadCart/resetGame
 	adreq r0,SYSEFrameLoop
 	cmp r4,#HW_SORDM5
 	adreq r0,SM5FrameLoop
-	str r0,[z80optbl,#z80NextTimeout]
-	str r0,[z80optbl,#z80NextTimeout_]
+	str r0,selectedFrameLoop
 
-
-	mov r0,#0					;@ SMS
+	ldr r0,=Z80OpTable
+	mov r1,#0					;@ SMS
 	cmp r4,#HW_MEGADRIVE
 //	cmpne r4,#HW_MEGATECH
-	moveq r0,#1					;@ MD
+	moveq r1,#1					;@ MD
 	cmp r4,#HW_GG
-	moveq r0,#2					;@ GG
+	moveq r1,#2					;@ GG
 	bl Z80Reset
 
 	ldr r0,=emptyReadPtr
 	ldr r0,[r0]
 	cmp r4,#HW_SORDM5
 	ldreq r0,=CTC0GetIrqVector
-	str r0,[z80optbl,#z80IrqVectorFunc]
+	str r0,[z80ptr,#z80IrqVectorFunc]
 	ldreq r0,=CTC0IrqAcknowledge
-	streq r0,[z80optbl,#z80IrqAckFunc]
+	streq r0,[z80ptr,#z80IrqAckFunc]
 
 	ldmfd sp!,{r4,lr}
 	bx lr

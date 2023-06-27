@@ -110,7 +110,7 @@ ram_W:						;@ Write ram ($0000-$FFFF)
 //	ldr r2,=EMU_RAM
 //	strb r0,[r2,addy]
 	and r1,addy,#MEM_BANK_MASK
-	add r2,z80optbl,#z80MemTbl
+	add r2,z80ptr,#z80MemTbl
 	ldr r1,[r2,r1,lsr#MEM_BANK_SHIFT]
 	strb r0,[r1,addy]
 	bx lr
@@ -220,7 +220,7 @@ sram1_W:					;@ Write sram bank1 ($8000-$BFFF),($C000-$FFFF)
 rom_R:						;@ Rom read
 ;@----------------------------------------------------------------------------
 	and r1,addy,#MEM_BANK_MASK
-	add r2,z80optbl,#z80MemTbl
+	add r2,z80ptr,#z80MemTbl
 	ldr r1,[r2,r1,lsr#MEM_BANK_SHIFT]
 	ldrb r0,[r1,addy]
 	bx lr

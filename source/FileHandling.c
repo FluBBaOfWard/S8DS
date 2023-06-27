@@ -1,11 +1,6 @@
 #include <nds.h>
-#include <fat.h>
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/dir.h>
 
 #include "FileHandling.h"
 #include "Emubase.h"
@@ -14,7 +9,6 @@
 #include "Shared/EmuSettings.h"
 #include "Shared/FileHelper.h"
 #include "Gui.h"
-#include "MasterSystem.h"
 #include "RomLoading.h"
 #include "Equates.h"
 #include "SegaVDP/SegaVDP.h"
@@ -47,7 +41,7 @@ int loadSettings() {
 	if ( (file = fopen(settingName, "r")) ) {
 		fread(&cfg, 1, sizeof(ConfigData), file);
 		fclose(file);
-		if ( !strstr(cfg.magic, "cfg") ) {
+		if (!strstr(cfg.magic, "cfg")) {
 			infoOutput("Error in settings file.");
 			return 1;
 		}
@@ -111,11 +105,10 @@ int loadSRAM() {
 	FILE *file;
 	char sramName[FILENAMEMAXLENGTH];
 
-	if ( findFolder(folderName) ) {
+	if (findFolder(folderName)) {
 		return 1;
 	}
-	strlcpy(sramName, currentFilename, sizeof(sramName));
-	strlcat(sramName, ".sav", sizeof(sramName));
+	setFileExtension(sramName, currentFilename, ".sav", sizeof(sramName));
 	if ( (file = fopen(sramName, "r")) ) {
 		fread(EMU_SRAM, 1, 0x2000, file);
 		fclose(file);
@@ -132,11 +125,10 @@ void saveSRAM() {
 	FILE *file;
 	char sramName[FILENAMEMAXLENGTH];
 
-	if ( findFolder(folderName) ) {
+	if (findFolder(folderName)) {
 		return;
 	}
-	strlcpy(sramName, currentFilename, sizeof(sramName));
-	strlcat(sramName, ".sav", sizeof(sramName));
+	setFileExtension(sramName, currentFilename, ".sav", sizeof(sramName));
 	if ( (file = fopen(sramName, "w")) ) {
 		fwrite(EMU_SRAM, 1, 0x2000, file);
 		fclose(file);
@@ -145,97 +137,50 @@ void saveSRAM() {
 }
 
 void loadState() {
-	FILE *file;
-	u32 *statePtr;
-	char stateName[FILENAMEMAXLENGTH];
-
-	if (findFolder(folderName)) {
-		return;
-	}
-	strlcpy(stateName, currentFilename, sizeof(stateName));
-	strlcat(stateName, ".sta", sizeof(stateName));
-	int stateSize = getStateSize();
-	if ( (file = fopen(stateName, "r")) ) {
-		if ( (statePtr = malloc(stateSize)) ) {
-			cls(0);
-			drawText("        Loading state...", 11, 0);
-			fread(statePtr, 1, stateSize, file);
-			unpackState(statePtr);
-			free(statePtr);
-			infoOutput("Loaded state.");
-		} else {
-			infoOutput("Couldn't alloc mem for state.");
-		}
-		fclose(file);
-	} else {
-		infoOutput("Couldn't open file for state.");
-	}
+	loadDeviceState(folderName);
 }
-void saveState() {
-	FILE *file;
-	u32 *statePtr;
-	char stateName[FILENAMEMAXLENGTH];
 
-	if ( findFolder(folderName) ) {
-		return;
-	}
-	strlcpy(stateName, currentFilename, sizeof(stateName));
-	strlcat(stateName, ".sta", sizeof(stateName));
-	int stateSize = getStateSize();
-	if ( (file = fopen(stateName, "w")) ) {
-		if ( (statePtr = malloc(stateSize)) ) {
-			cls(0);
-			drawText("        Saving state...", 11, 0);
-			packState(statePtr);
-			fwrite(statePtr, 1, stateSize, file);
-			free(statePtr);
-			infoOutput("Saved state.");
-		} else {
-			infoOutput("Couldn't alloc mem for state.");
-		}
-		fclose(file);
-	} else {
-		infoOutput("Couldn't open file for state.");
-	}
+void saveState() {
+	saveDeviceState(folderName);
 }
 
 bool loadGame(const char *gameName) {
 	char fileExt[8];
-	if ( gameName ) {
+	if (gameName) {
 		cls(0);
 		drawText("   Please wait, loading.", 11, 0);
 		gEmuFlags &= ~(MD_MODE|GG_MODE|SG_MODE|SC_MODE|COL_MODE|MSX_MODE|SORDM5_MODE|SGAC_MODE|SYSE_MODE|MT_MODE);
 		g_ROM_Size = loadROM(ROM_Space, gameName, 0x100000);
-		if ( !g_ROM_Size ) {
+		if (!g_ROM_Size) {
 			g_ROM_Size = loadArcadeROM(ROM_Space, gameName);
 		}
-		if ( g_ROM_Size ) {
+		if (g_ROM_Size) {
 			getFileExtension(fileExt, currentFilename);
-			if ( strstr(fileExt, ".gg") ) {
+			if (strstr(fileExt, ".gg")) {
 				gEmuFlags |= GG_MODE;
 			}
-			else if ( strstr(fileExt, ".sg") ) {
+			else if (strstr(fileExt, ".sg")) {
 				gEmuFlags |= SG_MODE;
 			}
-			else if ( strstr(fileExt, ".sc") ) {
+			else if (strstr(fileExt, ".sc")) {
 				gEmuFlags |= SC_MODE;
 			}
-			else if ( ( strstr(fileExt, ".mx1") || strstr(fileExt, ".mx2") || strstr(fileExt, ".rom") )
-					 && ( (ROM_Space[0] == 0x41 && ROM_Space[1] == 0x42) || (ROM_Space[0x4000] == 0x41 && ROM_Space[0x4001] == 0x42) ) ) {
+			else if ((strstr(fileExt, ".mx1") || strstr(fileExt, ".mx2") || strstr(fileExt, ".rom"))
+					 && ((ROM_Space[0] == 0x41 && ROM_Space[1] == 0x42) || (ROM_Space[0x4000] == 0x41 && ROM_Space[0x4001] == 0x42))) {
 				gEmuFlags |= MSX_MODE;
 			}
-			else if ( ( strstr(fileExt, ".col") || strstr(fileExt, ".rom") )
-					 && ( (ROM_Space[0] == 0xAA && ROM_Space[1] == 0x55) || (ROM_Space[0] == 0x55 && ROM_Space[1] == 0xAA) ) ) {
+			else if ((strstr(fileExt, ".col") || strstr(fileExt, ".rom"))
+					 && ((ROM_Space[0] == 0xAA && ROM_Space[1] == 0x55) || (ROM_Space[0] == 0x55 && ROM_Space[1] == 0xAA))) {
 				gEmuFlags |= COL_MODE;
 			}
-			else if ( strstr(fileExt, ".rom")
-					 && (ROM_Space[0] == 0x00 || ROM_Space[0] == 0x02) ) {
+			else if (strstr(fileExt, ".rom")
+					 && (ROM_Space[0] == 0x00 || ROM_Space[0] == 0x02)) {
 				gEmuFlags |= SORDM5_MODE;
 			}
 			setEmuSpeed(0);
 			loadCart(gEmuFlags);
 			loadSRAM();
-			if ( emuSettings & AUTOLOAD_STATE ) {
+			if (emuSettings & AUTOLOAD_STATE) {
 				loadState();
 			}
 			gameInserted = true;
@@ -249,9 +194,9 @@ bool loadGame(const char *gameName) {
 
 void selectGame() {
 	pauseEmulation = true;
-	setSelectedMenu(10);
+	ui10();
 	const char *gameName = browseForFileType(FILEEXTENSIONS".zip");
-	if ( loadGame(gameName) ) {
+	if (loadGame(gameName)) {
 		backOutOfMenu();
 	}
 }
@@ -260,7 +205,7 @@ static bool selectBios(const char *fileTypes, char *dest) {
 	const char *biosName = browseForFileType(fileTypes);
 	cls(0);
 
-	if ( biosName ) {
+	if (biosName) {
 		strlcpy(dest, currentDir, FILEPATHMAXLENGTH);
 		strlcat(dest, "/", FILEPATHMAXLENGTH);
 		strlcat(dest, biosName, FILEPATHMAXLENGTH);
@@ -270,37 +215,37 @@ static bool selectBios(const char *fileTypes, char *dest) {
 }
 
 void selectUSBios() {
-	if ( selectBios(".sms.zip", cfg.biosUS) ) {
+	if (selectBios(".sms.zip", cfg.biosUS)) {
 		loadUSBIOS();
 	}
 }
 
 void selectJPBios() {
-	if ( selectBios(".sms.zip", cfg.biosJP) ) {
+	if (selectBios(".sms.zip", cfg.biosJP)) {
 		loadJPBIOS();
 	}
 }
 
 void selectGGBios() {
-	if ( selectBios(".gg.zip", cfg.biosGG) ) {
+	if (selectBios(".gg.zip", cfg.biosGG)) {
 		loadGGBIOS();
 	}
 }
 
 void selectCOLECOBios() {
-	if ( selectBios(".rom.col.zip", cfg.biosCOLECO) ) {
+	if (selectBios(".rom.col.zip", cfg.biosCOLECO)) {
 		loadCOLECOBIOS();
 	}
 }
 
 void selectMSXBios() {
-	if ( selectBios(".mx1.mx2.rom.zip", cfg.biosMSX) ) {
+	if (selectBios(".mx1.mx2.rom.zip", cfg.biosMSX)) {
 		loadMSXBIOS();
 	}
 }
 
 void selectSORDM5Bios() {
-	if ( selectBios(".ic21.rom.zip", cfg.biosSORDM5) ) {
+	if (selectBios(".ic21.rom.zip", cfg.biosSORDM5)) {
 		loadSORDM5BIOS();
 	}
 }
@@ -310,7 +255,7 @@ static int loadBIOS(void *dest, const char *fPath, const int maxSize) {
 	char *sPtr;
 
 	strlcpy(tempString, fPath, sizeof(tempString));
-	if ( (sPtr = strrchr(tempString, '/')) ) {
+	if ((sPtr = strrchr(tempString, '/'))) {
 		sPtr[0] = 0;
 		sPtr += 1;
 		chdir("/");
@@ -321,7 +266,7 @@ static int loadBIOS(void *dest, const char *fPath, const int maxSize) {
 }
 
 int loadUSBIOS(void) {
-	if ( loadBIOS(BIOS_US_Space, cfg.biosUS, sizeof(BIOS_US_Space)) ) {
+	if (loadBIOS(BIOS_US_Space, cfg.biosUS, sizeof(BIOS_US_Space))) {
 		g_BIOSBASE_US = BIOS_US_Space;
 		return 1;
 	}
@@ -330,7 +275,7 @@ int loadUSBIOS(void) {
 }
 
 int loadJPBIOS(void) {
-	if ( loadBIOS(BIOS_JP_Space, cfg.biosJP, sizeof(BIOS_JP_Space)) ) {
+	if (loadBIOS(BIOS_JP_Space, cfg.biosJP, sizeof(BIOS_JP_Space))) {
 		g_BIOSBASE_JP = BIOS_JP_Space;
 		return 1;
 	}
@@ -339,7 +284,7 @@ int loadJPBIOS(void) {
 }
 
 int loadGGBIOS(void) {
-	if ( loadBIOS(BIOS_GG_Space, cfg.biosGG, sizeof(BIOS_GG_Space)) ) {
+	if (loadBIOS(BIOS_GG_Space, cfg.biosGG, sizeof(BIOS_GG_Space))) {
 		g_BIOSBASE_GG = BIOS_GG_Space;
 		return 1;
 	}
@@ -348,7 +293,7 @@ int loadGGBIOS(void) {
 }
 
 int loadCOLECOBIOS(void) {
-	if ( loadBIOS(BIOS_COLECO_Space, cfg.biosCOLECO, sizeof(BIOS_COLECO_Space)) ) {
+	if (loadBIOS(BIOS_COLECO_Space, cfg.biosCOLECO, sizeof(BIOS_COLECO_Space))) {
 		g_BIOSBASE_COLECO = BIOS_COLECO_Space;
 		return 1;
 	}
@@ -357,7 +302,7 @@ int loadCOLECOBIOS(void) {
 }
 
 int loadMSXBIOS(void) {
-	if ( loadBIOS(BIOS_MSX_Space, cfg.biosMSX, sizeof(BIOS_MSX_Space)) ) {
+	if (loadBIOS(BIOS_MSX_Space, cfg.biosMSX, sizeof(BIOS_MSX_Space))) {
 		g_BIOSBASE_MSX = BIOS_MSX_Space;
 		return 1;
 	}
@@ -366,7 +311,7 @@ int loadMSXBIOS(void) {
 }
 
 int loadSORDM5BIOS(void) {
-	if ( loadBIOS(BIOS_SORDM5_Space, cfg.biosSORDM5, sizeof(BIOS_SORDM5_Space)) ) {
+	if (loadBIOS(BIOS_SORDM5_Space, cfg.biosSORDM5, sizeof(BIOS_SORDM5_Space))) {
 		g_BIOSBASE_SORDM5 = BIOS_SORDM5_Space;
 		return 1;
 	}

@@ -2,7 +2,7 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.7 - 2022-08-01 (FluBBa)
+V1.1.7 - 2023-06-27 (FluBBa)
 	Fixed envelope handling on the AY38910.
 	Added support for "Megumi Rescue" on System-E.
 

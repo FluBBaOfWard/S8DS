@@ -16,10 +16,6 @@
 #include "io.h"
 #include "Sound.h"
 
-//#define sample_rate  32768
-#define sample_rate  55930
-#define buffer_size  (512+10)
-
 static void checkTimeOut(void);
 static void setupGraphics(void);
 static void setupStream(void);
@@ -85,7 +81,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	else {
-		drawText("fatInitDefault() failure.",23,0);
+		infoOutput("fatInitDefault() failure.");
 	}
 //	if ( (YM2413Init(1, 3579545, sample_rate)) ) {
 //		drawText("YMInit failure.",23,0);
@@ -195,9 +191,9 @@ static void setupGraphics() {
 					| DISPLAY_BG0_ACTIVE
 					| DISPLAY_BG1_ACTIVE
 					);
-	// Set up two backgrounds to scroll around
-	REG_BG0CNT_SUB = BG_COLOR_16 | BG_MAP_BASE(0);
-	REG_BG1CNT_SUB = BG_COLOR_16 | BG_MAP_BASE(1);
+	// Set up two backgrounds for menu
+	REG_BG0CNT_SUB = BG_32x32 | BG_MAP_BASE(0) | BG_COLOR_16 | BG_TILE_BASE(0) | BG_PRIORITY(0);
+	REG_BG1CNT_SUB = BG_32x32 | BG_MAP_BASE(1) | BG_COLOR_16 | BG_TILE_BASE(0) | BG_PRIORITY(0);
 	REG_BG1HOFS_SUB = 0;
 	REG_BG1VOFS_SUB = 0;
 	map0sub = BG_MAP_RAM_SUB(0);

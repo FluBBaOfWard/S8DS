@@ -1,14 +1,18 @@
 S8DS To do
 ------------
 
-	crash the emulator when machine is set to 'auto' :
-	master of darkness
-	vampire
-	dragon's trap
-	ninja gaiden
-	ak miracle world (jap)
-	ak shinobi world
-	makai retsuden
+	Use new Arcade rom loading instead of RomLoading.c!
+
+	Games that crash the emulator when machine is set to 'auto' :
+	Master of darkness
+	Vampire
+	Dragon's trap
+	Ninja gaiden
+	AK miracle world (jap)
+	AK shinobi world
+	Makai retsuden
+
+	Update sound more often? See NitroSwan.
 
 	Add Casio PV-2000? http://www43.tok2.com/home/cmpslv/Pv2000/EnrPV.htm
 	Add TOMY PuyTa? Tomy Tutor?
@@ -48,7 +52,6 @@ GUI:
 
 Sound:
 	Pitch is wrong?
-	Update more often?
 	Add YM2413?
 
 Games:
