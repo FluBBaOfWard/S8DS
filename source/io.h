@@ -17,6 +17,13 @@ extern u8 dipSwitch0;
 extern u8 dipSwitch1;
 extern u32 EMUinput;
 
+/**
+ * Convert device input keys to target keys.
+ * @param input NDS/GBA keys
+ * @return The converted input.
+ */
+int convertInput(int input);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

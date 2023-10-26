@@ -2,8 +2,9 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.7 - 2023-06-27 (FluBBa)
+V1.1.7 - 2023-10-26 (FluBBa)
 	Fixed envelope handling on the AY38910.
+	Fixed pause on older Sega machines (again).
 	Added support for "Megumi Rescue" on System-E.
 
 V1.1.6 - 2021-10-18 (FluBBa)

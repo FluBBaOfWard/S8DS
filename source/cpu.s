@@ -7,18 +7,23 @@
 
 #define CYCLE_PSL (228)
 
-	.global cpuReset
-	.global run
 	.global waitMaskIn
 	.global waitMaskOut
+
+	.global run
+	.global cpuReset
 
 	.syntax unified
 	.arm
 
-	.section .text
+#ifdef GBA
+	.section .ewram, "ax", %progbits	;@ For the GBA
+#else
+	.section .text						;@ For anything else
+#endif
 	.align 2
 ;@----------------------------------------------------------------------------
-run:		;@ Return after 1 frame
+run:		;@ Return after X frame(s)
 	.type   run STT_FUNC
 ;@----------------------------------------------------------------------------
 
@@ -46,9 +51,9 @@ runStart:
 	movpl r1,#224-SCREEN_HEIGHT
 @	strb r1,[r2]
 
+	ldr z80ptr,=Z80OpTable
 	bl refreshEMUjoypads		;@ Z=1 if communication ok
 
-	ldr z80ptr,=Z80OpTable
 	add r0,z80ptr,#z80Regs
 	ldmia r0,{z80f-z80pc,z80sp}	;@ Restore Z80 state
 

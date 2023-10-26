@@ -1,6 +1,6 @@
 # S8DS V1.1.7
 
-This is a SEGA 8Bit emulator for the NDS, it support the following systems:
+This is a SEGA 8Bit emulator for the Nintendo DS(i)/3DS, it support the following systems:
 
 	SEGA SG-1000 / SG-1000 II
 	SEGA SC-3000
@@ -33,7 +33,9 @@ https://www.smspower.org/maxim/Software/SMSChecker
 
 1. Create a "S8DS" directory either in the root of your card or in the data
  directory (eg h:\data\S8DS). This is where settings and save files end up.
-2. Now put game/bios files into a folder where you have roms.
+2. Now put game/bios files into a folder where you have (SEGA 8-bit) roms, max
+ 768 games per folder, filenames must not be longer than 127 chars. You can use
+ zipped files (as long as they use the deflate compression).
 3. Depending on your flashcart you might have to DLDI patch the emulator.
 
 Put your games on your flash card, max 768 games per folder (though shouldn't
@@ -161,6 +163,6 @@ The crew at PocketHeaven for their support.
 
 Fredrik Ahlström
 
-Twitter @TheRealFluBBa
+Twitter/X @TheRealFluBBa
 
 http://www.github.com/FluBBaOfWard

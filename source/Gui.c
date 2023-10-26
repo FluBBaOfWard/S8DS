@@ -29,7 +29,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2023-06-27"
+#define EMUVERSION "V1.1.7 2023-10-26"
 
 #define ENABLE_LIVE_UI		(1<<12)
 
@@ -86,6 +86,7 @@ static void machineSet(void);
 static void biosSet(void);
 static void ym2413Set(void);
 static void selectMachine(void);
+static void stepFrame(void);
 
 static void dip0Set0_1(void);
 static void dip0Set1_1(void);
@@ -118,6 +119,7 @@ static void uiDisplay(void);
 static void uiMachine(void);
 static void uiSelectMachine(void);
 static void uiSettings(void);
+static void uiDebug(void);
 static void uiBios(void);
 static void uiDipSwitches(void);
 
@@ -134,18 +136,19 @@ static void uiDipSwitchesMegaTech(void);
 
 static void ui11(void);
 static void ui21(void);
+static void ui22(void);
 
 
-const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
+const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
 
 static const fptr fnList0[] = {uiDummy};
 static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui9};
-static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui11};
+static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui11, ui22};
 static const fptr fnList3[] = {uiDummy};
 static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
-static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet, bgrLayerSet, sprLayerSet};
+static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet};
 static const fptr fnList6[] = {countrySet, ui21, ui8, ym2413Set};
-static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, debugTextSet, touchConsoleSet};
+static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, touchConsoleSet};
 static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
 static const fptr fnList9[] = {exitEmulator, backOutOfMenu};
 static const fptr fnList10[] = {uiDummy};
@@ -160,9 +163,10 @@ static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
 static const fptr fnList19[] = {dip0Set0_4,dip0Set4_4,dip1Set2_2,dip1Set4_2};
 static const fptr fnList20[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
 static const fptr fnList21[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
-const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21};
-u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21)};
-const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech,uiSelectMachine};
+static const fptr fnList22[] = {debugTextSet, bgrLayerSet, sprLayerSet, stepFrame};
+const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21,fnList22};
+u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21),ARRSIZE(fnList22)};
+const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech,uiSelectMachine,uiDebug};
 
 static int sdscPtr = 0;
 static char sdscBuffer[80];
@@ -263,7 +267,7 @@ void uiNullNormal() {
 
 static void uiFile() {
 	setupMenu();
-	drawMenuItem("Load Game ->");
+	drawMenuItem("Load Game");
 	drawMenuItem("Load State");
 	drawMenuItem("Save State");
 	drawMenuItem("Save SRAM");
@@ -278,11 +282,12 @@ static void uiFile() {
 
 static void uiOptions() {
 	setupMenu();
-	drawMenuItem("Controller ->");
-	drawMenuItem("Display ->");
-	drawMenuItem("Machine ->");
-	drawMenuItem("Settings ->");
-	drawMenuItem("Dipswitches ->");
+	drawMenuItem("Controller");
+	drawMenuItem("Display");
+	drawMenuItem("Machine");
+	drawMenuItem("Settings");
+	drawMenuItem("Dipswitches");
+	drawMenuItem("Debug");
 }
 
 static void uiAbout() {
@@ -334,15 +339,13 @@ static void uiDisplay() {
 	drawSubItem("GG Border:",bordTxt[bColor]);
 	drawSubItem("Perfect Sprites:",autoTxt[SPRS&1]);
 	drawSubItem("3D Display:",biosTxt[g3DEnable&1]);
-	drawSubItem("Disable Background:",autoTxt[gGfxMask&1]);
-	drawSubItem("Disable Sprites:",autoTxt[(gGfxMask>>4)&1]);
 }
 
 static void uiMachine() {
 	setupSubMenu("Machine Settings");
 	drawSubItem("Region:",cntrTxt[gRegion]);
 	drawSubItem("Machine:",machTxt[gMachineSet]);
-	drawSubItem("Bios Settings ->", NULL);
+	drawSubItem("Bios Settings", NULL);
 	drawSubItem("YM2413:",biosTxt[ym2413Enabled&1]);
 }
 
@@ -364,8 +367,15 @@ static void uiSettings() {
 	drawSubItem("Autopause Game:", autoTxt[emuSettings&1]);
 	drawSubItem("Powersave 2nd Screen:", autoTxt[(emuSettings>>1)&1]);
 	drawSubItem("Emulator on Bottom:", autoTxt[(emuSettings>>8)&1]);
-	drawSubItem("Debug Output:", autoTxt[gDebugSet&1]);
 	drawSubItem("Console Touch:", autoTxt[(emuSettings>>12)&1]);
+}
+
+void uiDebug() {
+	setupSubMenu("Debug");
+	drawSubItem("Debug Output:", autoTxt[gDebugSet&1]);
+	drawSubItem("Disable Background:", autoTxt[gGfxMask&1]);
+	drawSubItem("Disable Sprites:", autoTxt[(gGfxMask>>4)&1]);
+	drawSubItem("Step Frame", NULL);
 }
 
 static void uiBios() {
@@ -484,6 +494,10 @@ void ui11() {
 void ui21() {
 	enterMenu(21);
 	selected = gMachineSet;
+}
+
+void ui22() {
+	enterMenu(22);
 }
 
 void nullUINormal(int keyHit) {
@@ -1386,6 +1400,9 @@ void resetGame() {
 	loadCart(gEmuFlags);
 }
 
+void stepFrame() {
+	run();
+}
 //---------------------------------------------------------------------------------
 /// Switch between Player 1 & Player 2 controls
 void controllerSet() {				// See io.s: refreshEMUjoypads

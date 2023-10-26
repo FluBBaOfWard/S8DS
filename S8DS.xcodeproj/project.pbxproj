@@ -75,6 +75,7 @@
 		9C8F3401248ACBDB00996E5A /* nds_asm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nds_asm.h; sourceTree = "<group>"; };
 		9C8F3404248B982F00996E5A /* SN76496.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = SN76496.i; sourceTree = "<group>"; };
 		9C8F3405248B982F00996E5A /* SN76496.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SN76496.h; sourceTree = "<group>"; };
+		9C93BD772AE972C100DDCA13 /* EmuMenu.i */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c.preprocessed; path = EmuMenu.i; sourceTree = "<group>"; };
 		9CA4424A2A4301AC00259966 /* ArcadeRoms.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ArcadeRoms.c; sourceTree = "<group>"; };
 		9CA4424B2A4301AC00259966 /* ArcadeRoms.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ArcadeRoms.h; sourceTree = "<group>"; };
 		9CA4424C2A4301AC00259966 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -285,6 +286,7 @@
 				9CA4424C2A4301AC00259966 /* README.md */,
 				9C8F3401248ACBDB00996E5A /* nds_asm.h */,
 				9CBEE0D326EE24A50095347A /* EmuSettings.h */,
+				9C93BD772AE972C100DDCA13 /* EmuMenu.i */,
 				A47F09222085FDBF004E1DA6 /* EmuMenu.h */,
 				A47F09232085FDBF004E1DA6 /* EmuMenu.c */,
 				A47F0934208731E9004E1DA6 /* FileHelper.h */,

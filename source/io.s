@@ -4,10 +4,14 @@
 #include "Equates.h"
 #include "SegaVDP/SegaVDP.i"
 #include "PPI8255/PPI8255.i"
+#include "Shared/EmuMenu.i"
 
 	.global ioReset
+	.global refreshEMUjoypads
+	.global convertInput
 	.global Z80In
 	.global Z80Out
+
 	.global joyCfg
 	.global inputHW
 	.global ym2413Enabled
@@ -18,7 +22,7 @@
 	.global sc3Keyboard
 	.global keyboardRows
 	.global emptyReadPtr
-	.global refreshEMUjoypads
+
 	.global AGBinput
 	.global EMUinput
 	.global coinCounter0
@@ -420,6 +424,14 @@ sgacReset:
 	bx lr
 
 	.pool
+;@----------------------------------------------------------------------------
+convertInput:			;@ Convert from device keys to target r0=input/output
+	.type convertInput STT_FUNC
+;@----------------------------------------------------------------------------
+	mvn r1,r0
+	tst r1,#KEY_L|KEY_R				;@ Keys to open menu
+	orreq r0,r0,#KEY_OPEN_MENU
+	bx lr
 ;@----------------------------------------------------------------------------
 refreshEMUjoypads:			;@ Call every frame
 ;@----------------------------------------------------------------------------
