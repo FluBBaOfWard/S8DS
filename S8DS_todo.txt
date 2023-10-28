@@ -28,7 +28,7 @@ S8DS To do
 
 
 Misc:
-	Add loadCard for SMS1.
+	Add loadCard for SMS1/MD.
 	Terebi Oekaki/Graphic Board support?
 	Light Phaser support?
 	Add SMS(J) as options in machine?

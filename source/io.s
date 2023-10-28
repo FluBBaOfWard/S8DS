@@ -309,7 +309,7 @@ ioReset:
 	ldr r3,=joypadB2ButtonR
 	mov r1,#0xC0
 	cmp r4,#HW_MEGADRIVE
-	cmpne r4,#HW_MEGATECH
+//	cmpne r4,#HW_MEGATECH		;@ MT "Alien Syndrome" doesn't work with this.
 	moveq r1,#0xE0				;@ Bit 5 is different on MD.
 	strb r1,joy1Extra
 	ldrb r0,inputHW

@@ -11,6 +11,7 @@
 	.global waitMaskOut
 
 	.global run
+	.global runFrame
 	.global cpuReset
 
 	.syntax unified
@@ -57,33 +58,8 @@ runStart:
 	add r0,z80ptr,#z80Regs
 	ldmia r0,{z80f-z80pc,z80sp}	;@ Restore Z80 state
 
-	ldr pc,selectedFrameLoop
-
-;@----------------------------------------
-SM5FrameLoop:
-	ldr r0,scanlineCycles
-	bl CTC0Update
-	ldr vdpptr,=VDP0
-	bl VDPDoScanline
-	cmp r0,#0
-	ldreq r0,scanlineCycles
-	bleq Z80RunXCycles
-	ldr pc,selectedFrameLoop
-	b FrameLoopEnd
-
-;@----------------------------------------
-SYSEFrameLoop:
-	ldr vdpptr,=VDP1
-	bl VDPDoScanline
-;@----------------------------------------
-SMSFrameLoop:
-	ldr vdpptr,=VDP0
-	bl VDPDoScanline
-	cmp r0,#0
-	bne FrameLoopEnd
-	ldreq r0,scanlineCycles
-	bl Z80RunXCycles
-	ldr pc,selectedFrameLoop
+	mov lr,pc
+	ldr pc,selectedFrameRun
 ;@----------------------------------------------------------------------------
 FrameLoopEnd:
 	add r0,z80ptr,#z80Regs
@@ -110,15 +86,70 @@ FrameLoopEnd:
 	bxeq lr						;@ Return to rommenu()
 	b runStart
 
-
 ;@----------------------------------------------------------------------------
-selectedFrameLoop:	.long 0
+selectedFrameRun:	.long SMSFrameRun
 scanlineCycles:		.long CYCLE_PSL
 waitCountIn:		.byte 0
 waitMaskIn:			.byte 0
 waitCountOut:		.byte 0
 waitMaskOut:		.byte 0
 
+;@----------------------------------------
+SM5FrameRun:
+	stmfd sp!,{lr}
+SM5FrameLoop:
+	ldr r0,scanlineCycles
+	bl CTC0Update
+	ldr vdpptr,=VDP0
+	bl VDPDoScanline
+	cmp r0,#0
+	ldmfdne sp!,{pc}
+	ldr r0,scanlineCycles
+	bl Z80RunXCycles
+	b SM5FrameLoop
+;@----------------------------------------
+SYSEFrameRun:
+	stmfd sp!,{lr}
+SYSEFrameLoop:
+	ldr vdpptr,=VDP1
+	bl VDPDoScanline
+	ldr vdpptr,=VDP0
+	bl VDPDoScanline
+	cmp r0,#0
+	ldmfdne sp!,{pc}
+	ldr r0,scanlineCycles
+	bl Z80RunXCycles
+	b SYSEFrameLoop
+;@----------------------------------------
+SMSFrameRun:
+	stmfd sp!,{lr}
+SMSFrameLoop:
+	ldr vdpptr,=VDP0
+	bl VDPDoScanline
+	cmp r0,#0
+	ldmfdne sp!,{pc}
+	ldr r0,scanlineCycles
+	bl Z80RunXCycles
+	b SMSFrameLoop
+
+;@----------------------------------------------------------------------------
+runFrame:					;@ Return after 1 frame
+	.type runFrame STT_FUNC
+;@----------------------------------------------------------------------------
+	stmfd sp!,{r4-r11,lr}
+	ldr z80ptr,=Z80OpTable
+	add r0,z80ptr,#z80Regs
+	ldmia r0,{z80f-z80pc,z80sp}	;@ Restore Z80 state
+;@----------------------------------------------------------------------------
+s8StepLoop:
+;@----------------------------------------------------------------------------
+	mov lr,pc
+	ldr pc,selectedFrameRun
+;@----------------------------------------------------------------------------
+	add r0,z80ptr,#z80Regs
+	stmia r0,{z80f-z80pc,z80sp}	;@ Save Z80 state
+	ldmfd sp!,{r4-r11,lr}
+	bx lr
 ;@----------------------------------------------------------------------------
 ;@ntsc_pal_reset:
 ;@--- PAL Speed - 3546893Hz / 49.7Hz / 313 = 228
@@ -136,12 +167,12 @@ cpuReset:		;@ Called by loadCart/resetGame
 	str r0,scanlineCycles
 
 
-	adr r0,SMSFrameLoop
+	adr r0,SMSFrameRun
 	cmpne r4,#HW_MEGATECH
-	adreq r0,SYSEFrameLoop
+	adreq r0,SYSEFrameRun
 	cmp r4,#HW_SORDM5
-	adreq r0,SM5FrameLoop
-	str r0,selectedFrameLoop
+	adreq r0,SM5FrameRun
+	str r0,selectedFrameRun
 
 	ldr r0,=Z80OpTable
 	mov r1,#0					;@ SMS

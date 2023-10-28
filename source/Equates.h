@@ -32,7 +32,7 @@
 #define GG_MODE			(0x0004)	// 0=SMS mode, 1=GG mode
 #define SG_MODE			(0x0008)	// 0=SMS mode, 1=SG mode
 #define SC_MODE			(0x0010)	// 0=SMS mode, 1=SC mode
-#define OMV_MODE		(0x0020)	// 0=SMS mode, 1=SC mode
+#define OMV_MODE		(0x0020)	// 0=SMS mode, 1=OMV mode
 #define MD_MODE			(0x0040)	// 0=SMS mode, 1=MegaDrive mode
 #define SGAC_MODE		(0x0080)	// 0=SMS mode, 1=SG-Arcade mode
 #define COL_MODE		(0x0100)	// 0=SMS mode, 1=Coleco mode
@@ -52,13 +52,15 @@
 #define AC_CHAMPION_WRESTLING	(0x02)
 #define AC_DOKI_DOKI_PENGUIN	(0x03)
 #define AC_HANG_ON_JR			(0x10)
-#define AC_TRANSFORMER			(0x11)
-#define AC_ASTRO_FLASH			(0x12)
-#define AC_RIDDLE_OF_PYTHAGORAS	(0x13)
-#define AC_OPA_OPA				(0x14)
-#define AC_FANTASY_ZONE_2		(0x15)
-#define AC_TETRIS				(0x16)
-#define AC_MEGUMI_RESCUE		(0x17)
+#define AC_SLAP_SHOOTER			(0x11)
+#define AC_TRANSFORMER			(0x12)
+#define AC_ASTRO_FLASH			(0x13)
+#define AC_RIDDLE_OF_PYTHAGORAS	(0x14)
+#define AC_OPA_OPA				(0x15)
+#define AC_OPA_OPA_N			(0x16)
+#define AC_FANTASY_ZONE_2		(0x17)
+#define AC_TETRIS				(0x18)
+#define AC_MEGUMI_RESCUE		(0x19)
 #define AC_MT_GREAT_GOLF		(0x20)
 #define AC_MT_GREAT_SOCCER		(0x21)
 #define AC_MT_OUT_RUN			(0x22)

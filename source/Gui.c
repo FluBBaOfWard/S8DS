@@ -22,6 +22,7 @@
 #include "Cart.h"
 #include "Gfx.h"
 #include "io.h"
+#include "cpu.h"
 #include "Sound.h"
 #include "ARMZ80/Version.h"
 #include "SN76496/Version.h"
@@ -29,7 +30,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2023-10-26"
+#define EMUVERSION "V1.1.7 2023-10-28"
 
 #define ENABLE_LIVE_UI		(1<<12)
 
@@ -413,6 +414,13 @@ static void uiDipSwitchesHangOnJr() {
 	drawSubItem("Time Adj:",difficultyTxt[(dipSwitch1>>3) & 3]);
 }
 
+static void uiDipSwitchesSlapShooter() {
+	setupSysEMenu();
+//	drawSubItem("Demo sound:",autoTxt[dipSwitch1 & 1]);
+//	drawSubItem("Enemies:",difficultyTxt[(dipSwitch1>>1) & 3]);
+//	drawSubItem("Time Adj:",difficultyTxt[(dipSwitch1>>3) & 3]);
+}
+
 static void uiDipSwitchesTransformer() {
 	setupSysEMenu();
 	drawSubItem("2 Player:",autoTxt[dipSwitch1 & 1]);
@@ -477,7 +485,7 @@ void ui11() {
 		ds = 14;
 	} else if (gArcadeGameSet == AC_RIDDLE_OF_PYTHAGORAS) {
 		ds = 15;
-	} else if (gArcadeGameSet == AC_OPA_OPA) {
+	} else if (gArcadeGameSet == AC_OPA_OPA || gArcadeGameSet == AC_OPA_OPA_N) {
 		ds = 16;
 	} else if (gArcadeGameSet == AC_FANTASY_ZONE_2) {
 		ds = 17;
@@ -1401,7 +1409,7 @@ void resetGame() {
 }
 
 void stepFrame() {
-	run();
+	runFrame();
 }
 //---------------------------------------------------------------------------------
 /// Switch between Player 1 & Player 2 controls

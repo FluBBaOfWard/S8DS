@@ -1211,42 +1211,42 @@ scrolLoop2:
 
 
 
-	mov r6,#REG_BASE
-	strh r6,[r6,#REG_DMA0CNT_H]	;@ DMA0 stop
+	mov r8,#REG_BASE
+	strh r8,[r8,#REG_DMA0CNT_H]	;@ DMA0 stop
 
-	add r1,r6,#REG_DMA0SAD
+	add r1,r8,#REG_DMA0SAD
 ;@	mov r2,r2					;@ Setup DMA buffer for scrolling:
-	ldmia r2!,{r4,r5,r7,r8}		;@ Read
-	add r3,r6,#REG_BG0HOFS		;@ DMA0 always goes here
-	stmia r3,{r4-r5,r7,r8}		;@ Set 1st value manually, HBL is AFTER 1st line
+	ldmia r2!,{r4-r7}			;@ Read
+	add r3,r8,#REG_BG0HOFS		;@ DMA0 always goes here
+	stmia r3,{r4-r7}			;@ Set 1st value manually, HBL is AFTER 1st line
 	ldr r4,=0x96600004			;@ noIRQ hblank 32bit repeat incsrc inc_reloaddst, 4 word
 	stmia r1,{r2-r4}			;@ DMA0 go
 
-	add r1,r6,#REG_DMA3SAD
+	add r0,r8,#REG_DMA3SAD
 
-	ldr r2,[vdpptr,#vdpDMAOAMBuffer]	;@ DMA3 src, OAM transfer:
-	mov r3,#OAM					;@ DMA3 dst
-	mov r4,#0x84000000			;@ noIRQ 32bit incsrc incdst
-	orr r4,r4,#0x100			;@ 128 sprites (1024 bytes)
-	stmia r1,{r2-r4}			;@ DMA3 go
+	ldr r1,[vdpptr,#vdpDMAOAMBuffer]	;@ DMA3 src, OAM transfer:
+	mov r2,#OAM					;@ DMA3 dst
+	mov r3,#0x84000000			;@ noIRQ 32bit incsrc incdst
+	orr r3,r3,#0x100			;@ 128 sprites (1024 bytes)
+	stmia r0,{r1-r3}			;@ DMA3 go
 
-	ldr r2,=EMUPALBUFF			;@ DMA3 src, Palette transfer:
-	mov r3,#BG_PALETTE			;@ DMA3 dst
-	mov r4,#0x84000000			;@ noIRQ 32bit incsrc incdst
-	orr r4,r4,#0x100			;@ 256 words (1024 bytes)
-	stmia r1,{r2-r4}			;@ DMA3 go
+	ldr r1,=EMUPALBUFF			;@ DMA3 src, Palette transfer:
+	mov r2,#BG_PALETTE			;@ DMA3 dst
+	mov r3,#0x84000000			;@ noIRQ 32bit incsrc incdst
+	orr r3,r3,#0x100			;@ 256 words (1024 bytes)
+	stmia r0,{r1-r3}			;@ DMA3 go
 
 	ldr r2,[vdpptr,#vdpBgrMapOfs1]
 	add r0,r2,#0x0005
-	strh r0,[r6,#REG_BG0CNT]
+	strh r0,[r8,#REG_BG0CNT]
 	ldr r3,=0x02870102
 	add r0,r2,r3
 	ldr r1,[vdpptr,#vdpBgrTileOfs]
 	add r0,r0,r1,lsr#12
-	strh r0,[r6,#REG_BG1CNT]
-	strh r0,[r6,#REG_BG3CNT]
+	strh r0,[r8,#REG_BG1CNT]
+	strh r0,[r8,#REG_BG3CNT]
 	add r0,r2,r3,lsr#16
-	strh r0,[r6,#REG_BG2CNT]
+	strh r0,[r8,#REG_BG2CNT]
 
 	mov r0,#0x001F
 	ldrb r1,gGfxMask
@@ -1262,17 +1262,17 @@ scrolLoop2:
 	biceq r0,r0,#0x0800
 	bicne r0,r0,#0x0300
 
-	strh r0,[r6,#REG_WININ]
+	strh r0,[r8,#REG_WININ]
 
 	tst r1,#0x20				;@ Column 0 blanked?
 	ldreq r0,Window0HValue_normal
 	ldrne r0,Window0HValue_col0
-	strh r0,[r6,#REG_WIN0H]
+	strh r0,[r8,#REG_WIN0H]
 	ldr r0,Window1HValue
-	strh r0,[r6,#REG_WIN1H]
+	strh r0,[r8,#REG_WIN1H]
 	ldr r0,WindowVValue
-	strh r0,[r6,#REG_WIN0V]
-	strh r0,[r6,#REG_WIN1V]
+	strh r0,[r8,#REG_WIN0V]
+	strh r0,[r8,#REG_WIN1V]
 
 @	ldrh r0,DisplayControl		;@ 1d sprites, Win0, OBJ, BG0/1/2/3 enable. mode0.
 @	orrne r0,r0,#0x6000			;@ Enable Win0 & 1
@@ -1293,15 +1293,15 @@ scrolLoop2:
 hz50Start:
 	mov r0,#5
 hz50Loop0:
-	ldrh r1,[r6,#REG_VCOUNT]
+	ldrh r1,[r8,#REG_VCOUNT]
 	cmp r1,#212
 	beq hz50Loop0
 hz50Loop1:
-	ldrh r1,[r6,#REG_VCOUNT]
+	ldrh r1,[r8,#REG_VCOUNT]
 	cmp r1,#212
 	bne hz50Loop1
 	mov r1,#202
-	strh r1,[r6,#REG_VCOUNT]
+	strh r1,[r8,#REG_VCOUNT]
 	subs r0,r0,#1
 	bne hz50Loop0
 exitVbl:
@@ -1369,6 +1369,7 @@ noEJump:
 
 	mov r8,r3
 	ldr r2,=VDP1
+	ldrb lr,[r2,#vdpYScrollBak1]
 	add r2,r2,#scrollBuff
 	ldr r4,=DMA0Buff
 	subs r3,r3,r7
@@ -1381,63 +1382,64 @@ scrolELoop2:
 	mov r1,r0
 	mov r9,r0
 	ldrb r11,[r2],#1
-//	add r11,r11,r8,lsl#16
+	add r11,r11,lr,lsl#16
 	stmia r4!,{r0-r1,r9,r11}
 	subs r6,r6,r6,lsl#16
 	subcs r6,r6,r6,lsl#16
 	adc r8,r8,#0
+	adc lr,lr,#0
 	adc r2,r2,#0
 	adc r5,r5,#0
 	adcs r3,r3,#1
 	subcs r8,r8,r7
+	subcs lr,lr,r7
 	subs r10,r10,#1
 	bne scrolELoop2
 
 
 
-	ldr r2,=DMA0Buff
-	mov r6,#REG_BASE
-	strh r6,[r6,#REG_DMA0CNT_H]	;@ DMA0 stop
+	mov r8,#REG_BASE
+	strh r8,[r8,#REG_DMA0CNT_H]	;@ DMA0 stop
 
-	add r1,r6,#REG_DMA0SAD
-@	mov r2,r2					;@ Setup DMA buffer for scrolling:
-	ldmia r2!,{r4,r5,r7,r8}		;@ Read
-	add r3,r6,#REG_BG0HOFS		;@ DMA0 always goes here
-	stmia r3,{r4-r5,r7,r8}		;@ Set 1st value manually, HBL is AFTER 1st line
-	ldr r4,=0x96600004			;@ noIRQ hblank 32bit repeat incsrc inc_reloaddst, 4 word
-	stmia r1,{r2-r4}			;@ DMA0 go
+	add r0,r8,#REG_DMA0SAD
+	ldr r1,=DMA0Buff			;@ Setup DMA buffer for scrolling:
+	ldmia r1!,{r3-r6}			;@ Read
+	add r2,r8,#REG_BG0HOFS		;@ DMA0 always goes here
+	stmia r2,{r3-r6}			;@ Set 1st value manually, HBL is AFTER 1st line
+	ldr r3,=0x96600004			;@ noIRQ hblank 32bit repeat incsrc inc_reloaddst, 4 word
+	stmia r0,{r1-r3}			;@ DMA0 go
 
-	add r1,r6,#REG_DMA3SAD
+	add r0,r8,#REG_DMA3SAD
 
-	ldr r2,[vdpptr,#vdpDMAOAMBuffer]	;@ DMA3 src, OAM transfer:
-	mov r3,#OAM					;@ DMA3 dst
-	mov r4,#0x84000000			;@ noIRQ 32bit incsrc incdst
-	orr r4,r4,#0x100			;@ 128 sprites (1024 bytes)
-	stmia r1,{r2-r4}			;@ DMA3 go
+	ldr r1,[vdpptr,#vdpDMAOAMBuffer]	;@ DMA3 src, OAM transfer:
+	mov r2,#OAM					;@ DMA3 dst
+	mov r3,#0x84000000			;@ noIRQ 32bit incsrc incdst
+	orr r3,r3,#0x100			;@ 128 sprites (1024 bytes)
+	stmia r0,{r1-r3}			;@ DMA3 go
 
-	ldr r2,=EMUPALBUFF			;@ DMA3 src, Palette transfer:
-	mov r3,#BG_PALETTE			;@ DMA3 dst
-	mov r4,#0x84000000			;@ noIRQ 32bit incsrc incdst
-	orr r4,r4,#0x100			;@ 256 words (1024 bytes)
-	stmia r1,{r2-r4}			;@ DMA3 go
+	ldr r1,=EMUPALBUFF			;@ DMA3 src, Palette transfer:
+	mov r2,#BG_PALETTE			;@ DMA3 dst
+	mov r3,#0x84000000			;@ noIRQ 32bit incsrc incdst
+	orr r3,r3,#0x100			;@ 256 words (1024 bytes)
+	stmia r0,{r1-r3}			;@ DMA3 go
 
 	ldr r2,[vdpptr,#vdpBgrMapOfs1]
 	add r0,r2,#0x0005
-	strh r0,[r6,#REG_BG0CNT]
+	strh r0,[r8,#REG_BG0CNT]
 	ldr r3,=0x02870102
 	add r0,r2,r3
 	ldr r1,[vdpptr,#vdpBgrTileOfs]
 	add r0,r0,r1,lsr#12
-	strh r0,[r6,#REG_BG1CNT]
+	strh r0,[r8,#REG_BG1CNT]
 
 	ldr r11,=VDP1
 	ldr r2,[r11,#vdpBgrMapOfs1]
 	ldr r1,[r11,#vdpBgrTileOfs]
 	add r0,r2,r3
 	add r0,r0,r1,lsr#12
-	strh r0,[r6,#REG_BG3CNT]
+	strh r0,[r8,#REG_BG3CNT]
 	add r0,r2,r3,lsr#16
-	strh r0,[r6,#REG_BG2CNT]
+	strh r0,[r8,#REG_BG2CNT]
 
 	mov r0,#0x001F
 	ldrb r1,gGfxMask
@@ -1456,17 +1458,17 @@ scrolELoop2:
 //	biceq r0,r0,#0x0800
 //	bicne r0,r0,#0x0700
 
-	strh r0,[r6,#REG_WININ]
+	strh r0,[r8,#REG_WININ]
 
 	tst r1,#0x20				;@ Column 0 blanked?
 	ldreq r0,Window0HValue_normal
 	ldrne r0,Window0HValue_col0
-	strh r0,[r6,#REG_WIN0H]
+	strh r0,[r8,#REG_WIN0H]
 	ldr r0,Window1HValue
-	strh r0,[r6,#REG_WIN1H]
+	strh r0,[r8,#REG_WIN1H]
 	ldr r0,WindowVValue
-	strh r0,[r6,#REG_WIN0V]
-	strh r0,[r6,#REG_WIN1V]
+	strh r0,[r8,#REG_WIN0V]
+	strh r0,[r8,#REG_WIN1V]
 
 	blx scanKeys
 	ldmfd sp!,{r4-r11,pc}

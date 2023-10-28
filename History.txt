@@ -2,10 +2,14 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.7 - 2023-10-26 (FluBBa)
+V1.1.7 - 2023-10-28 (FluBBa)
+	Added support for "Megumi Rescue" on System-E.
+	Added support for "Opa Opa unencrypted" on System-E.
+	Added support for "Slap Shooter" on System-E.
+	Added new debug menu.
 	Fixed envelope handling on the AY38910.
 	Fixed pause on older Sega machines (again).
-	Added support for "Megumi Rescue" on System-E.
+	Better menu traversing.
 
 V1.1.6 - 2021-10-18 (FluBBa)
 	Fixed load/save state for Coleco.
