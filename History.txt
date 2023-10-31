@@ -2,10 +2,12 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.7 - 2023-10-28 (FluBBa)
+V1.1.7 - 2023-10-31 (FluBBa)
 	Added support for "Megumi Rescue" on System-E.
 	Added support for "Opa Opa unencrypted" on System-E.
 	Added support for "Slap Shooter" on System-E.
+	Added support for "Super Derby (satellite board)" on SG-AC (not working).
+	Added support for "Super Derby II (satellite board)" on SG-AC (not working).
 	Added new debug menu.
 	Fixed envelope handling on the AY38910.
 	Fixed pause on older Sega machines (again).

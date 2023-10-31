@@ -51,6 +51,8 @@
 #define AC_CHAMPION_BOXING		(0x01)
 #define AC_CHAMPION_WRESTLING	(0x02)
 #define AC_DOKI_DOKI_PENGUIN	(0x03)
+#define AC_SUPER_DERBY			(0x04)
+#define AC_SUPER_DERBY_II		(0x05)
 #define AC_HANG_ON_JR			(0x10)
 #define AC_SLAP_SHOOTER			(0x11)
 #define AC_TRANSFORMER			(0x12)

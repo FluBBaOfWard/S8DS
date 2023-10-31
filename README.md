@@ -88,8 +88,6 @@ better 3D effect, I have only tested with red/cyan glasses.
   * GG Border: Lets you change between black, bordercolor and none.
   * Perfect Sprites: Uses a bit more cpu but is worth it.
   * 3D Display: Terminator vs Robocop needs this off.
-  * Disable Background: Turn on/off background rendering.
-  * Disable Sprites: Turn on/off sprite rendering.
 * Machine:
   * Region: Change the region of the SMS and video standard.
   * Machine: Here you can select the hardware, Auto should work for most games.
@@ -116,8 +114,12 @@ better 3D effect, I have only tested with red/cyan glasses.
    screen when menu is not active.
   * Emulator on Bottom: Select if top or bottom screen should be used for
    emulator, when menu is active emulator screen is allways on top.
-  * Debug Output: Toggle fps meter & more.
   * Autosleep: Change the autosleep time, also see Sleep. !!!DoesntWork!!!
+* Debug:
+  * Debug Output: Toggle fps meter & more.
+  * Disable Background: Turn on/off background rendering.
+  * Disable Sprites: Turn on/off sprite rendering.
+  * Step Frame: Emulate one frame.
 * Dipswitches: For arcade games
 
 ### About
@@ -126,27 +128,37 @@ Some dumb info...
 
 ## Arcade roms
 
+## MegaTech
+
 * After Burner MT - mt_aftrb.zip
 * Alien Syndrom MT - mt_asyn.zip
 * Astro Warrior MT - mt_astro.zip
 * Fantasy Zone MT - mt_fz.zip
 * Great Football MT - mt_gfoot.zip
 * Great Golf MT - mt_ggolf.zip
-* Great Soccer MT - mt_gsocr.zip
+* Great Soccer MT - mt_gsocr.zip (bad dump)
 * Out Run MT - mt_orun.zip
 * Parlour Games MT - mt_parlg.zip
 * Shinobi MT - mt_shnbi.zip
 
+## SG AC
+
 * Champion Boxing SG-AC - chboxing.zip
 * Champion Wrestling SG-AC - chwrestl.zip (encrypted)
 * Doki Doki Penguin SG-AC - dokidoki.zip
+* Super Derby (satellite board) SG-AC - sderbys (not working)
+* Super Derby II (satellite board) SG-AC - sderby2s (not working)
+
+## System-E
 
 * Astro Flash System-E - astrofl.zip (encrypted)
 * Fantasy Zone 2 System-E - fantzn2.zip (encrypted)
 * Hang On Jr System-E - hangonjr.zip
 * Megumi Rescue System-E - megrescu.zip
 * Opa Opa System-E - opaopa.zip (encrypted)
+* Opa Opa System-E - opaopan.zip
 * Riddle Of Pythagoras System-E - ridleofp.zip
+* Slap Shooter System-E - slapshtr.zip
 * Tetris System-E - tetrisse.zip
 * Transformer System-E - transfrm.zip
 
@@ -163,6 +175,6 @@ The crew at PocketHeaven for their support.
 
 Fredrik Ahlström
 
-Twitter/X @TheRealFluBBa
+X/Twitter @TheRealFluBBa
 
 http://www.github.com/FluBBaOfWard

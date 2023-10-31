@@ -30,7 +30,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2023-10-28"
+#define EMUVERSION "V1.1.7 2023-10-31"
 
 #define ENABLE_LIVE_UI		(1<<12)
 
