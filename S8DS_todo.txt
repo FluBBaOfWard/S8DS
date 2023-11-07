@@ -1,8 +1,6 @@
 S8DS To do
 ------------
 
-	Use new Arcade rom loading instead of RomLoading.c!
-
 	Games that crash the emulator when machine is set to 'auto' :
 	Master of darkness
 	Vampire

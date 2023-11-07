@@ -42,7 +42,7 @@ Put your games on your flash card, max 768 games per folder (though shouldn't
 be a problem if you separate SMS, GG, SG & Coleco games into different
 folders). Filenames must not be longer than 127 chars. You can use zipped
 files (as long as they use the deflate compression). The emulator should also
-recognise SMS games for SEGAs MegaTech arcade machine, 3 of the SG-1000 arcade
+recognise SMS games for SEGAs MegaTech arcade machine, the SG-1000 arcade
 games and System-E (using MAME zip files).
 
 The GUI is accessed by pressing L+R (shoulder buttons) or by touching the
@@ -128,7 +128,7 @@ Some dumb info...
 
 ## Arcade roms
 
-## MegaTech
+### MegaTech
 
 * After Burner MT - mt_aftrb.zip
 * Alien Syndrom MT - mt_asyn.zip
@@ -141,7 +141,7 @@ Some dumb info...
 * Parlour Games MT - mt_parlg.zip
 * Shinobi MT - mt_shnbi.zip
 
-## SG AC
+### SG AC
 
 * Champion Boxing SG-AC - chboxing.zip
 * Champion Wrestling SG-AC - chwrestl.zip (encrypted)
@@ -149,7 +149,7 @@ Some dumb info...
 * Super Derby (satellite board) SG-AC - sderbys (not working)
 * Super Derby II (satellite board) SG-AC - sderby2s (not working)
 
-## System-E
+### System-E
 
 * Astro Flash System-E - astrofl.zip (encrypted)
 * Fantasy Zone 2 System-E - fantzn2.zip (encrypted)
@@ -177,4 +177,4 @@ Fredrik Ahlström
 
 X/Twitter @TheRealFluBBa
 
-http://www.github.com/FluBBaOfWard
+https://www.github.com/FluBBaOfWard

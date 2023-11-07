@@ -6,11 +6,7 @@
 #include "PPI8255/PPI8255.i"
 #include "Shared/EmuMenu.i"
 
-	.global ioReset
-	.global refreshEMUjoypads
-	.global convertInput
-	.global Z80In
-	.global Z80Out
+	.extern sdscHandler
 
 	.global joyCfg
 	.global inputHW
@@ -29,6 +25,18 @@
 	.global coinCounter1
 	.global dipSwitch0
 	.global dipSwitch1
+
+	.global ioReset
+	.global refreshEMUjoypads
+	.global convertInput
+	.global Z80In
+	.global Z80Out
+	.global ExtIO_0_SMS_R
+	.global ExtIO_1_SMS_R
+	.global IOCtrl_SMS_W
+	.global SDSC_Debug_W
+	.global ExternalIO_W
+
 	.global coinCounter0W
 	.global coinCounter1W
 	.global dipSwitch0iR
@@ -45,8 +53,6 @@
 	.global PPI1PortCW
 	.global PPI1PortDW
 	.global IOPortA_R
-
-	.extern sdscHandler
 
 
 	.syntax unified
@@ -242,26 +248,6 @@ IO_Params_Coleco_W:
 	.long 0x00C000E0, setJoystickWrite	;@ 0xC0-0xDF
 	.long 0x00E000E0, SN76496_W			;@ 0xE0-0xFF
 	.long 0x00000000, empty_W			;@ 0x00-0x7F
-
-;@----------------------------------------------------------------------------
-;@ MegaTech
-IO_Params_MT_R:
-	.long 0x004000C1, MTVDPVCounterR	;@ 0x40-0x7E
-	.long 0x004100C1, MTVDPHCounterR	;@ 0x41-0x7F
-	.long 0x008000C1, MTVDPDataR		;@ 0x80-0xBE
-	.long 0x008100C1, MTVDPStatR		;@ 0x81-0xBF
-	.long 0x00C000C1, ExtIO_0_SMS_R		;@ 0xC0-0xFE
-	.long 0x00C100C1, ExtIO_1_SMS_R		;@ 0xC1-0xFF
-	.long 0x00000000, empty_R			;@ 0x00-0x3F
-IO_Params_MT_W:
-	.long 0x000000C1, MemCtrl_SMS_W		;@ 0x00-0x3E
-	.long 0x000100C1, IOCtrl_SMS_W		;@ 0x01-0x3F
-	.long 0x004000C0, SN76496_W			;@ 0x40-0x7F
-	.long 0x008000C1, MTVDPDataW		;@ 0x80-0xBE
-	.long 0x008100C1, MTVDPCtrlW		;@ 0x81-0xBF
-	.long 0x00FD00FF, SDSC_Debug_W		;@ 0xFD
-	.long 0x00C000C0, ExternalIO_W		;@ 0xC0-0xFF
-	.long 0x00000000, empty_W			;@
 
 emptyReadPtr:
 	.long empty_R

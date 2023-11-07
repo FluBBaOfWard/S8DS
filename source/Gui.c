@@ -30,7 +30,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2023-10-31"
+#define EMUVERSION "V1.1.7 2023-11-07"
 
 #define ENABLE_LIVE_UI		(1<<12)
 
@@ -127,6 +127,7 @@ static void uiDipSwitches(void);
 static void touchConsoleSet(void);
 static void uiDipSwitchesSGAC(void);
 static void uiDipSwitchesHangOnJr(void);
+static void uiDipSwitchesSlapShooter(void);
 static void uiDipSwitchesTransformer(void);
 static void uiDipSwitchesPythagoras(void);
 static void uiDipSwitchesOpaOpa(void);
@@ -136,38 +137,39 @@ static void uiDipSwitchesMegumiRescue(void);
 static void uiDipSwitchesMegaTech(void);
 
 static void ui11(void);
-static void ui21(void);
-static void ui22(void);
+static void ui12(void);
+static void ui13(void);
 
 
-const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
+const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
 
 static const fptr fnList0[] = {uiDummy};
 static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui9};
-static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui11, ui22};
+static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui13, ui12};
 static const fptr fnList3[] = {uiDummy};
 static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
 static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet};
-static const fptr fnList6[] = {countrySet, ui21, ui8, ym2413Set};
+static const fptr fnList6[] = {countrySet, ui11, ui8, ym2413Set};
 static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, touchConsoleSet};
 static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
 static const fptr fnList9[] = {exitEmulator, backOutOfMenu};
 static const fptr fnList10[] = {uiDummy};
-static const fptr fnList11[] = {uiDummy};
-static const fptr fnList12[] = {dip0Set4_2,dip0Set6_1,dip0Set7_1};
-static const fptr fnList13[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_2,dip1Set3_2};
-static const fptr fnList14[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList15[] = {dip0Set0_4,dip0Set4_4,dip1Set0_2,dip1Set3_1,dip1Set5_2};
-static const fptr fnList16[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
-static const fptr fnList19[] = {dip0Set0_4,dip0Set4_4,dip1Set2_2,dip1Set4_2};
-static const fptr fnList20[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
-static const fptr fnList21[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
-static const fptr fnList22[] = {debugTextSet, bgrLayerSet, sprLayerSet, stepFrame};
-const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21,fnList22};
-u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21),ARRSIZE(fnList22)};
-const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech,uiSelectMachine,uiDebug};
+static const fptr fnList11[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
+static const fptr fnList12[] = {debugTextSet, bgrLayerSet, sprLayerSet, stepFrame};
+static const fptr fnList13[] = {uiDummy};
+static const fptr fnList14[] = {dip0Set4_2,dip0Set6_1,dip0Set7_1};
+static const fptr fnList15[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_2,dip1Set3_2};
+static const fptr fnList16[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1};
+static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
+static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set0_2,dip1Set3_1,dip1Set5_2};
+static const fptr fnList19[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
+static const fptr fnList20[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
+static const fptr fnList21[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
+static const fptr fnList22[] = {dip0Set0_4,dip0Set4_4,dip1Set2_2,dip1Set4_2};
+static const fptr fnList23[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
+const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21,fnList22,fnList23};
+u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21),ARRSIZE(fnList22),ARRSIZE(fnList23)};
+const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiSelectMachine,uiDebug,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesSlapShooter,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech};
 
 static int sdscPtr = 0;
 static char sdscBuffer[80];
@@ -381,7 +383,7 @@ void uiDebug() {
 
 static void uiBios() {
 	setupSubMenu("Bios Settings");
-	drawSubItem("Use BIOS:",biosTxt[(gConfigSet>>7)&1]);
+	drawSubItem("Use BIOS:", biosTxt[(gConfigSet>>7)&1]);
 	drawMenuItem(" Select Export Bios ->");
 	drawMenuItem(" Select Japanese Bios ->");
 	drawMenuItem(" Select GameGear Bios ->");
@@ -396,116 +398,116 @@ static void uiDipSwitches() {
 
 static void uiDipSwitchesSGAC() {
 	setupSubMenu("Dip Switches");
-	drawSubItem("Coin slot 1:",creditsSGTxt[(dipSwitch0>>4) & 3]);
-	drawSubItem("Demo sound:",autoTxt[(dipSwitch0>>6) & 1]);
-	drawSubItem("Language:",languageTxt[((dipSwitch0>>7) & 1) + 1]);
+	drawSubItem("Coin slot 1:", creditsSGTxt[(dipSwitch0>>4) & 3]);
+	drawSubItem("Demo sound:", autoTxt[(dipSwitch0>>6) & 1]);
+	drawSubItem("Language:", languageTxt[((dipSwitch0>>7) & 1) + 1]);
 }
 
 static void setupSysEMenu() {
 	setupSubMenu("Dip Switches");
-	drawSubItem("Coin slot 1:",sysECreditsTxt[dipSwitch0 & 0xF]);
-	drawSubItem("Coin slot 2:",sysECreditsTxt[(dipSwitch0>>4) & 0xF]);
+	drawSubItem("Coin slot 1:", sysECreditsTxt[dipSwitch0 & 0xF]);
+	drawSubItem("Coin slot 2:", sysECreditsTxt[(dipSwitch0>>4) & 0xF]);
 }
 
 static void uiDipSwitchesHangOnJr() {
 	setupSysEMenu();
-	drawSubItem("Demo sound:",autoTxt[dipSwitch1 & 1]);
-	drawSubItem("Enemies:",difficultyTxt[(dipSwitch1>>1) & 3]);
-	drawSubItem("Time Adj:",difficultyTxt[(dipSwitch1>>3) & 3]);
+	drawSubItem("Demo sound:", autoTxt[dipSwitch1 & 1]);
+	drawSubItem("Enemies:", difficultyTxt[(dipSwitch1>>1) & 3]);
+	drawSubItem("Time Adj:", difficultyTxt[(dipSwitch1>>3) & 3]);
 }
 
 static void uiDipSwitchesSlapShooter() {
 	setupSysEMenu();
-//	drawSubItem("Demo sound:",autoTxt[dipSwitch1 & 1]);
-//	drawSubItem("Enemies:",difficultyTxt[(dipSwitch1>>1) & 3]);
-//	drawSubItem("Time Adj:",difficultyTxt[(dipSwitch1>>3) & 3]);
+	drawSubItem("Demo sound:", autoTxt[(dipSwitch1>>1) & 1]);
 }
 
 static void uiDipSwitchesTransformer() {
 	setupSysEMenu();
-	drawSubItem("2 Player:",autoTxt[dipSwitch1 & 1]);
-	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Lives:",livesTxt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Bonus Life:",bonusTxt[(dipSwitch1>>4) & 3]);
+	drawSubItem("2 Player:", autoTxt[dipSwitch1 & 1]);
+	drawSubItem("Demo sound:", autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Lives:", livesTxt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Bonus Life:", bonusTxt[(dipSwitch1>>4) & 3]);
 	drawSubItem("Difficulty:", difficultyTrTxt[(dipSwitch1>>6) & 3]);
 }
 
 static void uiDipSwitchesPythagoras() {
 	setupSysEMenu();
-	drawSubItem("Lives:",livesTxt[dipSwitch1 & 3]);
-	drawSubItem("Ball Speed:",difficultyTxt[(dipSwitch1>>2) & 2]);
-	drawSubItem("Bonus Life:",bonusPyTxt[(dipSwitch1>>5) & 3]);
+	drawSubItem("Lives:", livesTxt[dipSwitch1 & 3]);
+	drawSubItem("Ball Speed:", difficultyTxt[(dipSwitch1>>2) & 2]);
+	drawSubItem("Bonus Life:", bonusPyTxt[(dipSwitch1>>5) & 3]);
 }
 
 static void uiDipSwitchesOpaOpa() {
 	setupSysEMenu();
-	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Lives:",livesFZ2Txt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Bonus Life:",bonusOpaTxt[(dipSwitch1>>4) & 3]);
+	drawSubItem("Demo sound:", autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Lives:", livesFZ2Txt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Bonus Life:", bonusOpaTxt[(dipSwitch1>>4) & 3]);
 	drawSubItem("Difficulty:", difficultyFZ2Txt[(dipSwitch1>>6) & 3]);
 }
 
 static void uiDipSwitchesFantasyZone2() {
 	setupSysEMenu();
 	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
-	drawSubItem("Lives:",livesFZ2Txt[(dipSwitch1>>2) & 3]);
-	drawSubItem("Timer:",timerTxt[(dipSwitch1>>4) & 3]);
+	drawSubItem("Lives:", livesFZ2Txt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Timer:", timerTxt[(dipSwitch1>>4) & 3]);
 	drawSubItem("Difficulty:", difficultyFZ2Txt[(dipSwitch1>>6) & 3]);
 }
 
 static void uiDipSwitchesTetris() {
 	setupSysEMenu();
-	drawSubItem("Demo sound:",autoTxt[(dipSwitch1>>1) & 1]);
+	drawSubItem("Demo sound:", autoTxt[(dipSwitch1>>1) & 1]);
 	drawSubItem("Difficulty:", difficultyFZ2Txt[(dipSwitch1>>4) & 3]);
 }
 
 static void uiDipSwitchesMegumiRescue() {
 	setupSysEMenu();
-	drawSubItem("Lives:",livesMRTxt[(dipSwitch1>>2) & 3]);
+	drawSubItem("Lives:", livesMRTxt[(dipSwitch1>>2) & 3]);
 	drawSubItem("Cabinet:", cabinetTxt[(dipSwitch1>>4) & 1]);
 }
 
 static void uiDipSwitchesMegaTech() {
 	setupSubMenu("Dip Switches");
-	drawSubItem("Coin slot 1:",mtCoin1Txt[~dipSwitch1 & 0xF]);
-	drawSubItem("Coin slot 2:",mtCoin2Txt[~(dipSwitch0>>5) & 0x7]);
-	drawSubItem("Coin slot 3:",mtAcceptTxt[(dipSwitch0>>1) & 0x1]);
-	drawSubItem("Coin slot 4:",mtAcceptTxt[(dipSwitch0) & 0x1]);
-	drawSubItem("Coin slot 3/4:",mtCoin3Txt[(dipSwitch0>>2) & 0x7]);
+	drawSubItem("Coin slot 1:", mtCoin1Txt[~dipSwitch1 & 0xF]);
+	drawSubItem("Coin slot 2:", mtCoin2Txt[~(dipSwitch0>>5) & 0x7]);
+	drawSubItem("Coin slot 3:", mtAcceptTxt[(dipSwitch0>>1) & 0x1]);
+	drawSubItem("Coin slot 4:", mtAcceptTxt[(dipSwitch0) & 0x1]);
+	drawSubItem("Coin slot 3/4:", mtCoin3Txt[(dipSwitch0>>2) & 0x7]);
 	drawSubItem("Time per credit:", mtTimerTxt[(dipSwitch1>>4) & 0xF]);
 }
 
-void ui11() {
-	int ds = 11;
+void ui13() {
+	int ds = 13;
 	if (gArcadeGameSet == AC_CHAMPION_BOXING || gArcadeGameSet == AC_CHAMPION_WRESTLING || gArcadeGameSet == AC_DOKI_DOKI_PENGUIN) {
-		ds = 12;
-	} else if (gArcadeGameSet == AC_HANG_ON_JR) {
-		ds = 13;
-	} else if (gArcadeGameSet == AC_TRANSFORMER || gArcadeGameSet == AC_ASTRO_FLASH) {
 		ds = 14;
-	} else if (gArcadeGameSet == AC_RIDDLE_OF_PYTHAGORAS) {
+	} else if (gArcadeGameSet == AC_HANG_ON_JR) {
 		ds = 15;
-	} else if (gArcadeGameSet == AC_OPA_OPA || gArcadeGameSet == AC_OPA_OPA_N) {
+	} else if (gArcadeGameSet == AC_SLAP_SHOOTER) {
 		ds = 16;
-	} else if (gArcadeGameSet == AC_FANTASY_ZONE_2) {
+	} else if (gArcadeGameSet == AC_TRANSFORMER || gArcadeGameSet == AC_ASTRO_FLASH) {
 		ds = 17;
-	} else if (gArcadeGameSet == AC_TETRIS) {
+	} else if (gArcadeGameSet == AC_RIDDLE_OF_PYTHAGORAS) {
 		ds = 18;
-	} else if (gArcadeGameSet == AC_MEGUMI_RESCUE) {
+	} else if (gArcadeGameSet == AC_OPA_OPA || gArcadeGameSet == AC_OPA_OPA_N) {
 		ds = 19;
-	} else if (gEmuFlags & MT_MODE || gMachine == HW_MEGATECH) {
+	} else if (gArcadeGameSet == AC_FANTASY_ZONE_2) {
 		ds = 20;
+	} else if (gArcadeGameSet == AC_TETRIS) {
+		ds = 21;
+	} else if (gArcadeGameSet == AC_MEGUMI_RESCUE) {
+		ds = 22;
+	} else if (gEmuFlags & MT_MODE || gMachine == HW_MEGATECH) {
+		ds = 23;
 	}
 
 	enterMenu(ds);
 }
-void ui21() {
-	enterMenu(21);
+void ui11() {
+	enterMenu(11);
 	selected = gMachineSet;
 }
 
-void ui22() {
-	enterMenu(22);
+void ui12() {
+	enterMenu(12);
 }
 
 void nullUINormal(int keyHit) {

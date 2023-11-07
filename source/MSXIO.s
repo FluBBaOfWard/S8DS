@@ -3,9 +3,10 @@
 #include "AY38910/AY38910.i"
 #include "PPI8255/PPI8255.i"
 
-	.global msxReset
 	.global IO_Params_MSX_R
 	.global IO_Params_MSX_W
+
+	.global msxReset
 	.global MSXJoyReadCallBack
 
 	.syntax unified

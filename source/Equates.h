@@ -74,4 +74,3 @@
 #define AC_MT_KUNG_FU_KID		(0x28)
 #define AC_MT_GREAT_FOOTBALL	(0x29)
 #define AC_MT_PARLOUR_GAMES		(0x2A)
-

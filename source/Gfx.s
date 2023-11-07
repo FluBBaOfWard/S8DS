@@ -1337,13 +1337,19 @@ SysEVBlHandler:
 
 	ldr vdpptr,=VDP0
 	ldrb r3,[vdpptr,#vdpYScrollBak1]
-	ldr r7,[vdpptr,#vdpScrollMask]
 	add r5,vdpptr,#scrollBuff
-	ldr r4,=yStart
-	ldrsb r4,[r4]
-	add r5,r5,r4
-	adds r3,r3,r4
-	addmi r3,r3,r7
+	ldr r7,=VDP1
+	ldrb lr,[r7,#vdpYScrollBak1]
+	add r7,r7,#scrollBuff
+
+	ldr r0,=yStart
+	ldrsb r0,[r0]
+	add r7,r7,r0
+	adds lr,lr,r0
+	addmi lr,lr,#224
+	add r5,r5,r0
+	adds r3,r3,r0
+	addmi r3,r3,#224
 
 	ldr r6,bgScaleValue
 	mul r1,r6,r3
@@ -1367,32 +1373,34 @@ noEJump:
 	cmp r1,#0
 	subne r6,r6,r6,lsl#16
 
+	mov r2,lr
 	mov r8,r3
-	ldr r2,=VDP1
-	ldrb lr,[r2,#vdpYScrollBak1]
-	add r2,r2,#scrollBuff
 	ldr r4,=DMA0Buff
-	subs r3,r3,r7
-	subpl r3,r3,r7
-	subpl r8,r8,r7
+	subs lr,lr,#224
+	subpl lr,lr,#224
+	subpl r2,r2,#224
+	subs r3,r3,#224
+	subpl r3,r3,#224
+	subpl r8,r8,#224
 	mov r10,#SCREEN_HEIGHT
 scrolELoop2:
 	ldrb r0,[r5],#1
 	add r0,r0,r8,lsl#16
 	mov r1,r0
 	mov r9,r0
-	ldrb r11,[r2],#1
-	add r11,r11,lr,lsl#16
+	ldrb r11,[r7],#1
+	add r11,r11,r2,lsl#16
 	stmia r4!,{r0-r1,r9,r11}
 	subs r6,r6,r6,lsl#16
 	subcs r6,r6,r6,lsl#16
 	adc r8,r8,#0
-	adc lr,lr,#0
 	adc r2,r2,#0
+	adc r7,r7,#0
 	adc r5,r5,#0
 	adcs r3,r3,#1
-	subcs r8,r8,r7
-	subcs lr,lr,r7
+	subcs r8,r8,#224
+	adcs lr,lr,#1
+	subcs r2,r2,#224
 	subs r10,r10,#1
 	bne scrolELoop2
 

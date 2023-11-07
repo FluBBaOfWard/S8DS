@@ -4,6 +4,9 @@
 #include "PPI8255/PPI8255.i"
 #include "CXD1095Q/CXD1095Q.i"
 
+	.global IO_Params_MT_R
+	.global IO_Params_MT_W
+
 	.global megaTechReset
 	.global MTIORead
 	.global MTIOWrite
@@ -21,6 +24,26 @@
 
 	.section .text
 	.align 2
+;@----------------------------------------------------------------------------
+;@ MegaTech
+IO_Params_MT_R:
+	.long 0x004000C1, MTVDPVCounterR	;@ 0x40-0x7E
+	.long 0x004100C1, MTVDPHCounterR	;@ 0x41-0x7F
+	.long 0x008000C1, MTVDPDataR		;@ 0x80-0xBE
+	.long 0x008100C1, MTVDPStatR		;@ 0x81-0xBF
+	.long 0x00C000C1, ExtIO_0_SMS_R		;@ 0xC0-0xFE
+	.long 0x00C100C1, ExtIO_1_SMS_R		;@ 0xC1-0xFF
+	.long 0x00000000, empty_R			;@ 0x00-0x3F
+IO_Params_MT_W:
+	.long 0x000000C1, MemCtrl_SMS_W		;@ 0x00-0x3E
+	.long 0x000100C1, IOCtrl_SMS_W		;@ 0x01-0x3F
+	.long 0x004000C0, SN76496_W			;@ 0x40-0x7F
+	.long 0x008000C1, MTVDPDataW		;@ 0x80-0xBE
+	.long 0x008100C1, MTVDPCtrlW		;@ 0x81-0xBF
+	.long 0x00FD00FF, SDSC_Debug_W		;@ 0xFD
+	.long 0x00C000C0, ExternalIO_W		;@ 0xC0-0xFF
+	.long 0x00000000, empty_W			;@
+
 ;@----------------------------------------------------------------------------
 megaTechReset:
 ;@----------------------------------------------------------------------------
@@ -148,7 +171,7 @@ MDGameR:
 	ldr r1,[r1]
 	ldrb r0,cartSelectReg
 	and r0,r0,#0x7
-	add r1,r1,r0,lsl#15		//32kB rom
+	add r1,r1,r0,lsl#15		// 32kB rom
 	ldrb r0,[r1,addy]
 	bx lr
 ;@----------------------------------------------------------------------------
@@ -157,7 +180,7 @@ BankedRAMR:
 	ldr r1,=EMU_SRAM
 	ldrb r0,cartSelectReg
 	and r0,r0,#0x7
-	add r1,r1,r0,lsl#12		//4kB page
+	add r1,r1,r0,lsl#12		// 4kB page
 	ldrb r0,[r1,addy]
 	bx lr
 ;@----------------------------------------------------------------------------
@@ -166,7 +189,7 @@ BankedRAMW:
 	ldr r1,=EMU_SRAM
 	ldrb r2,cartSelectReg
 	and r2,r2,#0x7
-	add r1,r1,r2,lsl#12		//4kB page
+	add r1,r1,r2,lsl#12		// 4kB page
 	strb r0,[r1,addy]
 	bx lr
 
