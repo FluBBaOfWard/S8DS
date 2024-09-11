@@ -69,7 +69,7 @@ soundReset:
 	cmpne r4,#HW_SGAC
 	cmpne r4,#HW_SC3000
 	cmpne r4,#HW_OMV
-	cmpne r4,#HW_SG1000II
+	cmpne r4,#HW_SG1000II	;@ ?
 	cmpne r4,#HW_COLECO
 	mov r0,#0
 	moveq r0,#1
@@ -86,7 +86,7 @@ noSysE:
 	ldmfd sp!,{r4,lr}
 	bx lr
 isMSX:
-	ldr sccptr,=SCC_0
+	ldr r0,=SCC_0
 	bl SCCReset
 	ldr r4,=AY38910_0
 	mov r0,r4
@@ -140,13 +140,12 @@ setMuteSoundGame:			;@ For System E ?
 ;@----------------------------------------------------------------------------
 VblSound2:					;@ r0=length, r1=pointer
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r0,r1,r4,r5,lr}
-
 	ldr r2,muteSound
 	cmp r2,#0
 	bne silenceMix
 
-	mov r0,r0,lsl#2
+	stmfd sp!,{r0,r1,r4,r5,lr}
+
 	ldr r1,=mixSpace0
 
 	ldr r2,=gMachine
@@ -163,7 +162,6 @@ VblSound2:					;@ r0=length, r1=pointer
 SMSMix:
 	ldr r2,=SN76496_0
 	ldmfd sp,{r0,r1}
-	mov r0,r0,lsl#2
 	bl sn76496Mixer
 
 	ldmfd sp!,{r0,r1,r4,r5,lr}
@@ -175,7 +173,6 @@ sysEMix:
 	bl sn76496Mixer
 addExtraSN76496:
 	ldmfd sp,{r0}
-	mov r0,r0,lsl#2
 	ldr r1,=mixSpace1
 	ldr r2,=SN76496_0
 	bl sn76496Mixer
@@ -201,7 +198,7 @@ mixLoop02:
 ;@----------------------------------------------------------------------------
 YM2413Mix:
 ;@----------------------------------------------------------------------------
-	mov r0,r0,lsl#1
+	mov r0,r0,lsl#3
 	ldr ymptr,=YM2413_0
 	bl YM2413Mixer
 	ldrb r2,SMSJSoundControl
@@ -267,9 +264,8 @@ MSXMix:
 //	cmp r0,#0
 //	noSCC
 	ldmfd sp,{r0}
-	mov r0,r0,lsl#2
 	ldr r1,=mixSpace1
-	ldr sccptr,=SCC_0
+	ldr r2,=SCC_0
 	bl SCCMixer
 //	b mix2Chips
 noSCC:
@@ -279,19 +275,6 @@ noSCC:
 //	ldr r12,soundFilter
 mixLoop01:
 	ldrsh r4,[r2],#2
-	ldrsh r5,[r2],#2
-	add r4,r4,r5
-	ldrsh r5,[r2],#2
-	add r4,r4,r5
-	ldrsh r5,[r2],#2
-	add r4,r4,r5
-
-	ldrsh r5,[r3],#2
-	add r4,r4,r5
-	ldrsh r5,[r3],#2
-	add r4,r4,r5
-	ldrsh r5,[r3],#2
-	add r4,r4,r5
 	ldrsh r5,[r3],#2
 	add r4,r4,r5
 
@@ -299,7 +282,7 @@ mixLoop01:
 //	add r12,r12,r4,lsl#16-3-2
 //	mov r4,r12,lsr#16
 
-	mov r4,r4,lsl#16-3
+	mov r4,r4,lsl#16-1
 	mov r4,r4,lsr#16
 	orr r4,r4,r4,lsl#16
 	subs r0,r0,#1
@@ -311,13 +294,13 @@ mixLoop01:
 	bx lr
 
 silenceMix:
+	mov r12,r0
 	mov r2,#0
 silenceLoop:
-	subs r0,r0,#1
+	subs r12,r12,#1
 	strpl r2,[r1],#4
 	bhi silenceLoop
 
-	ldmfd sp!,{r0,r1,r4,r5,lr}
 	bx lr
 
 soundFilter:
@@ -386,7 +369,7 @@ AY38910Data_0_R:
 SCCWrite_0:
 ;@----------------------------------------------------------------------------
 	mov r1,r12
-	ldr sccptr,=SCC_0
+	ldr r2,=SCC_0
 	b SCCWrite
 ;@----------------------------------------------------------------------------
 muteSound:

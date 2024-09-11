@@ -471,7 +471,7 @@ refreshSMSJoypads:
 	cmpne r1,#HW_SG1000II
 	ldrne vdpptr,=VDP0
 	strbne r0,[vdpptr,#vdpDebouncePin]
-	bleq Z80SetNMIPin
+	bleq Z80SetNMIPinCurrentCpu
 noPause:
 	bl refreshArcadeInput
 	adr addy,rlud2durl

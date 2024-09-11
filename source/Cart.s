@@ -149,6 +149,7 @@ rawRom:
 //	.incbin "col/Spy Hunter (1983-84) (Midway).rom"
 //	.incbin "msx/Bokosuka Wars (1984)(Ascii Corp).rom"
 //	.incbin "msx/Bosconian (1981-84)(Namco Ltd.)(Jp)[a].rom"
+//	.incbin "msx/Boulder Dash (1986)(Orpheus).rom"
 //	.incbin "msx/Bruce Lee (1984)(Datasoft).rom"
 //	.incbin "msx/Goonies, The (1986)(Konami)(Jp)[RC-734].rom"
 //	.incbin "msx/King's Valley (1985)(Konami)(Jp)[a][RC-727].rom"
@@ -956,8 +957,8 @@ mdLoop:
 mdE2:
 	cmp r7,r0
 	bhi mdLoop
-	mov r0,#0
 
+	mov r0,#0
 	add r1,r5,#1				;@ 2?
 	cmp r3,r1
 	movhi r0,#1

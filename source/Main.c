@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 	setupGUI();
 	ejectGame();
 //	loadCart(0);
-	if ( initFileHelper() ) {
+	if (initFileHelper()) {
 		loadSettings();
 		loadUSBIOS();
 		loadJPBIOS();

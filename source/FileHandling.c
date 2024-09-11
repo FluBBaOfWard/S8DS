@@ -103,7 +103,7 @@ int loadNVRAM() {
 }
 int loadSRAM() {
 	FILE *file;
-	char sramName[FILENAMEMAXLENGTH];
+	char sramName[FILENAME_MAX_LENGTH];
 
 	if (findFolder(folderName)) {
 		return 1;
@@ -123,7 +123,7 @@ void saveNVRAM() {
 }
 void saveSRAM() {
 	FILE *file;
-	char sramName[FILENAMEMAXLENGTH];
+	char sramName[FILENAME_MAX_LENGTH];
 
 	if (findFolder(folderName)) {
 		return;
@@ -206,9 +206,9 @@ static bool selectBios(const char *fileTypes, char *dest) {
 	cls(0);
 
 	if (biosName) {
-		strlcpy(dest, currentDir, FILEPATHMAXLENGTH);
-		strlcat(dest, "/", FILEPATHMAXLENGTH);
-		strlcat(dest, biosName, FILEPATHMAXLENGTH);
+		strlcpy(dest, currentDir, FILEPATH_MAX_LENGTH);
+		strlcat(dest, "/", FILEPATH_MAX_LENGTH);
+		strlcat(dest, biosName, FILEPATH_MAX_LENGTH);
 		return true;
 	}
 	return false;
@@ -251,7 +251,7 @@ void selectSORDM5Bios() {
 }
 
 static int loadBIOS(void *dest, const char *fPath, const int maxSize) {
-	char tempString[FILEPATHMAXLENGTH];
+	char tempString[FILEPATH_MAX_LENGTH];
 	char *sPtr;
 
 	strlcpy(tempString, fPath, sizeof(tempString));

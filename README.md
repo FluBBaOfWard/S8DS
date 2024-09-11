@@ -1,4 +1,4 @@
-# S8DS V1.1.7
+# S8DS V1.1.8
 
 This is a SEGA 8Bit emulator for the Nintendo DS(i)/3DS, it support the following systems:
 
@@ -8,6 +8,7 @@ This is a SEGA 8Bit emulator for the Nintendo DS(i)/3DS, it support the followin
 	SEGA Master System J, 1 & 2
 	SEGA Game Gear
 	SEGA System-E
+	Othello Multivision
 	Coleco
 	MSX 1
 	Sord M5
@@ -177,4 +178,4 @@ Fredrik Ahlström
 
 X/Twitter @TheRealFluBBa
 
-https://www.github.com/FluBBaOfWard
+<https://www.github.com/FluBBaOfWard>

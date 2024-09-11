@@ -2,6 +2,8 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
+V1.1.8 - 2024-09-11 (FluBBa)
+
 V1.1.7 - 2023-11-07 (FluBBa)
 	Added support for "Megumi Rescue" on System-E.
 	Added support for "Opa Opa unencrypted" on System-E.

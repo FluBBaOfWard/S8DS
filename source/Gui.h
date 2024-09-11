@@ -17,6 +17,8 @@ void uiNullNormal(void);
 
 void ejectGame(void);
 void sdscHandler(const unsigned char sdscChar);
+void debugIOUnimplR(u16 port);
+void debugIOUnimplW(u8 val, u16 port);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -44,8 +44,8 @@ GRAPHICS	:=	graphics \
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-mthumb -mthumb-interwork -march=armv5te -mtune=arm946e-s
-FLAGS	:= -DARM9 -DNDS -DZ80_LARGE_MAP -DZ80_USE_FAST_MEM
+ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb -mthumb-interwork
+FLAGS	:=	-DARM9 -DNDS -DZ80_LARGE_MAP -DZ80_USE_FAST_MEM -DAY_UPSHIFT=2 -DSCC_UPSHIFT=2
 
 ifeq ($(DEBUG),1)
 	CFLAGS	:=	-gdwarf-2 -Wall -ffast-math $(ARCH)

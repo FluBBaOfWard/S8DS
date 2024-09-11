@@ -30,7 +30,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.7 2023-11-07"
+#define EMUVERSION "V1.1.8 2024-09-11"
 
 #define ENABLE_LIVE_UI		(1<<12)
 
@@ -111,10 +111,8 @@ static void dip1Set6_2(void);
 static void dip1Sub0_4(void);
 static void dip1Set4_4(void);
 
-static void uiFile(void);
 static void uiSettings(void);
 static void uiAbout(void);
-static void uiOptions(void);
 static void uiController(void);
 static void uiDisplay(void);
 static void uiMachine(void);
@@ -141,35 +139,69 @@ static void ui12(void);
 static void ui13(void);
 
 
-const fptr fnMain[] = {nullUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI,subUI};
+static const MItem fnList0[] = {{"",uiDummy}};
+static const MItem fnList1[] = {
+	{"Load Game",selectGame},
+	{"Load State",loadState},
+	{"Save State",saveState},
+	{"Save SRAM",saveNVRAM},
+	{"Save Settings",saveSettings},
+	{"Eject Game",ejectGame},
+	{"Power On/Off",powerOnOff},
+	{"Reset Console",resetGame},
+	{"Quit Emulator",ui9}};
+static const MItem fnList2[] = {
+	{"Controller",ui4},
+	{"Display",ui5},
+	{"Machine",ui6},
+	{"Settings",ui7},
+	{"Dipswitches",ui13},
+	{"Debug",ui12}};
+static const MItem fnList4[] = {{"",autoBSet}, {"",autoASet}, {"",controllerSet}, {"",swapABSet}, {"",joypadSet}, {"",selectSet}, {"",rffSet}};
+static const MItem fnList5[] = {{"",scalingSet}, {"",flickSet}, {"",brightSet}, {"",colorSet}, {"",borderSet}, {"",spriteSet}, {"",glassesSet}};
+static const MItem fnList6[] = {{"",countrySet}, {"",ui11}, {"",ui8}, {"",ym2413Set}};
+static const MItem fnList7[] = {{"",speedSet}, {"",autoStateSet}, {"",autoSettingsSet}, {"",autoNVRAMSet}, {"",autoPauseGameSet}, {"",powerSaveSet}, {"",screenSwapSet}, {"",touchConsoleSet}};
+static const MItem fnList8[] = {{"",biosSet}, {"",selectUSBios}, {"",selectJPBios}, {"",selectGGBios}, {"",selectCOLECOBios}, {"",selectMSXBios}, {"",selectSORDM5Bios}};
+static const MItem fnList9[] = {{"Yes ",exitEmulator}, {"No",backOutOfMenu}};
+static const MItem fnList11[] = {{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine}};
+static const MItem fnList12[] = {{"",debugTextSet}, {"",bgrLayerSet}, {"",sprLayerSet}, {"",stepFrame}};
+static const MItem fnList14[] = {{"",dip0Set4_2},{"",dip0Set6_1},{"",dip0Set7_1}};
+static const MItem fnList15[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set0_1},{"",dip1Set1_2},{"",dip1Set3_2}};
+static const MItem fnList16[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set1_1}};
+static const MItem fnList17[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set0_1},{"",dip1Set1_1},{"",dip1Set2_2},{"",dip1Set4_2},{"",dip1Set6_2}};
+static const MItem fnList18[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set0_2},{"",dip1Set3_1},{"",dip1Set5_2}};
+static const MItem fnList19[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set1_1},{"",dip1Set2_2},{"",dip1Set4_2},{"",dip1Set6_2}};
+static const MItem fnList20[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set1_1},{"",dip1Set2_2},{"",dip1Set4_2},{"",dip1Set6_2}};
+static const MItem fnList21[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set1_1},{"",dip1Set4_2}};
+static const MItem fnList22[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set2_2},{"",dip1Set4_2}};
+static const MItem fnList23[] = {{"",dip1Sub0_4},{"",dip0Sub5_3},{"",dip0Set1_1},{"",dip0Set0_1},{"",dip0Set2_3},{"",dip1Set4_4}};
 
-static const fptr fnList0[] = {uiDummy};
-static const fptr fnList1[] = {selectGame, loadState, saveState, saveSRAM, saveSettings, ejectGame, powerOnOff, resetGame, ui9};
-static const fptr fnList2[] = {ui4, ui5, ui6, ui7, ui13, ui12};
-static const fptr fnList3[] = {uiDummy};
-static const fptr fnList4[] = {autoBSet, autoASet, controllerSet, swapABSet, joypadSet, selectSet, rffSet};
-static const fptr fnList5[] = {scalingSet, flickSet, brightSet, colorSet, borderSet, spriteSet, glassesSet};
-static const fptr fnList6[] = {countrySet, ui11, ui8, ym2413Set};
-static const fptr fnList7[] = {speedSet, autoStateSet, autoSettingsSet, autoNVRAMSet, autoPauseGameSet, powerSaveSet, screenSwapSet, touchConsoleSet};
-static const fptr fnList8[] = {biosSet, selectUSBios, selectJPBios, selectGGBios, selectCOLECOBios, selectMSXBios, selectSORDM5Bios};
-static const fptr fnList9[] = {exitEmulator, backOutOfMenu};
-static const fptr fnList10[] = {uiDummy};
-static const fptr fnList11[] = {selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine,selectMachine};
-static const fptr fnList12[] = {debugTextSet, bgrLayerSet, sprLayerSet, stepFrame};
-static const fptr fnList13[] = {uiDummy};
-static const fptr fnList14[] = {dip0Set4_2,dip0Set6_1,dip0Set7_1};
-static const fptr fnList15[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_2,dip1Set3_2};
-static const fptr fnList16[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1};
-static const fptr fnList17[] = {dip0Set0_4,dip0Set4_4,dip1Set0_1,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList18[] = {dip0Set0_4,dip0Set4_4,dip1Set0_2,dip1Set3_1,dip1Set5_2};
-static const fptr fnList19[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList20[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set2_2,dip1Set4_2,dip1Set6_2};
-static const fptr fnList21[] = {dip0Set0_4,dip0Set4_4,dip1Set1_1,dip1Set4_2};
-static const fptr fnList22[] = {dip0Set0_4,dip0Set4_4,dip1Set2_2,dip1Set4_2};
-static const fptr fnList23[] = {dip1Sub0_4,dip0Sub5_3,dip0Set1_1,dip0Set0_1,dip0Set2_3,dip1Set4_4};
-const fptr *const fnListX[] = {fnList0,fnList1,fnList2,fnList3,fnList4,fnList5,fnList6,fnList7,fnList8,fnList9,fnList10,fnList11,fnList12,fnList13,fnList14,fnList15,fnList16,fnList17,fnList18,fnList19,fnList20,fnList21,fnList22,fnList23};
-u8 menuXItems[] = {ARRSIZE(fnList0),ARRSIZE(fnList1),ARRSIZE(fnList2),ARRSIZE(fnList3),ARRSIZE(fnList4),ARRSIZE(fnList5),ARRSIZE(fnList6),ARRSIZE(fnList7),ARRSIZE(fnList8),ARRSIZE(fnList9),ARRSIZE(fnList10),ARRSIZE(fnList11),ARRSIZE(fnList12),ARRSIZE(fnList13),ARRSIZE(fnList14),ARRSIZE(fnList15),ARRSIZE(fnList16),ARRSIZE(fnList17),ARRSIZE(fnList18),ARRSIZE(fnList19),ARRSIZE(fnList20),ARRSIZE(fnList21),ARRSIZE(fnList22),ARRSIZE(fnList23)};
-const fptr drawUIX[] = {uiNullNormal,uiFile,uiOptions,uiAbout,uiController,uiDisplay,uiMachine,uiSettings,uiBios,uiYesNo,uiDummy,uiSelectMachine,uiDebug,uiDipSwitches,uiDipSwitchesSGAC,uiDipSwitchesHangOnJr,uiDipSwitchesSlapShooter,uiDipSwitchesTransformer,uiDipSwitchesPythagoras,uiDipSwitchesOpaOpa,uiDipSwitchesFantasyZone2,uiDipSwitchesTetris,uiDipSwitchesMegumiRescue,uiDipSwitchesMegaTech};
+const Menu menu0 = MENU_M("", uiNullNormal, fnList0);
+Menu menu1 = MENU_M("", uiAuto, fnList1);
+const Menu menu2 = MENU_M("", uiAuto, fnList2);
+const Menu menu3 = MENU_M("", uiAbout, fnList0);
+const Menu menu4 = MENU_M("Controller Settings", uiController, fnList4);
+const Menu menu5 = MENU_M("Display Settings", uiDisplay, fnList5);
+const Menu menu6 = MENU_M("Machine Settings", uiMachine, fnList6);
+const Menu menu7 = MENU_M("Settings", uiSettings, fnList7);
+const Menu menu8 = MENU_M("Bios Settings", uiBios, fnList8);
+const Menu menu9 = MENU_M("Quit Emulator?", uiAuto, fnList9);
+const Menu menu10 = MENU_M("", uiDummy, fnList0);
+const Menu menu11 = MENU_M("Select Machine", uiSelectMachine, fnList11);
+const Menu menu12 = MENU_M("Debug", uiDebug, fnList12);
+const Menu menu13 = MENU_M("Dip Switches", uiDipSwitches, fnList0);
+const Menu menu14 = MENU_M("Dip Switches", uiDipSwitchesSGAC, fnList14);
+const Menu menu15 = MENU_M("Dip Switches", uiDipSwitchesHangOnJr, fnList15);
+const Menu menu16 = MENU_M("Dip Switches", uiDipSwitchesSlapShooter, fnList16);
+const Menu menu17 = MENU_M("Dip Switches", uiDipSwitchesTransformer, fnList17);
+const Menu menu18 = MENU_M("Dip Switches", uiDipSwitchesPythagoras, fnList18);
+const Menu menu19 = MENU_M("Dip Switches", uiDipSwitchesOpaOpa, fnList19);
+const Menu menu20 = MENU_M("Dip Switches", uiDipSwitchesFantasyZone2, fnList20);
+const Menu menu21 = MENU_M("Dip Switches", uiDipSwitchesTetris, fnList21);
+const Menu menu22 = MENU_M("Dip Switches", uiDipSwitchesMegumiRescue, fnList22);
+const Menu menu23 = MENU_M("Dip Switches", uiDipSwitchesMegaTech, fnList23);
+
+const Menu *const menus[] = {&menu0, &menu1, &menu2, &menu3, &menu4, &menu5, &menu6, &menu7, &menu8, &menu9, &menu10, &menu11, &menu12, &menu13, &menu14, &menu15, &menu16, &menu17, &menu18, &menu19, &menu20, &menu21, &menu22, &menu23 };
 
 static int sdscPtr = 0;
 static char sdscBuffer[80];
@@ -218,7 +250,7 @@ static char *const cabinetTxt[] = {"Cocktail","Upright"};
 void setupGUI() {
 	emuSettings = AUTOPAUSE_EMULATION | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
 	keysSetRepeat(25, 4);	// Delay, repeat.
-	menuXItems[1] = ARRSIZE(fnList1) - (enableExit?0:1);
+	menu1.itemCount = ARRSIZE(fnList1) - (enableExit?0:1);
 	openMenu();
 }
 
@@ -268,31 +300,6 @@ void uiNullNormal() {
 	drawItem("Menu",27,1,0);
 }
 
-static void uiFile() {
-	setupMenu();
-	drawMenuItem("Load Game");
-	drawMenuItem("Load State");
-	drawMenuItem("Save State");
-	drawMenuItem("Save SRAM");
-	drawMenuItem("Save Settings");
-	drawMenuItem("Eject Game");
-	drawMenuItem("Power On/Off");
-	drawMenuItem("Reset Console");
-	if (enableExit) {
-		drawMenuItem("Quit Emulator");
-	}
-}
-
-static void uiOptions() {
-	setupMenu();
-	drawMenuItem("Controller");
-	drawMenuItem("Display");
-	drawMenuItem("Machine");
-	drawMenuItem("Settings");
-	drawMenuItem("Dipswitches");
-	drawMenuItem("Debug");
-}
-
 static void uiAbout() {
 	char str[32];
 	char *s = str+22;
@@ -323,7 +330,7 @@ static void uiAbout() {
 }
 
 static void uiController() {
-	setupSubMenu("Controller Settings");
+	setupSubMenuText();
 	drawSubItem("B Autofire:",autoTxt[autoB]);
 	drawSubItem("A Autofire:",autoTxt[autoA]);
 	drawSubItem("Controller:",ctrlTxt[(joyCfg>>30)&1]);
@@ -334,7 +341,7 @@ static void uiController() {
 }
 
 static void uiDisplay() {
-	setupSubMenu("Display Settings");
+	setupSubMenuText();
 	drawSubItem("Display:",dispTxt[gScalingSet]);
 	drawSubItem("Scaling:",flickTxt[gFlicker]);
 	drawSubItem("Gamma:",brighTxt[gGammaValue]);
@@ -345,7 +352,7 @@ static void uiDisplay() {
 }
 
 static void uiMachine() {
-	setupSubMenu("Machine Settings");
+	setupSubMenuText();
 	drawSubItem("Region:",cntrTxt[gRegion]);
 	drawSubItem("Machine:",machTxt[gMachineSet]);
 	drawSubItem("Bios Settings", NULL);
@@ -353,16 +360,15 @@ static void uiMachine() {
 }
 
 static void uiSelectMachine() {
-	setupSubMenu("Select Machine");
+	setupSubMenuText();
 	int i;
 	for (i=0; i<ARRSIZE(machTxt); i++) {
 		drawSubItem(machTxt[i], NULL);
 	}
-	drawMenuItem("");			// Cheating to remove last row.
 }
 
 static void uiSettings() {
-	setupSubMenu("Settings");
+	setupSubMenuText();
 	drawSubItem("Speed:", speedTxt[(emuSettings>>6)&3]);
 	drawSubItem("Autoload State:", autoTxt[(emuSettings>>2)&1]);
 	drawSubItem("Autosave Settings:", autoTxt[(emuSettings>>9)&1]);
@@ -374,7 +380,7 @@ static void uiSettings() {
 }
 
 void uiDebug() {
-	setupSubMenu("Debug");
+	setupSubMenuText();
 	drawSubItem("Debug Output:", autoTxt[gDebugSet&1]);
 	drawSubItem("Disable Background:", autoTxt[gGfxMask&1]);
 	drawSubItem("Disable Sprites:", autoTxt[(gGfxMask>>4)&1]);
@@ -382,7 +388,7 @@ void uiDebug() {
 }
 
 static void uiBios() {
-	setupSubMenu("Bios Settings");
+	setupSubMenuText();
 	drawSubItem("Use BIOS:", biosTxt[(gConfigSet>>7)&1]);
 	drawMenuItem(" Select Export Bios ->");
 	drawMenuItem(" Select Japanese Bios ->");
@@ -393,7 +399,7 @@ static void uiBios() {
 }
 
 static void uiDipSwitches() {
-	setupSubMenu("Dip Switches");
+	setupSubMenuText();
 }
 
 static void uiDipSwitchesSGAC() {
@@ -404,7 +410,7 @@ static void uiDipSwitchesSGAC() {
 }
 
 static void setupSysEMenu() {
-	setupSubMenu("Dip Switches");
+	setupSubMenuText();
 	drawSubItem("Coin slot 1:", sysECreditsTxt[dipSwitch0 & 0xF]);
 	drawSubItem("Coin slot 2:", sysECreditsTxt[(dipSwitch0>>4) & 0xF]);
 }
@@ -466,7 +472,7 @@ static void uiDipSwitchesMegumiRescue() {
 }
 
 static void uiDipSwitchesMegaTech() {
-	setupSubMenu("Dip Switches");
+	setupSubMenuText();
 	drawSubItem("Coin slot 1:", mtCoin1Txt[~dipSwitch1 & 0xF]);
 	drawSubItem("Coin slot 2:", mtCoin2Txt[~(dipSwitch0>>5) & 0x7]);
 	drawSubItem("Coin slot 3:", mtAcceptTxt[(dipSwitch0>>1) & 0x1]);
@@ -1326,6 +1332,25 @@ void sdscHandler(const unsigned char sdscChar) {
 		sdscPtr = 0;
 		debugOutput(sdscBuffer);
 	}
+}
+
+//---------------------------------------------------------------------------------
+void debugIO(u16 port, u8 val, const char *message) {
+	char debugString[32];
+
+	debugString[0] = 0;
+	strlcat(debugString, message, sizeof(debugString));
+	short2HexStr(&debugString[strlen(debugString)], port);
+	strlcat(debugString, " val:", sizeof(debugString));
+	char2HexStr(&debugString[strlen(debugString)], val);
+	debugOutput(debugString);
+}
+//---------------------------------------------------------------------------------
+void debugIOUnimplR(u16 port) {
+	debugIO(port, 0, "Unimpl R port:");
+}
+void debugIOUnimplW(u8 val, u16 port) {
+	debugIO(port, val, "Unimpl W port:");
 }
 
 //---------------------------------------------------------------------------------
