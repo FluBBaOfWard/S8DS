@@ -5,8 +5,6 @@
 extern "C" {
 #endif
 
-extern u8 gGammaValue;
-
 void setupGUI(void);
 void enterGUI(void);
 void exitGUI(void);

@@ -1,3 +1,10 @@
+//
+//  io.h
+//  S8DS
+//
+//  Created by Fredrik Ahlström on 2005-06-08.
+//  Copyright © 2005-2026 Fredrik Ahlström. All rights reserved.
+//
 #ifndef IO_HEADER
 #define IO_HEADER
 

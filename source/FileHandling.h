@@ -9,8 +9,9 @@ extern "C" {
 
 #define FILEEXTENSIONS ".sms.gg.sg.sc.col.rom.mx1.mx2"
 
+void initSettings(void);
 int loadSettings(void);
-void saveSettings(void);
+int saveSettings(void);
 bool loadGame(const char *gameName);
 void loadState(void);
 void saveState(void);

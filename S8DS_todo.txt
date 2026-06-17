@@ -1,14 +1,17 @@
 S8DS To do
 ------------
 
+	Make sure Region is saved in settings. #13
+	Save region & machine?
+	Add mapper select to MSX.
 	Games that crash the emulator when machine is set to 'auto' :
-	Master of darkness
+	Master of Darkness
 	Vampire
-	Dragon's trap
-	Ninja gaiden
-	AK miracle world (jap)
-	AK shinobi world
-	Makai retsuden
+	Dragon's Trap
+	Ninja Gaiden
+	AK Miracle World (jap)
+	AK Shinobi World
+	Makai Retsuden
 
 	Update sound more often? See NitroSwan.
 
@@ -32,7 +35,6 @@ Misc:
 	Add SMS(J) as options in machine?
 	ActionReplay/GameGenie support?
 	Add MSX second slot FFFF?
-	Save region & machine?
 	EEPROM support for some GG titles.
 	VGM logging?
 	Add Arcade System-1 & System-2?
@@ -45,7 +47,7 @@ Misc:
 	Fix Arcade Mega-Tech.
 
 GUI:
-	Show cart inserted/ejected.
+	Show cart/card inserted/ejected.
 	Pad left and right to switch Tabs in GUI?
 
 Sound:

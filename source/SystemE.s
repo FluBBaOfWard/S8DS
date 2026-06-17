@@ -197,7 +197,7 @@ SysEBanking_W:				;@ 0xF7
 
 	ldrb r0,sysELatch
 	and r0,r0,#0x10				;@ bit #4 controls sound mute.
-	bl setMuteSoundGame
+	bl soundSetMuteGame
 
 	ldmfd sp!,{r0,pc}
 sysELatch:

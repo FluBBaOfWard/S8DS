@@ -2,7 +2,10 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.8 - 2024-09-11 (FluBBa)
+V1.1.8 - 2026-06-17 (FluBBa)
+	Ported NDS DevkitARM version back to GBA.
+	Optimized the SN76496 chip.
+	Optimized the VDP chip.
 
 V1.1.7 - 2023-11-07 (FluBBa)
 	Added support for "Megumi Rescue" on System-E.
@@ -106,7 +109,7 @@ V0.2.0 - 2009-10-19 (FluBBa)
 	Added internal Bios (for Ace of Aces & Shadow Dancer).
 
 V0.1.0 - 2009-10-13 (FluBBa)
-	Initial release, allmost everything from SMSAdvance seems to work.
+	Initial DS release, allmost everything from SMSAdvance seems to work.
 
 V0.0.0 - 2009-07-25 (FluBBa)
 	Started Coding.

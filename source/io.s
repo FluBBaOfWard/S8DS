@@ -1,3 +1,10 @@
+//
+//  io.s
+//  S8DS
+//
+//  Created by Fredrik Ahlström on 2005-06-08.
+//  Copyright © 2005-2026 Fredrik Ahlström. All rights reserved.
+//
 #ifdef __arm__
 
 #include "ARMZ80/ARMZ80.i"
@@ -30,7 +37,9 @@
 	.global refreshEMUjoypads
 	.global convertInput
 	.global Z80In
+	.global Z80InBC
 	.global Z80Out
+	.global Z80OutBC
 	.global ExtIO_0_SMS_R
 	.global ExtIO_1_SMS_R
 	.global IOCtrl_SMS_W
@@ -58,7 +67,11 @@
 	.syntax unified
 	.arm
 
-	.section .text
+#if GBA
+	.section .ewram, "ax", %progbits	;@ For the GBA
+#else
+	.section .text						;@ For anything else
+#endif
 	.align 2
 ;@----------------------------------------------------------------------------
 ;@ SG-1000				Fix real io map (mixed access for some devices).
@@ -88,11 +101,8 @@ IO_Params_OMV_R:
 	.long 0x00210061, VDP0StatR			;@ 0x21-0x3F, 0xA1-0xBF
 	.long 0x00C000E1, IOPortA_R			;@ 0xC0-0xDE
 	.long 0x00C100E1, IOPortB_R			;@ 0xC1-0xDF
-	.long 0x00E000E7, OMVPort1_R		;@ 0xE0-0xF8
-	.long 0x00E100E7, OMVPort2_R		;@ 0xE1-0xF9
-	.long 0x00E200E7, OMVPort3_R		;@ 0xE2-0xFA
-	.long 0x00E300E7, OMVPort4_R		;@ 0xE3-0xFB
-	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x1F, 0x40-0x9F, 0xFC-0xFF
+	.long 0x00E000E0, OMVPortR			;@ 0xE0-0xFF
+	.long 0x00000000, empty_R_SMS1		;@ 0x00-0x1F, 0x40-0x9F
 IO_Params_OMV_W:
 	.long 0x006000E0, SN76496_W			;@ 0x60-0x7F
 	.long 0x00A000E1, VDP0DataTMSW		;@ 0xA0-0xBE
@@ -296,7 +306,7 @@ ioReset:
 	mov r1,#0xC0
 	cmp r4,#HW_MEGADRIVE
 //	cmpne r4,#HW_MEGATECH		;@ MT "Alien Syndrome" doesn't work with this.
-	moveq r1,#0xE0				;@ Bit 5 is different on MD.
+	orreq r1,#0x20				;@ Bit 5 is different on MD.
 	strb r1,joy1Extra
 	ldrb r0,inputHW
 	cmpeq r0,#0
@@ -311,8 +321,8 @@ ioReset:
 	cmpne r4,#HW_SG1000
 	cmpne r4,#HW_SGAC
 	cmpne r4,#HW_SC3000
-	cmpne r4,#HW_OMV
 	cmpne r4,#HW_SG1000II
+	cmpne r4,#HW_OMV
 	ldr r1,=empty_R
 	ldreq r1,=empty_R_SMS1
 	str r1,emptyReadPtr
@@ -434,8 +444,9 @@ refreshEMUjoypads:			;@ Call every frame
 		andcs r1,r1,r2,lsr#16
 	ands r0,r1,#3
 	cmpne r0,#3
-	tstne r2,#0x400				;@ Swap A/B?
 	eorne r0,r0,#3
+	tst r2,#0x400				;@ Swap A/B?
+	andne r0,r1,#3
 	bic r4,r4,#3
 	orr r4,r4,r0
 	and r3,r4,#0xf0
@@ -475,14 +486,14 @@ refreshSMSJoypads:
 noPause:
 	bl refreshArcadeInput
 	adr addy,rlud2durl
-	ldrb r0,[addy,r3,lsr#4]		;@ downupleftright
+	ldrb r0,[addy,r3,lsr#4]		;@ DownUpLeftRight
 
 	orr r0,r0,r4,lsl#4
 	mov r3,r4,lsr#8
 
 	mov r1,#0
 
-	tst r2,#0x40000000			;@ Player2?
+	tst r2,#0x20000000			;@ Player2?
 	strbeq r0,joy0State
 	strbeq r3,joy0Extra
 	strbne r0,joy1State
@@ -535,7 +546,7 @@ refreshColJoypads:
 	ldrb r3,colecoKey
 	orr r1,r1,r3
 
-	tst r2,#0x40000000			;@ Player2?
+	tst r2,#0x20000000			;@ Player2?
 	mov r2,#0
 	str r2,joy0State
 	strbeq r0,joy0State
@@ -581,15 +592,15 @@ refreshSM5Joypads:			;@ Call every frame
 refreshArcadeInput:
 ;@----------------------------------------------------------------------------
 	mov r1,#0
-	and r2,r4,#0x0F0
+	and r0,r4,#0x0F0
 	tst r4,#0x008				;@ NDS Start
-	orrne r1,r1,r2,lsr#4
+	orrne r1,r1,r0,lsr#4
 	orrne r1,r1,#0x010
 	tst r4,#0x004				;@ NDS Select
-	orrne r1,r1,r2,lsl#1
+	orrne r1,r1,r0,lsl#1
 	orrne r1,r1,#0x200
 	tst r4,#0x200				;@ NDS L
-	orrne r1,r1,r2,lsl#6
+	orrne r1,r1,r0,lsl#6
 	orrne r1,r1,#0x4000
 	tst r4,#0x100				;@ NDS R
 	orrne r1,r1,#0x8000
@@ -752,26 +763,10 @@ sgp2_r:
 	bx lr
 
 ;@----------------------------------------------------------------------------
-OMVPort1_R:		;@ 0xE0-0xF8
+OMVPortR:		;@ 0xE0-0xFF
 ;@----------------------------------------------------------------------------
-	mov r1,#0
-	b setOMVKeys
-;@----------------------------------------------------------------------------
-OMVPort2_R:		;@ 0xE1-0xF9
-;@----------------------------------------------------------------------------
-	mov r1,#1
-	b setOMVKeys
-;@----------------------------------------------------------------------------
-OMVPort3_R:		;@ 0xE2-0xFA
-;@----------------------------------------------------------------------------
-	mov r1,#2
-	b setOMVKeys
-;@----------------------------------------------------------------------------
-OMVPort4_R:		;@ 0xE3-0xFB
-;@----------------------------------------------------------------------------
-	mov r1,#3
-setOMVKeys:
 	ldrb r2,sc3Keyboard
+	and r1,addy,#3
 	cmp r1,r2,lsr#4				;@ Check row
 	and r2,r2,#0x07
 	mov r0,#0xFF				;@ Default output
@@ -864,7 +859,7 @@ setKeypadWrite:				;@ Coleco, 0x80 written?
 	strb r0,joyMode
 	bx lr
 ;@----------------------------------------------------------------------------
-setJoystickWrite:			;@ Coleco, 0x80 written?
+setJoystickWrite:			;@ Coleco, 0xC0 written?
 ;@----------------------------------------------------------------------------
 	mov r0,#0
 	strb r0,joyMode
@@ -1000,6 +995,10 @@ SDSC_Debug_W:				;@ 0xFD
 	bx lr
 
 ;@----------------------------------------------------------------------------
+Z80InBC:
+;@----------------------------------------------------------------------------
+	mov addy,z80bc,lsr#16
+;@----------------------------------------------------------------------------
 Z80In:
 ;@----------------------------------------------------------------------------
 	and addy,addy,#0xFF
@@ -1007,6 +1006,10 @@ Z80In:
 	.long 0
 inTable:
 	.space 0x400
+;@----------------------------------------------------------------------------
+Z80OutBC:
+;@----------------------------------------------------------------------------
+	mov addy,z80bc,lsr#16
 ;@----------------------------------------------------------------------------
 Z80Out:
 ;@----------------------------------------------------------------------------

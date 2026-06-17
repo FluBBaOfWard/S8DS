@@ -5,6 +5,21 @@
 #include "ARMZ80/ARMZ80.i"
 #include "SegaVDP/SegaVDP.i"
 
+	.global gColorValue
+	.global g3DEnable
+	.global gTwitch
+	.global gFlicker
+	.global gGfxMask
+	.global yStart
+	.global SPRS
+	.global paletteMask
+	.global bColor
+	.global frameTotal
+	.global VDP0
+	.global VDP1
+	.global VDPRAM				;@ Used by cart.s, init ram.
+	.global EMUPALBUFF			;@ Needs to be flushed before dma copied.
+
 	.global antWars
 	.global gfxInit
 	.global gfxReset
@@ -14,27 +29,22 @@
 	.global mapSGPalette
 	.global paletteTxAll
 	.global refreshGfx
+	.global bgFinish
 	.global transferVRAM
+	.global delayVRAM
 	.global makeBorder
 	.global earlyFrame
 	.global endFrame
-	.global gColorValue
-	.global g3DEnable
-	.global gTwitch
-	.global gFlicker
-	.global gGfxMask
 	.global vblIrqHandler
+	.global updateLCDRefresh
+	.global hz50Refresh
 	.global SysEVBlHandler
-	.global yStart
-	.global SPRS
-	.global paletteMask
-	.global bColor
-	.global frameTotal
 	.global SystemESetVRAM
 	.global SystemEVDPRAMWrite
 
 	.global VDP0SetMode
 	.global VDP0ScanlineBPReset
+	.global VDP0SetSprScan
 	.global VDP0LatchHCounter
 
 	.global VDP0VCounterR
@@ -54,11 +64,6 @@
 	.global VDP1DataR
 	.global VDP1DataSMSW
 	.global VDP1CtrlW
-
-	.global VDP0
-	.global VDP1
-	.global VDPRAM				;@ Used by cart.s, init ram.
-	.global EMUPALBUFF			;@ Needs to be flushed before dma copied.
 
 	.syntax unified
 	.arm
@@ -103,7 +108,7 @@ tmLoop:
 
 	ldr r0,=BG_GFX+0x04100
 	ldr r3,antSeed
-	ldr r1,=0x1E31
+	ldr r1,=32*240
 antLoop0:
 	mov r2,#8
 antLoop1:
@@ -265,6 +270,8 @@ VDP0Reset:
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer2
 	str r0,[vdpptr,#vdpDMAOAMBuffer]
+	mov r0,#1
+	strb r0,[vdpptr,#vdpSprScan]
 
 	mov r0,#0x0000				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs0]
@@ -274,6 +281,13 @@ VDP0Reset:
 	str r0,[vdpptr,#vdpBgrTileOfs]
 	mov r0,#0x400000			;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
+
+	ldr r0,=gEmuFlags
+	ldr r0,[r0]
+	tst r0,#PALTIMING
+	moveq r0,#60
+	movne r0,#50
+	bl setTargetFPS
 	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 VDP1Reset:
@@ -291,7 +305,6 @@ VDP1Reset:
 	bl VDPReset				;@ r0=vdp type, r1 = IRQ function ptr, r2 = debounce routine, r12 = vdpptr.
 	ldr r1,=VDP0
 	ldr r0,[r1,#vdpScanline]
-	add r0,r0,#1
 	bl VDPSetScanline
 	ldr r0,=VDPRAMCopy1
 	str r0,[vdpptr,#VRAMCopyPtr]
@@ -429,12 +442,12 @@ loadScaleValues:
 
 BG_SCALING_TO_FIT:	;@ 1:1, 7:6, 5:4
 	.long 0xFFFF,0xDB6D,0xCCCD
-	.long 0x00C0,0x00C0,0x00C0
+	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0000,0x0000
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_1_1:
 	.long 0xFFFF,0xFFFF,0xFFFF
-	.long 0x00C0,0x00C0,0x00C0
+	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0010,0x0018
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_1_1_GG:
@@ -444,12 +457,12 @@ BG_SCALING_1_1_GG:
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_ASPECT_PAL:			;@ 192->142, 224->165, 240->177
 	.long 0xBD56,0xBD56,0xBD56
-	.long 0x19A7,0x0DB2,0x00C0
+	.long 0x19A7,0x0DB2,SCREEN_HEIGHT
 	.long    -34,   -17,    -8
 	.long 0x0150,0x0150,0x00AD
 BG_SCALING_ASPECT_NTSC:			;@ 192->170, 224->199, 240->213, 216->192, 9->8
 	.long 0xE38F,0xE2AB,0xE2AB
-	.long 0x0BB5,0x00C0,0x00C0
+	.long 0x0BB5,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long    -12,0x0004,0x000C
 	.long 0x0100,0x0120,0x0090
 BG_SCALING_ASPECT_GG:			;@ 192->160, 216->180, 6->5
@@ -466,14 +479,14 @@ BG_SCALING_ASPECT_GGMODE:		;@ 160x144 -> 160x120, 6->5
 BG_SCALING_TBL:
 	.long 0,0,0
 BG_SCALING_WIN:
-	.long 0x00C0,0x00C0,0x00C0
+	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 BG_SCALING_OFS:
 	.long 0,0,0
 
 scaleParms:
 	.long 0x0000				;@ Rotate value
-	.long 0x0100				;@ Normal
-	.long 0x0080				;@ Double
+	.long 0x0100				;@ Normal Horizontal
+	.long 0x0080				;@ Double Horizontal
 scaleSprParam:
 	.long 0x0100				;@ Scaled Normal Vertical
 	.long 0x0120				;@ Scaled 8x16 Vertical
@@ -517,12 +530,12 @@ scaleLoop:
 	ldmfd sp!,{r4-r8}
 	bx lr
 ;@----------------------------------------------------------------------------
-VDP0ApplyScaling:		;@ r0-r3, r12 modified.
+VDP0ApplyScaling:		;@ r0-r2, r12 modified.
 	.type VDP0ApplyScaling STT_FUNC
 ;@----------------------------------------------------------------------------
 	ldr vdpptr,=VDP0
 ;@----------------------------------------------------------------------------
-applyScaling:		;@ r0-r3, r12 modified.
+applyScaling:		;@ r0-r2 modified, r12 = vdpptr.
 ;@----------------------------------------------------------------------------
 	ldrb r0,[vdpptr,#vdpHeightMode]
 	and r0,r0,#VDPMODE_HEIGHTMASK	;@ 224 and/or 240 height
@@ -647,7 +660,7 @@ yConvert:					;@ r0=BGR24, r1=color 0-4, outputs r0=BGR24
 	orr r0,r0,r0,lsl#8
 	mla r0,r1,r0,r4
 	mov r0,r0,lsr#10
-	
+
 	orr r3,r3,r3,lsl#8
 	mla r3,r1,r3,r4
 	mov r3,r3,lsr#10
@@ -681,50 +694,45 @@ gammaConvert:	;@ Takes value in r0(0-0xFF), gamma in r1(0-4),returns new value i
 paletteTxAll:				;@ Called from ui.c
 	.type   paletteTxAll STT_FUNC
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r8,lr}
-	ldr r12,=VDP0
-	add r12,r12,#vdpPaletteRAM
-	ldr r3,=mappedRGB
-	ldr r4,=EMUPALBUFF
-	ldr r8,=paletteMask
-	ldr r5,[r8]
-	mov r2,#0x40
+	stmfd sp!,{r4-r7,lr}
+	ldr r0,=EMUPALBUFF
+	ldr r1,=VDP0+vdpPaletteRAM
+	ldr r2,=mappedRGB
+	ldr r7,=paletteMask
+	ldr r5,[r7]
+	add r3,r0,#0x40
 	bl copyPalette
 
-	ldr r2,=gMachine
-	ldrb r2,[r2]
-	cmp r2,#HW_SYSE
+	ldr r4,=gMachine
+	ldrb r4,[r4]
+	cmp r4,#HW_SYSE
 //	cmpne r2,#HW_MEGATECH
 	;@ Do this only for System-E
-	ldreq r12,=VDP1
-	addeq r12,r12,#vdpPaletteRAM
-	addeq r4,r4,#0x40
-	mov r2,#0
+	ldreq r1,=VDP1+vdpPaletteRAM
+	addeq r0,r0,#0x40
+	mov r3,r0
 	bleq copyPalette
 
 	ldr r0,=0x7FFF
-	str r0,[r8]					;@ Restore palettemask
-	ldmfd sp!,{r4-r8,lr}
+	str r0,[r7]					;@ Restore paletteMask
+	ldmfd sp!,{r4-r7,lr}
 	bx lr
 
 copyPalette:
-	mov r6,#0
+	add r12,r0,#480
+	mov r6,#0x3E
 txLoop:
-	ldrh r0,[r12],#2
+	movs r4,r6,lsl#27
+	ldrh r4,[r1,r6]
+	mov r4,r4,lsl#1
+	ldrh r4,[r2,r4]
+	and r4,r4,r5				;@ Palette mask for anaglyph 3D.
+	strhne r4,[r0,r6]			;@ Bgtile palette
+	strheq r4,[r3,r6]			;@ Background palette
+	strhcs r4,[r12,r6]			;@ Sprite palette
 
-	mov r0,r0,lsl#1
-	ldrh r0,[r3,r0]
-	and r0,r0,r5				;@ Palette mask for anaglyph 3D.
-	add r7,r4,r6,lsl#1
-	movs r1,r6,lsl#28
-	strhne r0,[r7]				;@ Bgtile palette
-	strheq r0,[r7,r2]			;@ Background palette
-	movcs r1,#480
-	strhcs r0,[r7,r1]			;@ Sprite palette
-
-	add r6,r6,#1
-	cmp r6,#0x20
-	bmi txLoop
+	subs r6,r6,#2
+	bpl txLoop
 	bx lr
 
 ;@----------------------------------------------------------------------------
@@ -753,7 +761,7 @@ ggSGLoop:
 ;@----------------------------------------------------------------------------
 delayVRAM:					;@ This is used to get rid of graphics corruption
 ;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r9,lr}
+	stmfd sp!,{r4-r11,lr}
 
 	ldr r0,[vdpptr,#vdpDirtyTilesPtr]
 	add r1,vdpptr,#dirtyTiles
@@ -770,7 +778,7 @@ dVRamLoop0:
 	subs r2,r2,#1
 	bpl dVRamLoop0
 
-	ldmfd sp!,{r4-r9,lr}
+	ldmfd sp!,{r4-r11,lr}
 	bx lr
 
 dVRamCopy:
@@ -779,12 +787,11 @@ dVRamCopy:
 
 	add r6,r4,r2,lsl#5
 	add r7,r5,r2,lsl#5
-	mov r8,#0x8
 dVRamLoop1:
-	ldr r3,[r6],#4
-	str r3,[r7],#4
-	subs r8,r8,#1
-	bhi dVRamLoop1
+	ldmia r6!,{r3,r8,r10,r11}
+	stmia r7!,{r3,r8,r10,r11}
+	ldmia r6!,{r3,r8,r10,r11}
+	stmia r7!,{r3,r8,r10,r11}
 	bx lr
 
 ;@----------------------------------------------------------------------------
@@ -962,8 +969,8 @@ tileLoopSpr:				;@ Mode0, 2 & 3 sprites.
 	ldrb r1,[vdpptr,#vdpSPROffset]
 	and r1,r1,#0x07
 	mov r1,r1,lsl#11
-	ldr r4,tData
-	ldr r5,VDPRAMPtr
+	ldr r4,[vdpptr,#vdpDirtyTilesPtr]
+	ldr r5,[vdpptr,#VRAMPtr]
 	add r4,r4,r1,lsr#5
 	add r7,r7,#0x400000			;@ Sprites @ 0x06406000
 	sub r7,r7,#0x2000			;@ Sprites @ 0x06406000
@@ -1053,29 +1060,34 @@ tileLoop3_1:
 transferVRAM_m4:
 ;@----------------------------------------------------------------------------
 	ldr r9,=0x20202020			;@ Dirtytiles mode4 bgr & spr
-
+	mov r1,#0x200
+tl4pre:
+	subs r1,r1,#4
+	ldmfdmi sp!,{r12,pc}
 tileLoop4_0:
-	ldr r10,[r4]
-	str r9,[r4],#4
+	ldr r10,[r4,r1]
+	bics r2,r9,r10
+	beq tl4pre
+	orr r2,r10,r9
+	str r2,[r4,r1]
 	tst r10,#0x00000020
-	addne r1,r1,#0x20
 	bleq tileLoop4_1
+	add r1,r1,#1
 	tst r10,#0x00002000
-	addne r1,r1,#0x20
 	bleq tileLoop4_1
+	add r1,r1,#1
 	tst r10,#0x00200000
-	addne r1,r1,#0x20
 	bleq tileLoop4_1
+	add r1,r1,#1
 	tst r10,#0x20000000
-	addne r1,r1,#0x20
 	bleq tileLoop4_1
-	cmp r1,#0x4000
-	bne tileLoop4_0
+	subs r1,r1,#7
+	bpl tileLoop4_0
 
 	ldmfd sp!,{r12,pc}
 
 tileLoop4_1:
-	ldr r0,[r5,r1]
+	ldr r0,[r5,r1,ror#32-5]
 
 	ands r3,r0,#0x000000FF
 	ldrne r3,[r6,r3,lsl#2]
@@ -1089,11 +1101,10 @@ tileLoop4_1:
 	ldrne r2,[r6,r2,lsr#22]
 	orrne r3,r3,r2,lsl#3
 
-	str r3,[r7,r1]
-	str r3,[r8,r1]
-	add r1,r1,#4
-	tst r1,#0x1C
-	bne tileLoop4_1
+	str r3,[r7,r1,ror#32-5]
+	str r3,[r8,r1,ror#32-5]
+	adds r1,r1,#0x20000000
+	bcc tileLoop4_1
 
 	bx lr
 ;@----------------------------------------------------------------------------
@@ -1148,7 +1159,7 @@ vblIrqHandler:
 	add r5,vdpptr,#scrollBuff
 	ldr r4,=yStart
 	ldrsb r4,[r4]
-	add r5,r5,r4
+	add r5,r5,r4,lsl#1
 	adds r3,r3,r4
 	addmi r3,r3,r7
 
@@ -1168,15 +1179,14 @@ vblIrqHandler:
 @	bmi setLoop					;@ r1 will come out as 0 or 1.
 noLoop:
 
-	ldrb r0,gFlicker
-	ldrb r2,gTwitch
-	eors r2,r2,r0
-	strb r2,gTwitch
-	beq noJump
+	ldr r0,gFlicker
+	eors r0,r0,r0,lsl#31
+	str r0,gFlicker
+	bpl noJump
 	subs r6,r6,r6,lsl#16
 	movcs r1,#1
 noJump:
-	add r5,r5,r1
+	add r5,r5,r1,lsl#1
 	add r3,r3,r1
 	cmp r1,#0
 	subne r6,r6,r6,lsl#16
@@ -1187,9 +1197,10 @@ noJump:
 	subs r3,r3,r7
 	subpl r3,r3,r7
 	subpl r8,r8,r7
+	add r5,r5,#1
 	mov r10,#SCREEN_HEIGHT
 scrolLoop2:
-	ldrb r11,[r5],#1
+	ldrb r11,[r5],#2
 	add r0,r11,r8,lsl#16
 	mov r1,r0
 	mov r9,r0
@@ -1197,12 +1208,11 @@ scrolLoop2:
 	subs r6,r6,r6,lsl#16
 	subcs r6,r6,r6,lsl#16
 	adc r8,r8,#0
-	adc r5,r5,#0
+	addcs r5,r5,#2
 	adcs r3,r3,#1
 	subcs r8,r8,r7
 	subs r10,r10,#1
 	bne scrolLoop2
-
 
 
 	mov r8,#REG_BASE
@@ -1283,23 +1293,42 @@ scrolLoop2:
 	ldr r0,=pauseEmulation
 	ldr r0,[r0]
 	cmp r0,#0
-	bne exitVbl
-hz50Start:
-	mov r0,#5
-hz50Loop0:
-	ldrh r1,[r8,#REG_VCOUNT]
-	cmp r1,#212
-	beq hz50Loop0
-hz50Loop1:
-	ldrh r1,[r8,#REG_VCOUNT]
-	cmp r1,#212
-	bne hz50Loop1
-	mov r1,#202
-	strh r1,[r8,#REG_VCOUNT]
-	subs r0,r0,#1
-	bne hz50Loop0
+	ldreq r0,lcdSkip
+	strbeq r0,doLowRefresh
 exitVbl:
 	ldmfd sp!,{r4-r11,pc}
+
+;@----------------------------------------------------------------------------
+updateLCDRefresh:
+	.type updateLCDRefresh STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=emuSettings
+	ldr r0,[r0]
+	tst r0,#1<<19
+	moveq r0,#0
+	movne r0,#-49
+	str r0,lcdSkip
+	moveq r0,#60-1
+	movne r0,#50-1
+	ldr r1,=fpsNominal
+	strb r0,[r1]
+	bx lr
+;@----------------------------------------------------------------------------
+hz50Refresh:
+;@----------------------------------------------------------------------------
+	ldrsb r0,doLowRefresh
+	cmp r0,#0
+	bxpl lr
+	adds r1,r0,#26
+	movpl r1,#0
+	strb r1,doLowRefresh
+	movmi r0,#-26
+
+	mov r2,#REG_BASE
+	ldrh r1,[r2,#REG_VCOUNT]
+	add r1,r1,r0
+	strh r1,[r2,#REG_VCOUNT]
+	bx lr
 
 ;@----------------------------------------------------------------------------
 DisplayControl:
@@ -1314,14 +1343,19 @@ WindowVValue:
 	.long 0x00C0
 ;@----------------------------------------------------------------------------
 bgScaleValue:	.long 0x00002B10			;@ was 0x2AAB
-gTwitch:		.byte 0
+lcdSkip:		.long 0
+
 gFlicker:		.byte 1
+				.skip 2
+gTwitch:		.byte 0
+
 gColorValue:	.byte 4
 gGfxMask:		.byte 0
 bColor:			.byte 0
 g3DEnable:		.byte 1
 doubleVDP:		.byte 0
-				.byte 0
+doLowRefresh:	.byte 0
+				.skip 2
 ;@----------------------------------------------------------------------------
 SysEVBlHandler:
 ;@----------------------------------------------------------------------------
@@ -1338,10 +1372,10 @@ SysEVBlHandler:
 
 	ldr r0,=yStart
 	ldrsb r0,[r0]
-	add r7,r7,r0
+	add r7,r7,r0,lsl#1
 	adds lr,lr,r0
 	addmi lr,lr,#224
-	add r5,r5,r0
+	add r5,r5,r0,lsl#1
 	adds r3,r3,r0
 	addmi r3,r3,#224
 
@@ -1354,15 +1388,15 @@ SysEVBlHandler:
 	movcc r1,#1
 noELoop:
 
-	ldrb r0,gFlicker
-	ldrb r2,gTwitch
-	eors r2,r2,r0
-	strb r2,gTwitch
-	beq noEJump
+	ldr r0,gFlicker
+	eors r0,r0,r0,lsl#31
+	str r0,gFlicker
+	bpl noEJump
 	subs r6,r6,r6,lsl#16
 	movcs r1,#1
 noEJump:
-	add r5,r5,r1
+	add r5,r5,r1,lsl#1
+	add r7,r7,r1,lsl#1
 	add r3,r3,r1
 	cmp r1,#0
 	subne r6,r6,r6,lsl#16
@@ -1376,21 +1410,23 @@ noEJump:
 	subs r3,r3,#224
 	subpl r3,r3,#224
 	subpl r8,r8,#224
+	add r5,r5,#1
+	add r7,r7,#1
 	mov r10,#SCREEN_HEIGHT
 scrolELoop2:
-	ldrb r0,[r5],#1
+	ldrb r0,[r5],#2
 	add r0,r0,r8,lsl#16
 	mov r1,r0
 	mov r9,r0
-	ldrb r11,[r7],#1
+	ldrb r11,[r7],#2
 	add r11,r11,r2,lsl#16
 	stmia r4!,{r0-r1,r9,r11}
 	subs r6,r6,r6,lsl#16
 	subcs r6,r6,r6,lsl#16
 	adc r8,r8,#0
 	adc r2,r2,#0
-	adc r7,r7,#0
-	adc r5,r5,#0
+	addcs r7,r7,#2
+	addcs r5,r5,#2
 	adcs r3,r3,#1
 	subcs r8,r8,#224
 	adcs lr,lr,#1
@@ -1480,8 +1516,7 @@ earlyFrame:					;@ Called at line 0,16 or 32	(r0,r2 safe to use)
 ;@------------------------------------------------------------------------------
 	stmfd sp!,{r1,r3-r12,lr}
 
-	ldr r0,=SPRS
-	ldrb r0,[r0]
+	ldrb r0,[vdpptr,#vdpSprScan]
 	cmp r0,#0
 	ldreq r0,=defaultScanlineHook
 	ldrne r0,=spriteScanner
@@ -1501,13 +1536,8 @@ endFrame:					;@ Called just before screen end (~line 192)	(r0 & r2 safe to use)
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r1,r3-r11,lr}
 
-//	mov r11,vdpptr
-	ldrb r0,[vdpptr,#vdpNameTable]
-	mov r2,#224
-	bl ntFinnish
 	ldrb r1,[vdpptr,#vdpXScroll]
 	bl VDPReg08W
-	bl bgFinish
 ;@--------------------------
 	bl applyScaling
 	adr lr,sDMARet
@@ -1517,9 +1547,8 @@ endFrame:					;@ Called just before screen end (~line 192)	(r0 & r2 safe to use)
 	beq sprDMADo1
 sDMARet:
 ;@--------------------------
-	ldr r0,=gMachine
-	ldrb r0,[r0]
-	cmp r0,#HW_GG
+	ldrb r4,[vdpptr,#vdpType]
+	cmp r4,#VDPSega3155378		;@ HW_GG
 	bleq paletteTxGGSG
 ;@--------------------------
 
@@ -1527,9 +1556,7 @@ sDMARet:
 	ldr r1,=bColor
 	ldrb r0,[r1]
 	cmp r0,#0
-	ldreq r1,=gMachine
-	ldrbeq r1,[r1]
-	cmpeq r1,#HW_GG
+	cmpeq r4,#VDPSega3155378	;@ HW_GG
 	beq setBc
 	ldrb r0,[vdpptr,#vdpRealMode]
 	add r3,r2,#0x80				;@ SG palette
@@ -1567,7 +1594,7 @@ setBc:
 
 
 //	bl transferVRAM
-	bl delayVRAM
+//	bl delayVRAM
 	ldr r0,frameTotal
 	add r0,r0,#1
 	str r0,frameTotal
@@ -1611,36 +1638,35 @@ spriteScannerStart:
 	ldrb r0,[vdpptr,#vdpSATOffset]
 	and r0,r0,#0x7E
 	add r9,r9,r0,lsl#7
-	add r8,r9,#0x80
+	add r8,r9,#0x80+0x80
+
+	ldrb r10,[vdpptr,#vdpSPROffset]	;@ First or second half of VRAM for sprites?
+	and r10,r10,#4
 
 	ldr r2,[vdpptr,#vdpSprStop]
 	cmp r2,#0xD0
 	moveq r2,#0xFFFFFFD0
 
 	ldr r4,=SMSOAMBuff
-	add r3,r4,#0x80
-	ldrb r5,[vdpptr,#vdpScrStartLine]
-	sub r1,r5,#0xF
-
-	ldrb r10,[vdpptr,#vdpSPROffset]	;@ First or second half of VRAM for sprites?
-	and r10,r10,#4
+	add r5,r4,#0x80
+	ldrb r3,[vdpptr,#vdpScrStartLine]
+	sub r1,r3,#0xF
 
 	mov r6,#0
-	mov r7,#0
+	mov r7,#-0x80
 ss1Loop:
-	ldrsb r0,[r9,r7]			;@ MasterSystem OBJ, r0=Ypos.
+	ldrsb r0,[r9],#1			;@ MasterSystem OBJ, r0=Ypos.
 	cmp r0,r2
 	beq ss1End
-	cmp r0,r5
+	cmp r0,r3
 	bgt ss1Chk
 	cmp r0,r1
 	bpl ss1Add
 ss1Chk:
-	add r7,r7,#1
-	cmp r7,#0x40
+	adds r7,r7,#2
 	bne ss1Loop
 ss1End:
-	str r6,smsOamPtr
+	str r6,smsOamIndex
 	strb r2,[r4,r6]
 
 	ldmfd sp!,{r3-r10}
@@ -1648,10 +1674,9 @@ ss1End:
 
 ss1Add:
 	strb r0,[r4,r6]
-	mov r0,r7,lsl#1
-	ldrh r0,[r8,r0]				;@ MasterSystem OBJ, r4=Tile,Xpos.
+	ldrh r0,[r8,r7]				;@ MasterSystem OBJ, r4=Tile,Xpos.
 	orr r0,r0,r10,lsl#14
-	str r0,[r3,r6,lsl#2]
+	str r0,[r5,r6,lsl#2]
 	cmp r6,#0x7F
 	addmi r6,r6,#1
 	bmi ss1Chk
@@ -1665,7 +1690,7 @@ spriteScanner:
 	ldrb r0,[vdpptr,#vdpSATOffset]
 	and r0,r0,#0x7E
 	add r9,r9,r0,lsl#7
-	add r8,r9,#0x100
+	add r8,r9,#0x80+0x80
 
 	ldrb r10,[vdpptr,#vdpSPROffset]	;@ First or second half of VRAM for sprites?
 	and r10,r10,#4
@@ -1674,7 +1699,7 @@ spriteScanner:
 	ldr r4,=SMSOAMBuff
 	add r5,r4,#0x80
 ;@	ldr r1,[vdpptr,#vdpScanline]	;@ r1 is allready scanline.
-	ldr r6,smsOamPtr
+	ldr r6,smsOamIndex
 	mov r7,#-0x80
 ss0Loop:
 	ldrb r0,[r9],#1					;@ MasterSystem OBJ, r0=Ypos.
@@ -1685,10 +1710,10 @@ ss0Chk:
 	adds r7,r7,#2
 	bne ss0Loop
 ss0End:
-	str r6,smsOamPtr
+	str r6,smsOamIndex
 	strb r2,[r4,r6]
 	ldmfd sp!,{r4-r10}
-	b defaultScanlineHook
+	b sprsScanlineHook
 
 ss0Add:
 	cmp r0,r2
@@ -1714,7 +1739,7 @@ sprDMADo0:						;@ Called from earlyFrame if no spr scanning.
 
 sprDMADo1:						;@ Called from endFrame.
 	ldr r2,[vdpptr,#vdpTmpOAMBuffer]	;@ Destination
-	ldrb r0,SPRS
+	ldrb r0,[vdpptr,#vdpSprScan]
 	cmp r0,#0
 	bne pSprDo
 	add r2,r2,#0x200
@@ -1745,7 +1770,8 @@ dm4_1:
 	tst r0,#4
 	orrne r7,r7,#0x100
 	ldrb r1,[vdpptr,#vdpMode1]
-	and r1,r1,#8
+	and r1,r1,#8				;@ EC
+//	add r1,r1,#(GAME_WIDTH-SCREEN_WIDTH)/2
 	mov r1,r1,lsl#23
 dm4_2:
 	ldrb r0,[r10],#1			;@ MasterSystem OBJ, r0=Ypos.
@@ -1791,11 +1817,9 @@ dm4_4:
 	bne dm4_4
 	bx lr
 
-
-
 ;@----------------------------------------------------------------------------
 pSprDo:
-	ldr r8,smsOamPtr
+	ldr r8,smsOamIndex
 	cmp r8,#0
 	beq pSpr3
 	ldr r10,=SMSOAMBuff
@@ -1816,7 +1840,8 @@ pSpr1:
 	add r9,r10,#0x80
 	mov r7,#PRIORITY
 	ldrb r1,[vdpptr,#vdpMode1]
-	and r1,r1,#8
+	and r1,r1,#8				;@ EC
+//	add r1,r1,#(GAME_WIDTH-SCREEN_WIDTH)/2
 	mov r1,r1,lsl#23
 pSpr2:
 	ldrb r0,[r10],#1			;@ MasterSystem OBJ, r0=Ypos.
@@ -1852,10 +1877,9 @@ pSpr2:
 	strh r0,[r2],#4				;@ Store OBJ Atr 2. Pattern, palette.
 	subs r8,r8,#1
 	bne pSpr2
-//	bx lr
 
 pSpr3:
-	ldr r0,smsOamPtr
+	ldr r0,smsOamIndex
 	sub r8,r0,r8
 	rsb r8,r8,#0x80
 	mov r0,#0x2C0				;@ Double, y=192
@@ -1864,8 +1888,6 @@ pSpr4:
 	strpl r0,[r2],#8
 	bhi pSpr4
 	bx lr
-
-
 
 ;@----------------------------------------------------------------------------
 sprDMADoM2:					;@ Called from endFrame.
@@ -1889,11 +1911,10 @@ sprDMADoM2:					;@ Called from endFrame.
 	ldr r5,bgScaleValue
 	add r5,r5,#1
 
-	tst r6,r6,lsl#11			;@ 16x16 size + scaling?
 	mov r8,#32					;@ Number of sprites
 	cmp r0,#VDPMODE_1
 	beq dm2_3					;@ No sprites in Mode1
-	mov r7,#PRIORITY+0x300
+	mov r7,#PRIORITY+0x300		;@ Tile nr offset
 	mov r1,#0x10000000
 dm2_2:
 	ldr r4,[r10],#4				;@ MasterSystem OBJ, r0=Ypos.
@@ -1902,6 +1923,7 @@ dm2_2:
 	beq dm2_3					;@ Skip the rest if sprite Y=208
 	and r9,r4,#0xFF00
 	and r3,r1,r4,lsr#3			;@ EC early clock, x -=32.
+//	add r3,r3,#((GAME_WIDTH-SCREEN_WIDTH)/2)<<23
 	rsb r9,r3,r9,lsl#15
 
 	mov r0,r0,lsr#24
@@ -1912,11 +1934,10 @@ dm2_2:
 	ldrsb r3,[r3]
 	sub r0,r0,r3
 
+	movs r3,r6,lsl#6			;@ 16x16 size + scaling?
 	mov r3,#4					;@ Sprites are scaled around the center
-	tst r6,#0x02000000			;@ That's why this is needed
-	movne r3,r3,lsl#1
-	tst r6,#0x04000000
-	movne r3,r3,lsl#1
+	movmi r3,r3,lsl#1			;@ That's why this is needed
+	movcs r3,r3,lsl#1
 	add r0,r0,r3
 
 	mul r0,r5,r0
@@ -1924,7 +1945,7 @@ dm2_2:
 	and r0,r0,#0xFF0000
 	orr r0,r6,r0,lsr#16			;@ Size plus scaling?
 	tst r4,#0xF000000			;@ Color 0 sprite = invisible.
-	moveq r0,#0x2C0				;@ Double, y=192
+	moveq r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
 	orr r3,r0,r9,lsr#7
 	str r3,[r2],#4				;@ Store OBJ Atr 0,1. Xpos, ypos, flip, scale/rot, size, shape.
 
@@ -1935,7 +1956,7 @@ dm2_2:
 	bicne r3,r3,#3				;@ Only even tiles in 16x16 mode
 	strh r3,[r2],#4				;@ Store OBJ Atr 2. Pattern, palette.
 
-	moveq r0,#0x2C0				;@ Double, y=192
+	moveq r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
 	addne r3,r3,#2				;@ Tile+2
 	addne r9,r9,#0x04000000
 	tstne r6,#0x00000200		;@ Zoom?
@@ -1946,11 +1967,10 @@ dm2_2:
 
 	subs r8,r8,#1
 	bne dm2_2
-;@	bx lr
 
 dm2_3:
 	add r8,r8,#32
-	mov r0,#0x2C0				;@ Double, y=192
+	mov r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
 dm2_4:
 	str r0,[r2],#8
 	str r0,[r2],#8
@@ -1985,7 +2005,7 @@ bgCont:
 	rsbs r1,r0,#4
 	movmi r1,#0
 	add r8,vdpptr,#TMapBuff
-	ldrb r1,[r8,r1]!
+	ldrb r1,[r8,r1,lsl#1]!
 	ldrb r2,[vdpptr,#vdpHeightMode]
 	cmp r2,#VDPMODE_4_224
 	cmpne r2,#VDPMODE_4_240
@@ -2007,19 +2027,17 @@ bgCont:
 	orr r9,r9,r9,lsl#16
 	mov r9,r9,lsl#8
 
-	mov r8,#0
-	cmp r2,#VDPMODE_2
-	ldreq r8,=0x01000100
 	and r1,r1,#0xF
 	add r3,r11,r1,lsl#10
-
 
 	mov r4,r10
 	mov r0,#0
 
 	mov r6,#3
-	cmp r2,#VDPMODE_0
-	cmpne r2,#VDPMODE_2
+	mov r8,#0
+	cmp r2,#VDPMODE_2
+	ldreq r8,=0x01000100
+	cmpne r2,#VDPMODE_0
 	beq bgMode02
 	mov r6,#24
 	cmp r2,#VDPMODE_3
@@ -2049,7 +2067,7 @@ bgModeB:
 	ldmfd sp!,{r3-r11,pc}
 
 ;@----------------------------------------------------------------------------
-;@bgChrFinish				;@ End of frame...
+;@bgMapFinish				;@ End of frame...
 ;@----------------------------------------------------------------------------
 ;@	mov r0,#0
 ;@	ldr r7,=0x40004000
@@ -2077,7 +2095,7 @@ bgM2Loop:
 	ldmfd sp!,{r3-r11,pc}
 
 ;@----------------------------------------------------------------------------
-;@bgChrFinish				;@ End of frame...
+;@bgMapFinish				;@ End of frame...
 ;@----------------------------------------------------------------------------
 ;@	mov r0,#0
 ;@	ldr r7,=0x40004000
@@ -2108,7 +2126,7 @@ bgM3Loop:
 
 
 ;@----------------------------------------------------------------------------
-;@bgChrFinish				;@ End of frame...
+;@bgMapFinish				;@ End of frame...
 ;@----------------------------------------------------------------------------
 ;@	ldr r5,=0xF000F000
 ;@	ldr r6,=0x000003FF
@@ -2120,13 +2138,17 @@ bgMode4:
 	and r2,r2,#0x4000
 	orr r2,r2,r2,lsl#16
 bgM4Frame:
-	ldrb r1,[r8],#8
+	subs r9,r9,#1
+	ldmfdmi sp!,{r3-r11,pc}
+
+	ldrb r1,[r8],#16
 	ldrb r0,[vdpptr,#vdpNTMask]
 	movs r0,r0,lsr#1
 	orrcs r1,r1,#0x01
 	ands r0,r0,r1,lsr#1
 	orr r0,lr,r0,lsl#5
 	biccc r0,r0,#0x10
+
 	add r3,r11,r0,lsl#6
 	add r4,r10,lr,lsl#6
 
@@ -2140,7 +2162,7 @@ bgM4Row:
 
 	and r1,r7,r0,lsr#11
 	orr r1,r1,r7,lsl#1			;@ Bgr color 0x30 & 0x40
-	str r1,[r4,r7,lsr#4]		;@ Write to GBA Tilemap RAM, BGR color
+	str r1,[r4,r7,lsr#4]		;@ Write to NDS/GBA Tilemap RAM, BGR color
 
 	tst r7,r0,lsl#4				;@ Shift out top P bit, test low P bit.
 	bic r0,r0,r5
@@ -2148,15 +2170,14 @@ bgM4Row:
 	add r0,r0,r1				;@ XY flip + color.
 
 	orr r0,r0,r2,lsr#1
-	str r0,[r4,#0x800]			;@ Write to GBA Tilemap RAM, behind sprites
+	str r0,[r4,#0x800]			;@ Write to NDS/GBA Tilemap RAM, behind sprites
 	add r0,r0,r7,lsl#9			;@ New tile offset
 	biccc r0,r0,r6,lsl#16
 	biceq r0,r0,r6
-	str r0,[r4],#4				;@ Write to GBA Tilemap RAM, in front of sprites
+	str r0,[r4],#4				;@ Write to NDS/GBA Tilemap RAM, in front of sprites
 	tst r4,#0x3C				;@ 32 tiles wide
 	bne bgM4Row
-	subs r9,r9,#1
-	bne bgM4Frame
+	b bgM4Frame
 
 	ldmfd sp!,{r3-r11,pc}
 
@@ -2253,6 +2274,12 @@ VDP0ScanlineBPReset:
 	ldr vdpptr,=VDP0
 	b VDPScanlineBPReset
 ;@----------------------------------------------------------------------------
+VDP0SetSprScan:
+	.type VDP0SetSprScan STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr vdpptr,=VDP0
+	b VDPSetSprScan
+;@----------------------------------------------------------------------------
 VDP0LatchHCounter:
 ;@----------------------------------------------------------------------------
 	ldr vdpptr,=VDP0
@@ -2344,7 +2371,7 @@ VDP1CtrlW:
 
 ;@----------------------------------------------------------------------------
 
-smsOamPtr:			.long 0
+smsOamIndex:		.long 0
 windowTop:			.long 0
 wTop:
 	.long 0,0,0		;@ windowtop  (this label too)   L/R scrolling in unscaled mode
@@ -2357,13 +2384,25 @@ yStart:				.byte 0
 SPRS:				.byte 1		;@ SpriteScanning On/Off
 				.byte 0
 				.byte 0
-	.pool
 
 
+#ifdef NDS
+	.section .sbss				;@ This is DTCM on NDS with devkitARM
+#elif GBA
+	.section .bss				;@ This is IWRAM on GBA with devkitARM
+#else
 	.section .bss
+#endif
 	.align 2
 VDP0:
 	.space vdpSize
+
+#ifdef GBA
+	.section .sbss				;@ This is EWRAM on GBA with devkitARM
+#else
+	.section .bss
+#endif
+	.align 2
 VDP1:
 	.space vdpSize
 VDPRAM:

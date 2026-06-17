@@ -27,19 +27,19 @@
 //-----------------------------------------------------------cartflags
 #define SRAMFLAG		(0x02)		// Save SRAM
 //-----------------------------------------------------------emuflags
-#define PALTIMING		(0x0001)	// 0=NTSC 1=PAL timing
-#define COUNTRY			(0x0002)	// 0=Export 1=JAP
-#define GG_MODE			(0x0004)	// 0=SMS mode, 1=GG mode
-#define SG_MODE			(0x0008)	// 0=SMS mode, 1=SG mode
-#define SC_MODE			(0x0010)	// 0=SMS mode, 1=SC mode
-#define OMV_MODE		(0x0020)	// 0=SMS mode, 1=OMV mode
-#define MD_MODE			(0x0040)	// 0=SMS mode, 1=MegaDrive mode
-#define SGAC_MODE		(0x0080)	// 0=SMS mode, 1=SG-Arcade mode
-#define COL_MODE		(0x0100)	// 0=SMS mode, 1=Coleco mode
-#define MSX_MODE		(0x0200)	// 0=SMS mode, 1=MSX mode
-#define SORDM5_MODE		(0x0400)	// 0=SMS mode, 1=SordM5 mode
-#define SYSE_MODE		(0x0800)	// 0=SMS mode, 1=System E mode
-#define MT_MODE			(0x1000)	// 0=SMS mode, 1=MegaTech mode
+#define PALTIMING		(1<<0)		// 0=NTSC 1=PAL timing
+#define COUNTRY			(1<<1)		// 0=Export 1=JAP
+#define GG_MODE			(1<<2)		// 0=SMS mode, 1=GG mode
+#define SG_MODE			(1<<3)		// 0=SMS mode, 1=SG mode
+#define SC_MODE			(1<<4)		// 0=SMS mode, 1=SC mode
+#define OMV_MODE		(1<<5)		// 0=SMS mode, 1=OMV mode
+#define MD_MODE			(1<<6)		// 0=SMS mode, 1=MegaDrive mode
+#define SGAC_MODE		(1<<7)		// 0=SMS mode, 1=SG-Arcade mode
+#define COL_MODE		(1<<8)		// 0=SMS mode, 1=Coleco mode
+#define MSX_MODE		(1<<9)		// 0=SMS mode, 1=MSX mode
+#define SORDM5_MODE		(1<<10)		// 0=SMS mode, 1=SordM5 mode
+#define SYSE_MODE		(1<<11)		// 0=SMS mode, 1=System E mode
+#define MT_MODE			(1<<12)		// 0=SMS mode, 1=MegaTech mode
 
 
 #define SCALED_1_1		0		// Display types

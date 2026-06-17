@@ -102,7 +102,11 @@ cart2Write:					;@ Write Cart2 address (error)
 	bx lr
 ;@----------------------------------------------------------------------------
 
-	.section .itcm
+#ifdef NDS
+	.section .itcm, "ax", %progbits		;@ For the NDS ARM9
+#elif GBA
+	.section .iwram, "ax", %progbits	;@ For the GBA
+#endif
 	.align 2
 ;@----------------------------------------------------------------------------
 ram_W:						;@ Write ram ($0000-$FFFF)
@@ -206,7 +210,8 @@ ram16k_W:					;@ Write ram (SYS-E $C000-$FFFF), no mirroring.
 ;@----------------------------------------------------------------------------
 sram0_W:					;@ Write sram bank0 ($8000-$BFFF)
 ;@----------------------------------------------------------------------------
-	ldr r1,=EMU_SRAM-0x8000
+//	ldr r1,=EMU_SRAM-0x8000
+	ldr r1,[z80ptr,#-33*4]
 	strb r0,[r1,addy]
 	bx lr
 ;@----------------------------------------------------------------------------

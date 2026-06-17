@@ -10,3 +10,6 @@
 
 # standard 4bpp tilereduction
 -mR4
+
+# palette options
+-pn16

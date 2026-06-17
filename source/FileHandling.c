@@ -25,77 +25,92 @@ static ConfigData cfg;
 //static char tempState[STATESIZE];
 
 //---------------------------------------------------------------------------------
-int loadSettings() {
-	FILE *file;
-
-	cfg.currentPath[0] = 0;
-	cfg.biosUS[0] = 0;
-	cfg.biosJP[0] = 0;
-	cfg.biosGG[0] = 0;
-	cfg.biosCOLECO[0] = 0;
-	cfg.biosMSX[0] = 0;
-	cfg.biosSORDM5[0] = 0;
-	if (findFolder(folderName)) {
-		return 1;
-	}
-	if ( (file = fopen(settingName, "r")) ) {
-		fread(&cfg, 1, sizeof(ConfigData), file);
-		fclose(file);
-		if (!strstr(cfg.magic, "cfg")) {
-			infoOutput("Error in settings file.");
-			return 1;
-		}
-	} else {
-		infoOutput("Couldn't open file:");
-		infoOutput(settingName);
-		return 1;
-	}
-
-//	gDipSwitch0 = cfg.dipSwitch0;
-//	gDipSwitch1 = cfg.dipSwitch1;
+void applyConfigData(void) {
+	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
 	SPRS         = cfg.sprites;
 	g3DEnable    = cfg.glasses;
 	gConfigSet   = cfg.config;
 	gScalingSet  = cfg.scaling & 3;
 	gFlicker     = cfg.flicker & 1;
 	gGammaValue  = cfg.gammaValue & 0x7;
-	gColorValue  = (cfg.gammaValue>>4) & 0x7;
-	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK;	// Clear speed setting.
+	gColorValue  = (cfg.gammaValue >> 4) & 0x7;
 	sleepTime    = cfg.sleepTime;
-	joyCfg       = (joyCfg & ~0x400) | ((cfg.controller & 1)<<10);
+	joyCfg       = (joyCfg & ~0x400) | ((cfg.controller & 1) << 10);
 	strlcpy(currentDir, cfg.currentPath, sizeof(currentDir));
-
-	infoOutput("Settings loaded.");
-	return 0;
+//	gDipSwitch0  = cfg.dipSwitch0;
+//	gDipSwitch1  = cfg.dipSwitch1;
+	pauseEmulation = (emuSettings & AUTOPAUSE_EMULATION);
 }
 
-void saveSettings() {
-	FILE *file;
-
+void updateConfigData(void) {
 	strcpy(cfg.magic, "cfg");
-//	cfg.dipSwitch0  = gDipSwitch0;
+	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
 	cfg.sprites     = SPRS;
 	cfg.glasses     = g3DEnable;
 	cfg.config      = gConfigSet;
 	cfg.scaling     = gScalingSet & 3;
 	cfg.flicker     = gFlicker & 1;
-	cfg.gammaValue  = (gGammaValue & 0x7)|((gColorValue & 0x7)<<4);
-	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK;		// Clear speed setting.
+	cfg.gammaValue  = (gGammaValue & 0x7) | ((gColorValue & 0x7) << 4);
 	cfg.sleepTime   = sleepTime;
 	cfg.controller  = (joyCfg>>10) & 1;
 	strlcpy(cfg.currentPath, currentDir, sizeof(cfg.currentPath));
+//	cfg.dipSwitch0  = gDipSwitch0;
+}
 
-	if ( findFolder(folderName) ) {
-		return;
-	}
-	if ( (file = fopen(settingName, "w")) ) {
-		fwrite(&cfg, 1, sizeof(ConfigData), file);
+void initSettings() {
+	memset(&cfg, 0, sizeof(cfg));
+	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
+	cfg.sprites     = 1;		// SpriteScanning On/Off;
+	cfg.glasses     = 1;
+	cfg.config      = 0x80;		// config, bit 7=BIOS on/off, bit 6=X as GG Start, bit 5=Select as Reset, bit 4=R as FastForward
+	cfg.scaling     = SCALED_FIT;
+	cfg.flicker     = 1;
+	cfg.gammaValue  = 0x40;		// ColorValue = 4
+	cfg.sleepTime   = 60*60*5;
+
+	applyConfigData();
+}
+
+int loadSettings() {
+	FILE *file;
+	if (!findFolder(folderName)
+		&& (file = fopen(settingName, "r"))) {
+		int len = fread(&cfg, 1, sizeof(ConfigData), file);
 		fclose(file);
-		infoOutput("Settings saved.");
-	} else {
+		if (strstr(cfg.magic, "cfg") && len == sizeof(ConfigData)) {
+			applyConfigData();
+			infoOutput("Settings loaded.");
+			return 0;
+		}
+		updateConfigData();
+		infoOutput("Error in settings file.");
+	}
+	else {
 		infoOutput("Couldn't open file:");
 		infoOutput(settingName);
 	}
+	return 1;
+}
+
+int saveSettings() {
+	updateConfigData();
+
+	FILE *file;
+	if (!findFolder(folderName)
+		&& (file = fopen(settingName, "w"))) {
+		int len = fwrite(&cfg, 1, sizeof(ConfigData), file);
+		fclose(file);
+		if (len == sizeof(ConfigData)) {
+			infoOutput("Settings saved.");
+			return 0;
+		}
+		infoOutput("Couldn't save settings.");
+	}
+	else {
+		infoOutput("Couldn't open file:");
+		infoOutput(settingName);
+	}
+	return 1;
 }
 
 int loadNVRAM() {
@@ -109,11 +124,12 @@ int loadSRAM() {
 		return 1;
 	}
 	setFileExtension(sramName, currentFilename, ".sav", sizeof(sramName));
-	if ( (file = fopen(sramName, "r")) ) {
+	if ((file = fopen(sramName, "r"))) {
 		fread(EMU_SRAM, 1, 0x2000, file);
 		fclose(file);
 		infoOutput("Loaded SRAM.");
-	} else {
+	}
+	else {
 		return 1;
 	}
 	return 0;
@@ -129,7 +145,7 @@ void saveSRAM() {
 		return;
 	}
 	setFileExtension(sramName, currentFilename, ".sav", sizeof(sramName));
-	if ( (file = fopen(sramName, "w")) ) {
+	if ((file = fopen(sramName, "w"))) {
 		fwrite(EMU_SRAM, 1, 0x2000, file);
 		fclose(file);
 		infoOutput("Saved SRAM.");
@@ -184,7 +200,7 @@ bool loadGame(const char *gameName) {
 				loadState();
 			}
 			gameInserted = true;
-			powerButton = true;
+			powerIsOn = true;
 			closeMenu();
 			return false;
 		}

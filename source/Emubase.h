@@ -1,6 +1,9 @@
 #ifndef EMUBASE
 #define EMUBASE
 
+#define ENABLE_LIVE_UI		(1<<12)
+#define ALLOW_REFRESH_CHG	(1<<19)
+
 typedef struct {				//(config struct)
 	char magic[4];				//="CFG",0
 	int emuSettings;

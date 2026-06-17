@@ -1,5 +1,7 @@
 # S8DS V1.1.8
 
+<img align="right" width="220" src="./logo.png" />
+
 This is a SEGA 8Bit emulator for the Nintendo DS(i)/3DS, it support the following systems:
 
 	SEGA SG-1000 / SG-1000 II
@@ -28,7 +30,7 @@ Missing:
 	EEPROM save for the few GG games that use it.
 
 Check your roms!
-https://www.smspower.org/maxim/Software/SMSChecker
+<https://www.smspower.org/maxim/Software/SMSChecker>
 
 ## How to use
 
@@ -87,7 +89,7 @@ better 3D effect, I have only tested with red/cyan glasses.
   * Gamma: Lets you change the gamma ("brightness").
   * Color: Lets you change the color.
   * GG Border: Lets you change between black, bordercolor and none.
-  * Perfect Sprites: Uses a bit more cpu but is worth it.
+  * Perfect Sprites: Uses a bit more cpu but it is worth it.
   * 3D Display: Terminator vs Robocop needs this off.
 * Machine:
   * Region: Change the region of the SMS and video standard.
@@ -102,10 +104,10 @@ better 3D effect, I have only tested with red/cyan glasses.
   * YM2413: Enable YM2413 emulation for SMS1 & Mark 3.
 * Settings:
   * Speed: Switch between speed modes, can also be toggled with L+START.
-    * Normal: Standard, 100% speed.
-    * Fast: Double, 200% speed.
-    * Max: Fastest, 400% speed.
-    * Slowmo: Slow, 50% speed.
+    * Normal: Game runs at its normal speed.
+    * 200%: Game can run up to double speed.
+    * Max: Games can run up to 4 times normal speed.
+    * 50%: Game runs at half speed.
   * Autoload State: Toggle Savestate autoloading. Automagicaly load the
    savestate associated with the selected game.
   * Autosave Settings: This will save settings when leaving menu if any
@@ -176,6 +178,8 @@ The crew at PocketHeaven for their support.
 
 Fredrik Ahlström
 
-X/Twitter @TheRealFluBBa
+<https://bsky.app/profile/therealflubba.bsky.social>
 
 <https://www.github.com/FluBBaOfWard>
+
+X/Twitter @TheRealFluBBa

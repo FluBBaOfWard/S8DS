@@ -25,6 +25,8 @@ void paletteInit(u8 gammaVal);
 void mapSGPalette(u8 gammaVal);
 void paletteTxAll(void);
 void refreshGfx(void);
+void updateLCDRefresh(void);
+void hz50Refresh(void);
 void makeBorder(void);
 void setupScaling(void);
 

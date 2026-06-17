@@ -1,3 +1,10 @@
+//
+//  cpu.s
+//  S8DS
+//
+//  Created by Fredrik Ahlström on 2009-07-25.
+//  Copyright © 2009-2026 Fredrik Ahlström. All rights reserved.
+//
 #ifdef __arm__
 
 #include "Shared/nds_asm.h"
@@ -11,7 +18,7 @@
 	.global waitMaskOut
 
 	.global run
-	.global runFrame
+	.global stepFrame
 	.global cpuReset
 
 	.syntax unified
@@ -116,10 +123,11 @@ SYSEFrameLoop:
 	ldr vdpptr,=VDP0
 	bl VDPDoScanline
 	cmp r0,#0
-	ldmfdne sp!,{pc}
 	ldr r0,scanlineCycles
-	bl Z80RunXCycles
-	b SYSEFrameLoop
+	adr lr,SYSEFrameLoop
+	beq Z80RunXCycles
+	ldmfd sp!,{lr}
+	b Z80RunXCycles
 ;@----------------------------------------
 SMSFrameRun:
 	stmfd sp!,{lr}
@@ -127,14 +135,15 @@ SMSFrameLoop:
 	ldr vdpptr,=VDP0
 	bl VDPDoScanline
 	cmp r0,#0
-	ldmfdne sp!,{pc}
 	ldr r0,scanlineCycles
-	bl Z80RunXCycles
-	b SMSFrameLoop
+	adr lr,SMSFrameLoop
+	beq Z80RunXCycles
+	ldmfd sp!,{lr}
+	b Z80RunXCycles
 
 ;@----------------------------------------------------------------------------
-runFrame:					;@ Return after 1 frame
-	.type runFrame STT_FUNC
+stepFrame:					;@ Return after 1 frame
+	.type stepFrame STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4-r11,lr}
 	ldr z80ptr,=Z80OpTable

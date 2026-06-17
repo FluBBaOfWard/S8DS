@@ -43,6 +43,8 @@
 		35E683AF1C664A6D00FCFE8A /* io.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
 		35E683B01C664E2300FCFE8A /* Sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
 		746D78E114ED9A8400CC738F /* Makefile */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = Makefile; sourceTree = "<group>"; };
+		9C2F502A2FBA23720063ACDD /* SordM5Kb.grit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SordM5Kb.grit; sourceTree = "<group>"; };
+		9C2F502B2FBA23720063ACDD /* SordM5Kb.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SordM5Kb.png; sourceTree = "<group>"; };
 		9C35484D24BB837B00CCD030 /* YM2413.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = YM2413.i; sourceTree = "<group>"; };
 		9C35484E24BB837B00CCD030 /* YM2413.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YM2413.h; sourceTree = "<group>"; };
 		9C3D5AD825E2C54400E8CD56 /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
@@ -179,6 +181,8 @@
 				350E1C3D18AFF55400074DD5 /* GG.png */,
 				350E1C3E18AFF55400074DD5 /* MD.grit */,
 				350E1C3518AFB50800074DD5 /* MD.png */,
+				9C2F502A2FBA23720063ACDD /* SordM5Kb.grit */,
+				9C2F502B2FBA23720063ACDD /* SordM5Kb.png */,
 				359D278818C85E840087F5FD /* ColecoNumpad.grit */,
 				359D278918C85E840087F5FD /* ColecoNumpad.png */,
 				A43DE79B1AD2E1EC00112CE8 /* MSX.grit */,

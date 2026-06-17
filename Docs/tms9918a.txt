@@ -123,7 +123,7 @@ EXTVID		Enables external video input.
 BL		Blank screen if reset; just backdrop. Sprite system inactive
 SI		16x16 sprites if set; 8x8 if reset
 MAG		Sprites enlarged if set (sprite pixels are 2x2)
-GINT		Generate interrupts if set
+GINT	Generate interrupts if set
 PN*		Address for pattern name table
 CT*		Address for colour table (special meaning in M2)
 PG*		Address for pattern generator table (special meaning in M2)

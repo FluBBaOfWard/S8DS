@@ -20,7 +20,7 @@ static void checkTimeOut(void);
 static void setupGraphics(void);
 static void setupStream(void);
 
-bool powerButton = false;
+bool powerIsOn = false;
 bool gameInserted = false;
 static int sleepTimer = 0x7FFFFFFF;		// 5 min
 static bool vBlankOverflow = false;
@@ -64,7 +64,11 @@ int main(int argc, char **argv) {
 
 	setupStream();
 	irqSet(IRQ_VBLANK, myVblank);
+	SetYtrigger(230);
+	irqSet(IRQ_VCOUNT, hz50Refresh);
+	irqEnable(IRQ_VCOUNT);
 	setupGUI();
+	initSettings();
 	ejectGame();
 //	loadCart(0);
 	if (initFileHelper()) {
@@ -75,15 +79,16 @@ int main(int argc, char **argv) {
 		loadCOLECOBIOS();
 		loadMSXBIOS();
 		loadSORDM5BIOS();
+		updateLCDRefresh();
 		if (argc > 1) {
 			loadGame(argv[1]);
-			setMuteSoundGUI();
+			soundSetMuteGUI();
 		}
 	}
 	else {
 		infoOutput("fatInitDefault() failure.");
 	}
-//	if ( (YM2413Init(1, 3579545, sample_rate)) ) {
+//	if (YM2413Init(1, 3579545, sample_rate)) {
 //		drawText("YMInit failure.",23,0);
 //	}
 	getInput();
@@ -91,9 +96,8 @@ int main(int argc, char **argv) {
 	while (1) {
 		waitVBlank();
 //		mmStreamUpdate();
-		checkTimeOut();
 		guiRunLoop();
-		if (powerButton) {
+		if (powerIsOn) {
 			if (!pauseEmulation) {
 				run();
 			}
@@ -101,6 +105,7 @@ int main(int argc, char **argv) {
 		else {
 			antWars();
 		}
+//		checkTimeOut();
 	}
 //	YM2413Shutdown();
 	return 0;
@@ -219,7 +224,7 @@ static void setupStream(void) {
 	sys.samp_count			= 0;
 	sys.mem_bank			= 0;
 	sys.fifo_channel		= FIFO_MAXMOD;
-	mmInit( &sys );
+	mmInit(&sys);
 
 	//----------------------------------------------------------------
 	// open stream
@@ -228,11 +233,11 @@ static void setupStream(void) {
 	myStream.sampling_rate	= sample_rate;				// sampling rate =
 	myStream.buffer_length	= buffer_size;				// buffer length =
 //	myStream.callback		= mix_sound;				// set callback function
-	myStream.callback		= VblSound2;				// set callback function
+	myStream.callback		= soundRender;				// set callback function
 	myStream.format			= MM_STREAM_16BIT_STEREO;	// format = stereo 16-bit
 	myStream.timer			= MM_TIMER0;				// use hardware timer 0
 	myStream.manual			= false;					// use manual filling
-	mmStreamOpen( &myStream );
+	mmStreamOpen(&myStream);
 
 	//----------------------------------------------------------------
 	// when using 'automatic' filling, your callback will be triggered

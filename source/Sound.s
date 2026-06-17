@@ -9,7 +9,7 @@
 	.global soundInit
 	.global soundReset
 	.global soundSetFrequency
-	.global VblSound2
+	.global soundRender
 	.global SMSJSoundControlW
 	.global SMSJSoundControlR
 	.global SN76496_0
@@ -25,15 +25,13 @@
 	.global SCCWrite_0
 	.global GG_Stereo_W
 	.global SoundVariables
-	.global setMuteSoundGUI
-	.global setMuteSoundGame
+	.global soundSetMuteGUI
+	.global soundSetMuteGame
 
 	.extern pauseEmulation
-	.extern powerButton
-
+	.extern powerIsOn
 
 ;@----------------------------------------------------------------------------
-
 	.syntax unified
 	.arm
 
@@ -72,12 +70,12 @@ soundReset:
 	cmpne r4,#HW_SG1000II	;@ ?
 	cmpne r4,#HW_COLECO
 	mov r0,#0
-	moveq r0,#1
+	movne r0,#1
 	ldr r1,=SN76496_0
 	bl sn76496Reset			;@ Sound
 	cmp r4,#HW_SYSE
 	bne noSysE
-	mov r0,#0
+	mov r0,#1
 	ldr r1,=SN76496_1
 	bl sn76496Reset			;@ Sound
 noSysE:
@@ -121,24 +119,24 @@ soundSetFrequency:
 	bx lr
 
 ;@----------------------------------------------------------------------------
-setMuteSoundGUI:
-	.type   setMuteSoundGUI STT_FUNC
+soundSetMuteGUI:
+	.type   soundSetMuteGUI STT_FUNC
 ;@----------------------------------------------------------------------------
 	ldr r1,=pauseEmulation		;@ Output silence when emulation paused.
 	ldrb r0,[r1]
-	ldr r1,=powerButton			;@ Output silence when power off.
+	ldr r1,=powerIsOn			;@ Output silence when power off.
 	ldrb r1,[r1]
 	cmp r1,#0
 	orreq r0,r0,#0xFF
 	strb r0,muteSoundGUI
 	bx lr
 ;@----------------------------------------------------------------------------
-setMuteSoundGame:			;@ For System E ?
+soundSetMuteGame:			;@ For System E ?
 ;@----------------------------------------------------------------------------
 	strb r0,muteSoundGame
 	bx lr
 ;@----------------------------------------------------------------------------
-VblSound2:					;@ r0=length, r1=pointer
+soundRender:					;@ r0=length, r1=pointer
 ;@----------------------------------------------------------------------------
 	ldr r2,muteSound
 	cmp r2,#0
