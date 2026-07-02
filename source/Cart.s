@@ -282,7 +282,7 @@ loadCart: 		;@ Called from C:  r0=emuFlags
 	ldr r4,=MEMMAPTBL_
 	ldr r9,=RDMEMTBL_
 	ldr r6,=WRMEMTBL_
-	ldr r7,=rom_R
+	ldr r7,=mem_R
 	ldrmi r8,=rom_W
 	ldreq r8,=Codemaster_W
 	ldrhi r8,=Korean_W
@@ -895,7 +895,7 @@ initMTMemory:
 	str r2,[r1,#3*4]			;@ Z80ReadTbl, IO ROM
 	str r2,[r1,#4*4]			;@ Z80ReadTbl, READ_GAME_ROM
 	str r2,[r1,#5*4]			;@ Z80ReadTbl, READ_GAME_ROM
-	ldr r2,=rom_R
+	ldr r2,=mem_R
 	str r2,[r1,#6*4]			;@ Z80ReadTbl, READ_GAME ROM/RAM?
 	str r2,[r1,#7*4]			;@ Z80ReadTbl, READ_GAME ROM/RAM?
 

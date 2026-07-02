@@ -31,7 +31,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-06-17"
+#define EMUVERSION "V1.1.8 2026-07-02"
 
 extern u8 sordM5Input;		// SordM5.s
 
@@ -61,7 +61,7 @@ static void setupMSXBackground(void);
 static void setupSordM5Background(void);
 
 static void powerOnOff(void);
-static void resetGame(void);
+static void resetConsole(void);
 
 static void controllerSet(void);
 static const char *getControllerText(void);
@@ -93,7 +93,6 @@ static const char *getGlassesText(void);
 
 static void countrySet(void);
 static const char *getCountryText(void);
-static void machineSet(void);
 static void selectMachine(void);
 static const char *getMachineText(void);
 static void biosSet(void);
@@ -158,7 +157,7 @@ static const MItem fileItems[] = {
 	{"Save Settings", saveSettings},
 	{"Eject Game", ejectGame},
 	{"Power On/Off", powerOnOff},
-	{"Reset Console", resetGame},
+	{"Reset Console", resetConsole},
 	{"Quit Emulator", ui9},
 };
 static const MItem optionItems[] = {
@@ -204,6 +203,12 @@ static const MItem setItems[] = {
 	{"Emulator on Bottom:", screenSwapSet, getScreenSwapText},
 	{"Console Touch:", touchConsoleSet, getTouchConsoleText},
 };
+static const MItem debugItems[] = {
+	{"Debug Output:", debugTextSet, getDebugText},
+	{"Disable Background:", bgrLayerSet, getBgrLayerText},
+	{"Disable Sprites:", sprLayerSet, getSprLayerText},
+	{"Step Frame", stepFrame},
+};
 static const MItem biosItems[] = {
 	{"Use BIOS:", biosSet},
 	{"Select Export Bios ->", selectUSBios},
@@ -219,12 +224,7 @@ static const MItem quitItems[] = {
 	{"No", backOutOfMenu},
 };
 static const MItem fnList11[] = {
-	{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine}};
-static const MItem debugItems[] = {
-	{"Debug Output:", debugTextSet, getDebugText},
-	{"Disable Background:", bgrLayerSet, getBgrLayerText},
-	{"Disable Sprites:", sprLayerSet, getSprLayerText},
-	{"Step Frame", stepFrame},
+	{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine},{"",selectMachine}
 };
 static const MItem fnList14[] = {{"",dip0Set4_2},{"",dip0Set6_1},{"",dip0Set7_1}};
 static const MItem fnList15[] = {{"",dip0Set0_4},{"",dip0Set4_4},{"",dip1Set0_1},{"",dip1Set1_2},{"",dip1Set3_2}};
@@ -578,7 +578,8 @@ static void cartridgePortTouched(int keyHit) {
 	if (keyHit & KEY_TOUCH) {
 		if (gameInserted) {
 			ejectGame();
-		} else {
+		}
+		else {
 			quickSelectGame();
 		}
 	}
@@ -1409,6 +1410,9 @@ void powerOnOff() {
 		cls(0);
 		uiNullNormal();
 	}
+	if (!powerIsOn) {
+		antWarsInit();
+	}
 }
 
 void ejectGame() {
@@ -1416,7 +1420,7 @@ void ejectGame() {
 	gameInserted = false;
 }
 
-void resetGame() {
+void resetConsole() {
 	loadCart(gEmuFlags);
 }
 
@@ -1570,12 +1574,6 @@ const char *getCountryText() {
 	return cntrTxt[gRegion];
 }
 
-void machineSet() {
-	gMachineSet++;
-	if (gMachineSet >= HW_SELECT_END) {
-		gMachineSet = 0;
-	}
-}
 void selectMachine() {
 	gMachineSet = selected;
 	backOutOfMenu();

@@ -91,6 +91,9 @@ int main(int argc, char **argv) {
 //	if (YM2413Init(1, 3579545, sample_rate)) {
 //		drawText("YMInit failure.",23,0);
 //	}
+	if ( !powerIsOn ) {
+		antWarsInit();
+	}
 	getInput();
 
 	while (1) {
@@ -148,7 +151,7 @@ static void checkTimeOut() {
 //---------------------------------------------------------------------------------
 void setEmuSpeed(int speed) {
 //---------------------------------------------------------------------------------
-	if (speed == 0) {			// Normal Speed
+	if (speed == 0) {		// Normal Speed
 		waitMaskIn = 0x00;
 		waitMaskOut = 0x00;
 	}

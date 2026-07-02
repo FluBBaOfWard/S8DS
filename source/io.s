@@ -51,7 +51,7 @@
 	.global dipSwitch0iR
 	.global dipSwitch1iR
 
-	.global PPI_1
+	.global PPI0
 	.global PPI1Reset
 	.global PPI1PortAR
 	.global PPI1PortBR
@@ -1020,52 +1020,52 @@ outTable:
 	.space 0x400
 ;@----------------------------------------------------------------------------
 PPI1Reset:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255Reset
 ;@----------------------------------------------------------------------------
 PPI1R:
 	mov r1,addy
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255R
 ;@----------------------------------------------------------------------------
 PPI1PortAR:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortAR
 ;@----------------------------------------------------------------------------
 PPI1PortBR:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortBR
 ;@----------------------------------------------------------------------------
 PPI1PortCR:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortCR
 ;@----------------------------------------------------------------------------
 PPI1PortDR:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortDR
 ;@----------------------------------------------------------------------------
 PPI1W:
 	mov r1,addy
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255W
 ;@----------------------------------------------------------------------------
 PPI1PortAW:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortAW
 ;@----------------------------------------------------------------------------
 PPI1PortBW:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortBW
 ;@----------------------------------------------------------------------------
 PPI1PortCW:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortCW
 ;@----------------------------------------------------------------------------
 PPI1PortDW:
-	adr ppiptr,PPI_1
+	adr ppiptr,PPI0
 	b PPI8255PortDW
 ;@----------------------------------------------------------------------------
-PPI_1:
+PPI0:
 	.space ppiSize
 ;@----------------------------------------------------------------------------
 	.end

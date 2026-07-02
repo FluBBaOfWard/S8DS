@@ -20,15 +20,16 @@ extern u16 EMUPALBUFF[200];
 
 void gfxInit(void);
 void vblIrqHandler(void);
+void antWarsInit(void);
 void antWars(void);
 void paletteInit(u8 gammaVal);
 void mapSGPalette(u8 gammaVal);
 void paletteTxAll(void);
 void refreshGfx(void);
-void updateLCDRefresh(void);
-void hz50Refresh(void);
 void makeBorder(void);
 void setupScaling(void);
+void updateLCDRefresh(void);
+void hz50Refresh(void);
 
 void VDP0ApplyScaling(void);
 void VDP0SetMode(void);

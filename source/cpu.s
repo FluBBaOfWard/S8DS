@@ -164,7 +164,7 @@ s8StepLoop:
 ;@--- PAL Speed - 3546893Hz / 49.7Hz / 313 = 228
 ;@---NTSC Speed - 3579545Hz / 59.9Hz / 262 = 228
 ;@----------------------------------------------------------------------------
-cpuReset:		;@ Called by loadCart/resetGame
+cpuReset:		;@ Called by loadCart/resetConsole
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4,lr}
 

@@ -45,6 +45,7 @@
 		746D78E114ED9A8400CC738F /* Makefile */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; path = Makefile; sourceTree = "<group>"; };
 		9C2F502A2FBA23720063ACDD /* SordM5Kb.grit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SordM5Kb.grit; sourceTree = "<group>"; };
 		9C2F502B2FBA23720063ACDD /* SordM5Kb.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SordM5Kb.png; sourceTree = "<group>"; };
+		9C2F50312FEC271D0063ACDD /* RendererGBA.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = RendererGBA.s; sourceTree = "<group>"; };
 		9C35484D24BB837B00CCD030 /* YM2413.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = YM2413.i; sourceTree = "<group>"; };
 		9C35484E24BB837B00CCD030 /* YM2413.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YM2413.h; sourceTree = "<group>"; };
 		9C3D5AD825E2C54400E8CD56 /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
@@ -411,6 +412,7 @@
 				9CC0AADB259FA95B009020F3 /* SegaVDP.h */,
 				9CC0AADA259FA95B009020F3 /* SegaVDP.i */,
 				A49D34501757E54900BD9B4B /* SegaVDP.s */,
+				9C2F50312FEC271D0063ACDD /* RendererGBA.s */,
 			);
 			path = SegaVDP;
 			sourceTree = "<group>";

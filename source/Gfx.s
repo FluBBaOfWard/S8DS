@@ -20,6 +20,7 @@
 	.global VDPRAM				;@ Used by cart.s, init ram.
 	.global EMUPALBUFF			;@ Needs to be flushed before dma copied.
 
+	.global antWarsInit
 	.global antWars
 	.global gfxInit
 	.global gfxReset
@@ -29,12 +30,11 @@
 	.global mapSGPalette
 	.global paletteTxAll
 	.global refreshGfx
-	.global bgFinish
-	.global transferVRAM
-	.global delayVRAM
 	.global makeBorder
-	.global earlyFrame
 	.global endFrame
+	.global spriteScannerStart
+	.global spriteScanner
+	.global sprDMADo0
 	.global vblIrqHandler
 	.global updateLCDRefresh
 	.global hz50Refresh
@@ -72,41 +72,37 @@
 	.align 2
 
 antSeed:
-	.long 0x800000
+	.long 0x814821
 ;@----------------------------------------------------------------------------
-antWars:
-	.type antWars STT_FUNC
+antWarsInit:
+	.type antWarsInit STT_FUNC
 ;@----------------------------------------------------------------------------
+	ldr r0,=gMachine
+	ldrb r0,[r0]
+	cmp r0,#HW_GG
+	bxeq lr
 	stmfd sp!,{r4,lr}
 
+	ldr r4,=VDP0
 	mov r0,#0x40
-	ldr r1,=VDP0
-	strb r0,[r1,#vdpMode2Bak2]
+	strb r0,[r4,#vdpMode2Bak2]
 
 	ldr r0,=EMUPALBUFF			;@ Setup palette for antWars.
-	mov r4,#0
-	strh r4,[r0]
-	strh r4,[r0,#0x40]
-	ldr r4,=0x7FFF
-	strh r4,[r0,#0x1E]
+	mov r1,#0
+	strh r1,[r0]
+	strh r1,[r0,#0x40]
+	ldr r1,=0x7FFF
+	strh r1,[r0,#0x1E]
 
-	ldr r4,[r1,#vdpBgrMapOfs1]
-	mov r0,#BG_GFX
-	add r4,r0,r4,lsl#3
-	mov r0,#0
-tmLoop:
-	add r1,r0,#8
-	strh r1,[r4],#2
-	add r0,r0,#1
-	cmp r0,#1024
-	bne tmLoop
+	ldr r0,[r4,#vdpBgrMapOfs0]
+	mov r1,#BG_GFX
+	add r0,r1,r0,lsl#3
+	add r0,r0,#0x800
 
-	mov r0,r4
-	ldr r1,=0x02000200
-	mov r2,#0x800/4
-	bl memset_					;@ BG1/BG3 clear
+	mov r1,#0x1000/4
+	bl memclr_					;@ BG1/BG3 clear
 
-	ldr r0,=BG_GFX+0x04100
+	ldr r0,[r4,#vdpBgrTileOfs]
 	ldr r3,antSeed
 	ldr r1,=32*240
 antLoop0:
@@ -126,46 +122,44 @@ antLoop1:
 	ldmfd sp!,{r4,lr}
 	bx lr
 ;@----------------------------------------------------------------------------
+antWars:
+	.type antWars STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=gMachine
+	ldrb r0,[r0]
+	cmp r0,#HW_GG
+	bxeq lr
+	stmfd sp!,{r4,lr}
+
+	ldr r4,=VDP0
+	ldr r0,[r4,#vdpBgrMapOfs0]
+	ldr r3,[r4,#vdpBgrTileOfs]
+	and r3,r3,#0x3FC0
+	mov r3,r3,lsr#5
+	mov r1,#BG_GFX
+	add r0,r1,r0,lsl#3
+	ldr r4,antSeed
+	mov r1,#1024
+tmLoop:
+	movs r4,r4,lsr#1
+	eorcs r4,r4,#0xE10000
+	mov r2,r4,lsl#23
+	add r2,r3,r2,lsr#23
+	strh r2,[r0],#2
+	subs r1,r1,#1
+	bne tmLoop
+
+	str r4,antSeed
+	ldmfd sp!,{r4,lr}
+	bx lr
+;@----------------------------------------------------------------------------
 gfxInit:					;@ (called from main.c) only need to call once
 	.type gfxInit STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{lr}
-
-	ldr r0,=BG_GFX+0x4000
-	mov r1,#0x4000
-	bl memclr_					;@ Clear NDS VRAM
-	add r0,r0,#0x80
-	ldr r1,=0x20202020
-	mov r2,#0x10
-	bl memset_					;@ BGR color 0
-	add r0,r0,#0x40
-	ldr r1,=0x30303030
-	mov r2,#0x10
-	bl memset_					;@ BGR color 1
-
-	ldr r0,=CHRDecode			;@ Destination
-	mov r1,#0xffffff00			;@ Build chr decode tbl
-ppi:
-	movs r2,r1,lsl#31
-	movne r2,#0x10000000
-	orrcs r2,r2,#0x01000000
-	tst r1,r1,lsl#29
-	orrmi r2,r2,#0x00100000
-	orrcs r2,r2,#0x00010000
-	tst r1,r1,lsl#27
-	orrmi r2,r2,#0x00001000
-	orrcs r2,r2,#0x00000100
-	tst r1,r1,lsl#25
-	orrmi r2,r2,#0x00000010
-	orrcs r2,r2,#0x00000001
-	str r2,[r0],#4
-	adds r1,r1,#1
-	bne ppi
-
-	bl setupScaling
-	bl VDP0ApplyScaling
+	bl rendererInit
 	ldmfd sp!,{lr}
-	bx lr
+	b VDP0Reset
 ;@----------------------------------------------------------------------------
 gfxReset:					;@ Called with cpuReset
 ;@----------------------------------------------------------------------------
@@ -262,10 +256,6 @@ VDP0Reset:
 	tst r3,#GG_MODE
 	orrne r0,r0,#GGMODE
 	bl VDPReset				;@ r0=vdp/tv type, r1 = IRQ function ptr, r2 = debounce routine, r12 = vdpptr.
-	ldr r0,=VDPRAMCopy0
-	str r0,[vdpptr,#VRAMCopyPtr]
-	ldr r0,=DirtyTilesBackup0
-	str r0,[vdpptr,#vdpDirtyTilesPtr]
 	ldr r0,=OAMBuffer1
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer2
@@ -277,9 +267,11 @@ VDP0Reset:
 	str r0,[vdpptr,#vdpBgrMapOfs0]
 	mov r0,#0x0300				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs1]
-	mov r0,#0x08000				;@ BGR tiles
+//	mov r0,#0x08000				;@ BGR tiles
+	ldr r0,=BG_GFX+0x05800		;@ BGR tiles
 	str r0,[vdpptr,#vdpBgrTileOfs]
-	mov r0,#0x400000			;@ SPR tiles
+//	mov r0,#0x400000			;@ SPR tiles
+	ldr r0,=BG_GFX+0x400000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
 
 	ldr r0,=gEmuFlags
@@ -306,10 +298,6 @@ VDP1Reset:
 	ldr r1,=VDP0
 	ldr r0,[r1,#vdpScanline]
 	bl VDPSetScanline
-	ldr r0,=VDPRAMCopy1
-	str r0,[vdpptr,#VRAMCopyPtr]
-	ldr r0,=DirtyTilesBackup1
-	str r0,[vdpptr,#vdpDirtyTilesPtr]
 	ldr r0,=OAMBuffer3
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer4
@@ -319,9 +307,9 @@ VDP1Reset:
 	str r0,[vdpptr,#vdpBgrMapOfs0]
 	mov r0,#0x0C00				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs1]
-	mov r0,#0x0C000				;@ BGR tiles
+	ldr r0,=BG_GFX+0x09800		;@ BGR tiles
 	str r0,[vdpptr,#vdpBgrTileOfs]
-	ldr r0,=0x404000			;@ SPR tiles
+	ldr r0,=BG_GFX+0x404000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
 	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
@@ -330,20 +318,20 @@ clearTileMaps:
 	stmfd sp!,{r4-r6,lr}
 	add r3,vdpptr,#vdpBgrMapOfs0
 	mov r6,#2
-clrtmLoop2:
+clrTmLoop2:
 	ldr r4,[r3],#4
 	mov r0,#BG_GFX
 	add r4,r0,r4,lsl#3
 	mov r5,#2
-clrtmLoop1:
+clrTmLoop1:
 	add r0,r4,#0x700
 	add r4,r4,#0x800
 	mov r1,#0x100/4
 	bl memclr_
 	subs r5,r5,#1
-	bne clrtmLoop1
+	bne clrTmLoop1
 	subs r6,r6,#1
-	bne clrtmLoop2
+	bne clrTmLoop2
 	ldmfd sp!,{r4-r6,pc}
 ;@----------------------------------------------------------------------------
 makeBorder:					;@ Also called from UI.c, r0 = border type.
@@ -539,13 +527,13 @@ applyScaling:		;@ r0-r2 modified, r12 = vdpptr.
 ;@----------------------------------------------------------------------------
 	ldrb r0,[vdpptr,#vdpHeightMode]
 	and r0,r0,#VDPMODE_HEIGHTMASK	;@ 224 and/or 240 height
-	ldr r2,=BG_SCALING_TBL
+	adr r2,BG_SCALING_TBL
 	ldr r1,[r2,r0,lsr#2]
 	str r1,bgScaleValue
-	ldr r2,=BG_SCALING_WIN
+	adr r2,BG_SCALING_WIN
 	ldr r1,[r2,r0,lsr#2]
 	str r1,WindowVValue
-	ldr r2,=BG_SCALING_OFS
+	adr r2,BG_SCALING_OFS
 	ldr r1,[r2,r0,lsr#2]
 	ldr r0,=yStart
 	strb r1,[r0]
@@ -755,394 +743,6 @@ ggSGLoop:
 	ldmfd sp!,{r4-r5}
 	bx lr
 
-.pool
-
-
-;@----------------------------------------------------------------------------
-delayVRAM:					;@ This is used to get rid of graphics corruption
-;@----------------------------------------------------------------------------
-	stmfd sp!,{r4-r11,lr}
-
-	ldr r0,[vdpptr,#vdpDirtyTilesPtr]
-	add r1,vdpptr,#dirtyTiles
-	ldr r4,[vdpptr,#VRAMPtr]
-	ldr r5,[vdpptr,#VRAMCopyPtr]
-
-	mov r2,#0x200
-	mov r9,#-1
-	sub r2,r2,#1
-dVRamLoop0:
-	ldrb r3,[r1,r2]
-	cmp r3,#0
-	bleq dVRamCopy
-	subs r2,r2,#1
-	bpl dVRamLoop0
-
-	ldmfd sp!,{r4-r11,lr}
-	bx lr
-
-dVRamCopy:
-	strb r9,[r1,r2]
-	strb r3,[r0,r2]
-
-	add r6,r4,r2,lsl#5
-	add r7,r5,r2,lsl#5
-dVRamLoop1:
-	ldmia r6!,{r3,r8,r10,r11}
-	stmia r7!,{r3,r8,r10,r11}
-	ldmia r6!,{r3,r8,r10,r11}
-	stmia r7!,{r3,r8,r10,r11}
-	bx lr
-
-;@----------------------------------------------------------------------------
-tData:
-//	.long dirtyTiles
-	.long DirtyTilesBackup0
-VDPRAMPtr:
-	.long VDPRAMCopy0
-	.long CHRDecode
-//	.long BG_GFX+0x08000		;@ BGR tiles
-//	.long BG_GFX+0x400000		;@ SPR tiles
-;@----------------------------------------------------------------------------
-transferVRAM:
-;@----------------------------------------------------------------------------
-	stmfd sp!,{r12,lr}
-	adr r0,tData
-	ldmia r0,{r4-r6}
-	ldr r4,[vdpptr,#vdpDirtyTilesPtr]
-	ldr r5,[vdpptr,#VRAMCopyPtr]
-	ldr r7,[vdpptr,#vdpBgrTileOfs]
-	ldr r8,[vdpptr,#vdpSprTileOfs]
-	add r7,r7,#BG_GFX
-	add r8,r8,#BG_GFX
-	mov r1,#0
-
-	ldrb r0,[vdpptr,#vdpRealMode]
-	cmp r0,#VDPMODE_4
-	beq transferVRAM_m4
-	cmp r0,#VDPMODE_5
-	beq transferVRAM_m5
-	ldrb r2,[vdpptr,#vdpMode2]
-	tst r2,#0x40				;@ Screen on?
-	ldmfdeq sp!,{r12,pc}
-	ldr r8,=0x11111111
-	ldrb r2,[vdpptr,#vdpPGOffsetBak1]
-	ldrb r3,[vdpptr,#vdpCTOffset]
-	cmp r0,#VDPMODE_2
-	beq	transferVRAM_m2
-	cmp r0,#VDPMODE_0
-	beq	transferVRAM_m0
-	cmp r0,#VDPMODE_1
-	beq	transferVRAM_m1
-	cmp r0,#VDPMODE_3
-	beq	transferVRAM_m3
-	ldmfd sp!,{r12,pc}
-
-;@----------------------------------------------------------------------------
-transferVRAM_m0:
-;@----------------------------------------------------------------------------
-	and r2,r2,#0x07
-	add r11,r5,r3,lsl#6
-	add r5,r5,r2,lsl#11
-	ldrb r9,[r4,r3,lsl#1]
-	orr r0,r9,#0x01
-	strb r0,[r4,r3,lsl#1]
-	orr r9,r9,r9,lsl#8
-	orr r9,r9,r9,lsl#16
-	add r4,r4,r2,lsl#6
-tileLoop0_0:
-	ldr r0,=0x01010101			;@ Dirtytiles mode 0 bgr.
-	ldr r12,[r4]
-	orr r2,r12,r0
-	str r2,[r4],#4
-	and r12,r12,r9
-	tst r12,#0x00000001
-	addne r1,r1,#0x20
-	bleq tileLoop0_1
-	tst r12,#0x00000100
-	addne r1,r1,#0x20
-	bleq tileLoop0_1
-	tst r12,#0x00010000
-	addne r1,r1,#0x20
-	bleq tileLoop0_1
-	tst r12,#0x01000000
-	addne r1,r1,#0x20
-	bleq tileLoop0_1
-	cmp r1,#0x2000
-	bne tileLoop0_0
-
-	b tileLoopSpr
-;@----------------------------------------------------------------------------
-transferVRAM_m1:
-;@----------------------------------------------------------------------------
-	and r2,r2,#0x07
-	add r5,r5,r2,lsl#11
-	add r4,r4,r2,lsl#6
-	ldr r10,=0x02020202			;@ Dirtytiles mode 1 bgr.
-tileLoop1_0:
-	ldr r12,[r4]
-	orr r2,r12,r10
-	str r2,[r4],#4
-	tst r12,#0x00000002
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	tst r12,#0x00000200
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	tst r12,#0x00020000
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	tst r12,#0x02000000
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	cmp r1,#0x0800
-	bne tileLoop1_0
-
-	ldmfd sp!,{r12,pc}
-
-;@----------------------------------------------------------------------------
-transferVRAM_m2:
-;@----------------------------------------------------------------------------
-	and r2,r2,#0x04
-	and r3,r3,#0x80
-	add r11,r5,r3,lsl#6
-	add r9,r4,r3,lsl#1
-	add r5,r5,r2,lsl#11
-	add r4,r4,r2,lsl#6
-	ldr r10,=0x04040404			;@ Dirtytiles mode 2 bgr.
-
-tileLoop2_0:
-	ldr r12,[r4]
-	orr r2,r12,r10
-	str r2,[r4],#4
-	ldr r2,[r9]
-	and r12,r12,r2
-	orr r2,r2,r10
-	str r2,[r9],#4
-	tst r12,#0x00000004
-	addne r1,r1,#0x20
-	bleq tileLoop2_2
-	tst r12,#0x00000400
-	addne r1,r1,#0x20
-	bleq tileLoop2_2
-	tst r12,#0x00040000
-	addne r1,r1,#0x20
-	bleq tileLoop2_2
-	tst r12,#0x04000000
-	addne r1,r1,#0x20
-	bleq tileLoop2_2
-	cmp r1,#0x2000
-	bne tileLoop2_0
-
-	b tileLoopSpr
-;@----------------------------------------------------------------------------
-transferVRAM_m3:
-;@----------------------------------------------------------------------------
-	and r2,r2,#0x07
-	add r5,r5,r2,lsl#11
-	add r4,r4,r2,lsl#6
-	ldr r10,=0x08080808			;@ Dirtytiles mode 3 bgr.
-tileLoop3_0:
-	ldr r12,[r4]
-	orr r2,r12,r10
-	str r2,[r4],#4
-	tst r12,#0x00000008
-	addne r1,r1,#0x20
-	bleq tileLoop3_1
-	tst r12,#0x00000800
-	addne r1,r1,#0x20
-	bleq tileLoop3_1
-	tst r12,#0x00080000
-	addne r1,r1,#0x20
-	bleq tileLoop3_1
-	tst r12,#0x08000000
-	addne r1,r1,#0x20
-	bleq tileLoop3_1
-	cmp r1,#0x800
-	bne tileLoop3_0
-
-;@----------------------------------------------------------------------------
-tileLoopSpr:				;@ Mode0, 2 & 3 sprites.
-;@----------------------------------------------------------------------------
-	ldmfd sp!,{r12}
-	ldr r9,=0x10101010			;@ Dirtytiles mode 0, 2 & 3 spr.
-	ldrb r1,[vdpptr,#vdpSPROffset]
-	and r1,r1,#0x07
-	mov r1,r1,lsl#11
-	ldr r4,[vdpptr,#vdpDirtyTilesPtr]
-	ldr r5,[vdpptr,#VRAMPtr]
-	add r4,r4,r1,lsr#5
-	add r7,r7,#0x400000			;@ Sprites @ 0x06406000
-	sub r7,r7,#0x2000			;@ Sprites @ 0x06406000
-	sub r7,r7,r1,lsl#2			;@ r1 is later added in the render loop.
-	add r8,r1,#0x800
-tileLoop2_1:
-	ldr r10,[r4]
-	orr r2,r10,r9
-	str r2,[r4],#4
-	tst r10,#0x00000010
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	tst r10,#0x00001000
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	tst r10,#0x00100000
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	tst r10,#0x10000000
-	addne r1,r1,#0x20
-	bleq tileLoop1_1
-	cmp r1,r8
-	bne tileLoop2_1
-
-	ldmfd sp!,{pc}
-
-;@----------------------------------------------------------------------------
-;@----------------------------------------------------------------------------
-tileLoop0_1:
-	bic r2,r1,#0x1800
-	ldrb r2,[r11,r2,lsr#6]
-	mov r3,r2,lsr#4
-	and r2,r2,#0x0F
-tileLoop0_2:
-	ldrb r0,[r5,r1]
-	ldr r0,[r6,r0,lsl#2]
-	mul r10,r0,r3
-	eor r0,r0,r8
-	mla r10,r0,r2,r10
-	str r10,[r7,r1,lsl#2]
-	add r1,r1,#1
-	tst r1,#0x1F
-	bne tileLoop0_2
-	bx lr
-
-tileLoop1_1:
-	ldrb r0,[r5,r1]
-	ldr r0,[r6,r0,lsl#2]
-	str r0,[r7,r1,lsl#2]
-	add r1,r1,#1
-	tst r1,#0x1F
-	bne tileLoop1_1
-	bx lr
-
-tileLoop2_2:
-	ldrb r2,[r11,r1]
-	ldrb r0,[r5,r1]
-	ldr r0,[r6,r0,lsl#2]
-	movs r3,r2,lsr#4
-	mulne r3,r0,r3
-	eor r0,r0,r8
-	ands r2,r2,#0x0F
-	mlane r3,r0,r2,r3
-	str r3,[r7,r1,lsl#2]
-	add r1,r1,#1
-	tst r1,#0x1F
-	bne tileLoop2_2
-	bx lr
-
-tileLoop3_1:
-	ldrb r0,[r5,r1]
-	mov r0,r0,ror#4
-	orr r0,r0,r0,lsr#12
-	orr r0,r0,r0,lsl#4
-	orr r0,r0,r0,lsl#8
-	add r11,r7,r1,lsl#4
-	str r0,[r11],#4
-	str r0,[r11],#4
-	str r0,[r11],#4
-	str r0,[r11],#4
-	add r1,r1,#1
-	tst r1,#0x1F
-	bne tileLoop3_1
-	bx lr
-
-;@----------------------------------------------------------------------------
-transferVRAM_m4:
-;@----------------------------------------------------------------------------
-	ldr r9,=0x20202020			;@ Dirtytiles mode4 bgr & spr
-	mov r1,#0x200
-tl4pre:
-	subs r1,r1,#4
-	ldmfdmi sp!,{r12,pc}
-tileLoop4_0:
-	ldr r10,[r4,r1]
-	bics r2,r9,r10
-	beq tl4pre
-	orr r2,r10,r9
-	str r2,[r4,r1]
-	tst r10,#0x00000020
-	bleq tileLoop4_1
-	add r1,r1,#1
-	tst r10,#0x00002000
-	bleq tileLoop4_1
-	add r1,r1,#1
-	tst r10,#0x00200000
-	bleq tileLoop4_1
-	add r1,r1,#1
-	tst r10,#0x20000000
-	bleq tileLoop4_1
-	subs r1,r1,#7
-	bpl tileLoop4_0
-
-	ldmfd sp!,{r12,pc}
-
-tileLoop4_1:
-	ldr r0,[r5,r1,ror#32-5]
-
-	ands r3,r0,#0x000000FF
-	ldrne r3,[r6,r3,lsl#2]
-	ands r2,r0,#0x0000FF00
-	ldrne r2,[r6,r2,lsr#6]
-	orrne r3,r3,r2,lsl#1
-	ands r2,r0,#0x00FF0000
-	ldrne r2,[r6,r2,lsr#14]
-	orrne r3,r3,r2,lsl#2
-	ands r2,r0,#0xFF000000
-	ldrne r2,[r6,r2,lsr#22]
-	orrne r3,r3,r2,lsl#3
-
-	str r3,[r7,r1,ror#32-5]
-	str r3,[r8,r1,ror#32-5]
-	adds r1,r1,#0x20000000
-	bcc tileLoop4_1
-
-	bx lr
-;@----------------------------------------------------------------------------
-transferVRAM_m5:
-;@----------------------------------------------------------------------------
-	ldr r9,=0x40404040			;@ Dirtytiles mode5 bgr & spr
-
-tileLoop5_0:
-	ldr r10,[r4]
-	str r9,[r4],#4
-	tst r10,#0x00000040
-	addne r1,r1,#0x20
-	bleq tileLoop5_1
-	tst r10,#0x00004000
-	addne r1,r1,#0x20
-	bleq tileLoop5_1
-	tst r10,#0x00400000
-	addne r1,r1,#0x20
-	bleq tileLoop5_1
-	tst r10,#0x40000000
-	addne r1,r1,#0x20
-	bleq tileLoop5_1
-	cmp r1,#0x4000
-	bne tileLoop5_0
-
-	ldmfd sp!,{r12,pc}
-
-tileLoop5_1:
-	ldr r0,[r5,r1]
-
-	str r0,[r7,r1]
-	str r0,[r8,r1]
-	add r1,r1,#4
-	tst r1,#0x1C
-	bne tileLoop5_1
-
-	bx lr
-
 ;@----------------------------------------------------------------------------
 vblIrqHandler:
 	.type vblIrqHandler STT_FUNC
@@ -1191,66 +791,70 @@ noJump:
 	cmp r1,#0
 	subne r6,r6,r6,lsl#16
 
-	ldr r2,=DMA0Buff
-	mov r4,r2
-	mov r8,r3
+	mov r8,r3,lsl#16
 	subs r3,r3,r7
 	subpl r3,r3,r7
-	subpl r8,r8,r7
-	add r5,r5,#1
-	mov r10,#SCREEN_HEIGHT
-scrolLoop2:
-	ldrb r11,[r5],#2
-	add r0,r11,r8,lsl#16
-	mov r1,r0
-	mov r9,r0
-	stmia r4!,{r0-r1,r9,r11}
+	subpl r8,r8,r7,lsl#16
+	sub r5,r5,r3,lsl#1
+	add r1,r5,#1
+	ldr r0,=DMA0Buff
+	sub r10,r8,r4,lsl#16
+	mov r2,#SCREEN_HEIGHT
+scaleLoop4:
+	ldrb r4,[r1,r3,lsl#1]
+	add r4,r4,r8
+	mov r5,r4
+	mov r9,r4
+	sub r11,r4,r10
+	stmia r0!,{r4,r5,r9,r11}
 	subs r6,r6,r6,lsl#16
 	subcs r6,r6,r6,lsl#16
-	adc r8,r8,#0
-	addcs r5,r5,#2
+	addcs r8,r8,#0x10000
 	adcs r3,r3,#1
-	subcs r8,r8,r7
-	subs r10,r10,#1
-	bne scrolLoop2
+	subcs r8,r8,r7,lsl#16
+	subcs r10,r10,r7,lsl#16
+	subs r2,r2,#1
+	bne scaleLoop4
 
 
 	mov r8,#REG_BASE
 	strh r8,[r8,#REG_DMA0CNT_H]	;@ DMA0 stop
 
-	add r1,r8,#REG_DMA0SAD
-;@	mov r2,r2					;@ Setup DMA buffer for scrolling:
-	ldmia r2!,{r4-r7}			;@ Read
-	add r3,r8,#REG_BG0HOFS		;@ DMA0 always goes here
-	stmia r3,{r4-r7}			;@ Set 1st value manually, HBL is AFTER 1st line
-	ldr r4,=0x96600004			;@ noIRQ hblank 32bit repeat incsrc inc_reloaddst, 4 word
-	stmia r1,{r2-r4}			;@ DMA0 go
+	ldr r0,=DMA0Buff
+//	mov r0,r10					;@ Setup DMA buffer for scrolling:
+	ldmia r0!,{r2-r5}			;@ Read
+	add r1,r8,#REG_BG0HOFS		;@ DMA0 always goes here
+	stmia r1,{r2-r5}			;@ Set 1st value manually, HBL is AFTER 1st line
+	ldr r2,=0x96600004			;@ noIRQ hblank 32bit repeat incsrc inc_reloaddst, 4 word
+	add r3,r8,#REG_DMA0SAD
+	stmia r3,{r0-r2}			;@ DMA0 go
 
-	add r0,r8,#REG_DMA3SAD
+	add r3,r8,#REG_DMA3SAD
 
-	ldr r1,[vdpptr,#vdpDMAOAMBuffer]	;@ DMA3 src, OAM transfer:
-	mov r2,#OAM					;@ DMA3 dst
-	mov r3,#0x84000000			;@ noIRQ 32bit incsrc incdst
-	orr r3,r3,#0x100			;@ 128 sprites (1024 bytes)
-	stmia r0,{r1-r3}			;@ DMA3 go
+	ldr r0,[vdpptr,#vdpDMAOAMBuffer]	;@ DMA3 src, OAM transfer:
+	mov r1,#OAM					;@ DMA3 dst
+	mov r2,#0x84000000			;@ noIRQ 32bit incsrc incdst
+	orr r2,r2,#0x100			;@ 128 sprites (1024 bytes)
+	stmia r3,{r0-r2}			;@ DMA3 go
 
-	ldr r1,=EMUPALBUFF			;@ DMA3 src, Palette transfer:
-	mov r2,#BG_PALETTE			;@ DMA3 dst
-	mov r3,#0x84000000			;@ noIRQ 32bit incsrc incdst
-	orr r3,r3,#0x100			;@ 256 words (1024 bytes)
-	stmia r0,{r1-r3}			;@ DMA3 go
+	ldr r0,=EMUPALBUFF			;@ DMA3 src, Palette transfer:
+	mov r1,#BG_PALETTE			;@ DMA3 dst
+	mov r2,#0x84000000			;@ noIRQ 32bit incsrc incdst
+	orr r2,r2,#0x100			;@ 256 words (1024 bytes)
+	stmia r3,{r0-r2}			;@ DMA3 go
 
-	ldr r2,[vdpptr,#vdpBgrMapOfs1]
-	add r0,r2,#0x0005
+	ldr r1,[vdpptr,#vdpBgrTileOfs]
+	ldr r2,[vdpptr,#vdpBgrMapOfs0]
+	and r1,r1,#0xC000
+	add r2,r2,r1,lsr#12
+	add r0,r2,#0x0001
 	strh r0,[r8,#REG_BG0CNT]
 	ldr r3,=0x02870102
 	add r0,r2,r3
-	ldr r1,[vdpptr,#vdpBgrTileOfs]
-	add r0,r0,r1,lsr#12
 	strh r0,[r8,#REG_BG1CNT]
 	strh r0,[r8,#REG_BG3CNT]
-	add r0,r2,r3,lsr#16
-	strh r0,[r8,#REG_BG2CNT]
+	mov r3,r3,lsr#16
+	strh r3,[r8,#REG_BG2CNT]
 
 	mov r0,#0x001F
 	ldrb r1,gGfxMask
@@ -1334,13 +938,13 @@ hz50Refresh:
 DisplayControl:
 	.short 0x3F40,0
 Window0HValue_normal:
-	.long 0x00E0
-Window0HValue_col0:
-	.long 0x08E0
-Window1HValue:
-	.long 0xE000
-WindowVValue:
 	.long 0x00C0
+Window0HValue_col0:
+	.long 0x08C0
+Window1HValue:
+	.long 0xC000
+WindowVValue:
+	.long SCREEN_HEIGHT
 ;@----------------------------------------------------------------------------
 bgScaleValue:	.long 0x00002B10			;@ was 0x2AAB
 lcdSkip:		.long 0
@@ -1461,20 +1065,22 @@ scrolELoop2:
 	orr r3,r3,#0x100			;@ 256 words (1024 bytes)
 	stmia r0,{r1-r3}			;@ DMA3 go
 
-	ldr r2,[vdpptr,#vdpBgrMapOfs1]
-	add r0,r2,#0x0005
-	strh r0,[r8,#REG_BG0CNT]
-	ldr r3,=0x02870102
-	add r0,r2,r3
 	ldr r1,[vdpptr,#vdpBgrTileOfs]
-	add r0,r0,r1,lsr#12
+	ldr r2,[vdpptr,#vdpBgrMapOfs1]
+	and r1,r1,#0xC000
+	add r2,r2,r1,lsr#12
+	add r0,r2,#0x0001
+	strh r0,[r8,#REG_BG0CNT]
+	ldr r3,=0x02830102
+	add r0,r2,r3
 	strh r0,[r8,#REG_BG1CNT]
 
 	ldr r11,=VDP1
-	ldr r2,[r11,#vdpBgrMapOfs1]
 	ldr r1,[r11,#vdpBgrTileOfs]
+	ldr r2,[r11,#vdpBgrMapOfs1]
+	and r1,r1,#0xC000
+	add r2,r2,r1,lsr#12
 	add r0,r2,r3
-	add r0,r0,r1,lsr#12
 	strh r0,[r8,#REG_BG3CNT]
 	add r0,r2,r3,lsr#16
 	strh r0,[r8,#REG_BG2CNT]
@@ -1510,26 +1116,6 @@ scrolELoop2:
 
 	blx scanKeys
 	ldmfd sp!,{r4-r11,pc}
-
-;@------------------------------------------------------------------------------
-earlyFrame:					;@ Called at line 0,16 or 32	(r0,r2 safe to use)
-;@------------------------------------------------------------------------------
-	stmfd sp!,{r1,r3-r12,lr}
-
-	ldrb r0,[vdpptr,#vdpSprScan]
-	cmp r0,#0
-	ldreq r0,=defaultScanlineHook
-	ldrne r0,=spriteScanner
-	str r0,[vdpptr,#vdpScanlineHook]
-	adrne lr,earlyFrameEnd
-	bne spriteScannerStart
-
-
-	ldrb r0,[vdpptr,#vdpRealMode]
-	cmp r0,#VDPMODE_4
-	bleq sprDMADo0
-earlyFrameEnd:
-	ldmfd sp!,{r1,r3-r12,pc}
 
 ;@----------------------------------------------------------------------------
 endFrame:					;@ Called just before screen end (~line 192)	(r0 & r2 safe to use)
@@ -1593,8 +1179,6 @@ setBc:
 	stmib r0,{r1-r3}			;@ Store with pre increment
 
 
-//	bl transferVRAM
-//	bl delayVRAM
 	ldr r0,frameTotal
 	add r0,r0,#1
 	str r0,frameTotal
@@ -1810,7 +1394,7 @@ dm4_2:
 	bx lr
 
 dm4_3:
-	mov r0,#0x2C0				;@ Double, y=192
+	mov r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
 dm4_4:
 	str r0,[r2],#8
 	subs r8,r8,#1
@@ -1882,7 +1466,7 @@ pSpr3:
 	ldr r0,smsOamIndex
 	sub r8,r0,r8
 	rsb r8,r8,#0x80
-	mov r0,#0x2C0				;@ Double, y=192
+	mov r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
 pSpr4:
 	subs r8,r8,#1
 	strpl r0,[r2],#8
@@ -1914,7 +1498,7 @@ sprDMADoM2:					;@ Called from endFrame.
 	mov r8,#32					;@ Number of sprites
 	cmp r0,#VDPMODE_1
 	beq dm2_3					;@ No sprites in Mode1
-	mov r7,#PRIORITY+0x300		;@ Tile nr offset
+	mov r7,#PRIORITY+0x100		;@ Tile nr offset
 	mov r1,#0x10000000
 dm2_2:
 	ldr r4,[r10],#4				;@ MasterSystem OBJ, r0=Ypos.
@@ -1978,254 +1562,6 @@ dm2_4:
 	bne dm2_4
 	bx lr
 
-;@----------------------------------------------------------------------------
-bgFinish:					;@ End of frame...
-;@----------------------------------------------------------------------------
-	stmfd sp!,{r3-r11,lr}
-
-
-;@	b bgCont
-
-;@	ldrb r0,frame
-;@	tst r0,#0x7
-;@	ldmnefd sp!,{r3-r11,pc}
-bgCont:
-;@	mov r0,#0
-;@	strb r0,[r4]
-
-	mov r10,#BG_GFX
-	ldr r0,[vdpptr,#vdpBgrMapOfs0]
-	add r10,r10,r0,lsl#3
-	ldr r5,=0xF000F000
-	ldr r6,=0x000003FF
-	ldr r7,=0x00010001
-	ldrb lr,[vdpptr,#vdpYScrollBak1]
-	and r0,lr,#7
-	mov lr,lr,lsr#3
-	rsbs r1,r0,#4
-	movmi r1,#0
-	add r8,vdpptr,#TMapBuff
-	ldrb r1,[r8,r1,lsl#1]!
-	ldrb r2,[vdpptr,#vdpHeightMode]
-	cmp r2,#VDPMODE_4_224
-	cmpne r2,#VDPMODE_4_240
-	ldr r11,[vdpptr,#VRAMPtr]
-	addeq r11,r11,#0x700
-	mov r9,#28
-	moveq r9,#32
-
-	and r2,r2,#0x0F
-	cmp r2,#VDPMODE_4
-	beq bgMode4
-	cmp r2,#VDPMODE_5
-	beq bgMode5
-
-	ldr r7,=0x40004000			;@ Palette 4 & tileoffset
-	ldrb r9,[vdpptr,#vdpPGOffsetBak1]
-	and r9,r9,#3
-	eor r9,r9,#3
-	orr r9,r9,r9,lsl#16
-	mov r9,r9,lsl#8
-
-	and r1,r1,#0xF
-	add r3,r11,r1,lsl#10
-
-	mov r4,r10
-	mov r0,#0
-
-	mov r6,#3
-	mov r8,#0
-	cmp r2,#VDPMODE_2
-	ldreq r8,=0x01000100
-	cmpne r2,#VDPMODE_0
-	beq bgMode02
-	mov r6,#24
-	cmp r2,#VDPMODE_3
-	beq bgMode3
-	cmp r2,#VDPMODE_1
-	bne bgModeB
-;@----------------------------------------------------------------------------
-bgMode1:
-	ldr r7,=0x20002000			;@ Palette 2
-bgM1Loop:
-	mov r5,#16
-bgM1Row:
-	ldrh r1,[r3],#2				;@ Read from MasterSystem Tilemap RAM
-	orr r1,r1,r1,lsl#8
-	bic r1,r1,#0xFF00
-	orr r1,r1,r7				;@ Palette & tileoffset
-
-	str r0,[r4,r7,lsr#17]		;@ Write to NDS Tilemap RAM, BGR color
-	str r1,[r4,#0x800]			;@ Write to NDS Tilemap RAM, behind sprites
-	str r0,[r4],#4				;@ Write to NDS Tilemap RAM, in front of sprites
-	subs r5,r5,#1
-	bne bgM1Row
-	add r3,r3,#8
-	subs r6,r6,#1
-	bne bgM1Loop
-bgModeB:
-	ldmfd sp!,{r3-r11,pc}
-
-;@----------------------------------------------------------------------------
-;@bgMapFinish				;@ End of frame...
-;@----------------------------------------------------------------------------
-;@	mov r0,#0
-;@	ldr r7,=0x40004000
-;@	ldr r9,=0x00020002
-bgMode02:						;@ Fake
-
-bgM2Loop2:
-	bic r11,r7,r9
-	mov r5,#16*8
-bgM2Loop:
-	ldrh r1,[r3],#2				;@ Read from MasterSystem Tilemap RAM
-	orr r1,r1,r1,lsl#8
-	bic r1,r1,#0xFF00
-	orr r1,r1,r11				;@ Palette & tile offset.
-
-	str r0,[r4,r8,lsr#12]		;@ Write to NDS Tilemap RAM, BGR color
-	str r1,[r4,#0x800]			;@ Write to NDS Tilemap RAM, behind sprites
-	str r0,[r4],#4				;@ Write to NDS Tilemap RAM, in front of sprites
-	subs r5,r5,#1
-	bne bgM2Loop
-	add r7,r7,r8				;@ Add tileoffset for group.
-	subs r6,r6,#1
-	bne bgM2Loop2
-
-	ldmfd sp!,{r3-r11,pc}
-
-;@----------------------------------------------------------------------------
-;@bgMapFinish				;@ End of frame...
-;@----------------------------------------------------------------------------
-;@	mov r0,#0
-;@	ldr r7,=0x40004000
-;@	ldr r9,=0x00040004
-bgMode3:
-	ldr r7,=0x40004000
-	ldr r8,=0x00010001
-	ldr r9,=0x00040004
-bgM3Loop2:
-	bic r7,r7,r9
-	mov r5,#16
-bgM3Loop:
-	ldrh r1,[r3],#2				;@ Read from MasterSystem Tilemap RAM
-	orr r1,r1,r1,lsl#8
-	bic r1,r1,#0xFF00
-	orr r1,r7,r1,lsl#2			;@ Palette & tile offset.
-
-	str r0,[r4,r8,lsr#12]		;@ Write to NDS Tilemap RAM, BGR color
-	str r1,[r4,#0x800]			;@ Write to NDS Tilemap RAM, behind sprites
-	str r0,[r4],#4				;@ Write to NDS Tilemap RAM, in front of sprites
-	subs r5,r5,#1
-	bne bgM3Loop
-	add r7,r7,r8				;@ Add tileoffset for group.
-	subs r6,r6,#1
-	bne bgM3Loop2
-
-	ldmfd sp!,{r3-r11,pc}
-
-
-;@----------------------------------------------------------------------------
-;@bgMapFinish				;@ End of frame...
-;@----------------------------------------------------------------------------
-;@	ldr r5,=0xF000F000
-;@	ldr r6,=0x000003FF
-;@	ldr r7,=0x00010001
-;@ MSB          LSB
-;@ ---pcvhnnnnnnnnn
-bgMode4:
-	ldr r2,[vdpptr,#vdpBgrTileOfs]
-	and r2,r2,#0x4000
-	orr r2,r2,r2,lsl#16
-bgM4Frame:
-	subs r9,r9,#1
-	ldmfdmi sp!,{r3-r11,pc}
-
-	ldrb r1,[r8],#16
-	ldrb r0,[vdpptr,#vdpNTMask]
-	movs r0,r0,lsr#1
-	orrcs r1,r1,#0x01
-	ands r0,r0,r1,lsr#1
-	orr r0,lr,r0,lsl#5
-	biccc r0,r0,#0x10
-
-	add r3,r11,r0,lsl#6
-	add r4,r10,lr,lsl#6
-
-	add lr,lr,#1
-	ldr r0,[vdpptr,#vdpScrollMask]
-	cmp lr,r0,lsr#3
-	subpl lr,lr,r0,lsr#3
-
-bgM4Row:
-	ldr r0,[r3],#4				;@ Read from MasterSystem Tilemap RAM
-
-	and r1,r7,r0,lsr#11
-	orr r1,r1,r7,lsl#1			;@ Bgr color 0x30 & 0x40
-	str r1,[r4,r7,lsr#4]		;@ Write to NDS/GBA Tilemap RAM, BGR color
-
-	tst r7,r0,lsl#4				;@ Shift out top P bit, test low P bit.
-	bic r0,r0,r5
-	and r1,r0,r5,lsr#3
-	add r0,r0,r1				;@ XY flip + color.
-
-	orr r0,r0,r2,lsr#1
-	str r0,[r4,#0x800]			;@ Write to NDS/GBA Tilemap RAM, behind sprites
-	add r0,r0,r7,lsl#9			;@ New tile offset
-	biccc r0,r0,r6,lsl#16
-	biceq r0,r0,r6
-	str r0,[r4],#4				;@ Write to NDS/GBA Tilemap RAM, in front of sprites
-	tst r4,#0x3C				;@ 32 tiles wide
-	bne bgM4Row
-	b bgM4Frame
-
-	ldmfd sp!,{r3-r11,pc}
-
-;@----------------------------------------------------------------------------
-bgMode5:
-	ldr r2,=0x01C001C0
-	ldr r5,=0xFC00FC00
-;@	ldr r6,=0x000003FF
-;@	ldr r7,=0x00010001
-;@	r10 = NDS destination address
-;@	lr = y scroll row
-;@	r11 = VDPRAM
-;@ MSB          LSB
-;@ pccvhnnnnnnnnnnn
-bgM5Loop:
-	ldrb r0,[r8],#8
-	and r0,r0,#0x08				;@ 0x2000, should be 0x1C
-	orr r0,lr,r0,lsl#4
-	add r3,r11,r0,lsl#6
-	add r4,r10,lr,lsl#6
-
-	add lr,lr,#1
-;@	ldr r0,[vdpptr,#vdpScrollMask]
-	mov r0,#256
-	cmp lr,r0,lsr#3
-	subpl lr,lr,r0,lsr#3
-
-bgM5Row:
-	ldr r0,[r3],#4				;@ Read from MegaDrive Tilemap RAM
-
-	and r1,r7,r0,lsr#11
-	str r1,[r4,r7,lsr#4]		;@ Write to NDS Tilemap RAM, BGR color
-
-	bic r1,r0,r5
-	and r0,r5,r0,lsr#1
-	add r0,r0,r2				;@ Tile offset.
-	orr r0,r0,r7,lsl#15			;@ MD palette
-	orr r1,r1,r0				;@ XY flip + color.
-
-	str r1,[r4,#0x800]			;@ Write to NDS Tilemap RAM, behind sprites
-	mov r1,#0
-	str r1,[r4],#4				;@ Write to NDS Tilemap RAM, in front of sprites
-	tst r4,#0x3C				;@ 32 tiles wide
-	bne bgM5Row
-	subs r9,r9,#1
-	bne bgM5Loop
-
-	ldmfd sp!,{r3-r11,pc}
 ;@----------------------------------------------------------------------------
 SystemESetVRAM:
 ;@----------------------------------------------------------------------------
@@ -2369,8 +1705,6 @@ VDP1CtrlW:
 
 ;@----------------------------------------------------------------------------
 
-;@----------------------------------------------------------------------------
-
 smsOamIndex:		.long 0
 windowTop:			.long 0
 wTop:
@@ -2411,17 +1745,7 @@ VDPRAM:
 	.space 0x4000
 	.space 0x4000
 	.size VDPRAM, 0x4000
-VDPRAMCopy0:
-	.space 0x4000
-VDPRAMCopy1:
-	.space 0x4000
 
-CHRDecode:
-	.space 0x400
-DirtyTilesBackup0:
-	.space 0x200
-DirtyTilesBackup1:
-	.space 0x200
 SMSOAMBuff:
 	.space 0x280
 OAMBuffer1:
