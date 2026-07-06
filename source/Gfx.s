@@ -106,15 +106,14 @@ antWarsInit:
 	ldr r3,antSeed
 	ldr r1,=32*240
 antLoop0:
-	mov r2,#8
 antLoop1:
 	movs r3,r3,lsr#1
 	eorcs r3,r3,#0xE10000
-	mov r4,r4,lsl#4
-	orrcs r4,r4,#0xF
-	subs r2,r2,#1
-	bne antLoop1
-	str r4,[r0],#4
+	mov r2,r2,lsl#4
+	orrcs r2,r2,#0xF
+	adds r1,r1,#0x20000000		;@ 8x
+	bcc antLoop1
+	str r2,[r0],#4
 	subs r1,r1,#1
 	bne antLoop0
 
@@ -1335,52 +1334,53 @@ sprPassDoM4:
 	ldrb r0,[vdpptr,#vdpSATOffset]
 	and r0,r0,#0x7E
 	add r10,r10,r0,lsl#7
-	mov r6,#0x100				;@ r6= scale obj
 
+	ldrb r6,[vdpptr,#vdpMode2]
 	ldr r11,[vdpptr,#vdpSprStop]
-	ldrb r0,[vdpptr,#vdpMode2]
-	movs r0,r0,lsl#31			;@ Double pixels/8x16 size
+	movs r6,r6,lsl#31			;@ Double pixels/8x16 size
+	mov r6,#0x100				;@ r6= scale obj
 	orrmi r6,r6,#0x00000200		;@ Doublesize
 	orrmi r6,r6,#0x04000000		;@ Scaling param
 	orrcs r6,r6,#0x00008000		;@ 8x16 shape
 	orrcs r6,r6,#0x02000000		;@ Scaling param
+	mov r11,r11,lsl#16
+	mov r3,#0x400				;@ Sprites are scaled around the center
+	movmi r3,r3,lsl#1			;@ That's why this is needed
+	movcs r3,r3,lsl#1
+	orr r11,r11,r3
 
 	ldr r5,bgScaleValue
 	add r5,r5,#1
-dm4_1:
+
 	add r9,r10,#0x80
 	mov r7,#PRIORITY
 	ldrb r0,[vdpptr,#vdpSPROffset]	;@ First or second half of VRAM for sprites?
 	tst r0,#4
 	orrne r7,r7,#0x100
+	ldr r3,=yStart
+	ldrb r3,[r3]
+	orr r7,r7,r3,lsl#24
 	ldrb r1,[vdpptr,#vdpMode1]
 	and r1,r1,#8				;@ EC
 //	add r1,r1,#(GAME_WIDTH-SCREEN_WIDTH)/2
 	mov r1,r1,lsl#23
-dm4_2:
+dm4Loop:
 	ldrb r0,[r10],#1			;@ MasterSystem OBJ, r0=Ypos.
 	ldrh r4,[r9],#2				;@ MasterSystem OBJ, r4=Tile,Xpos.
-	cmp r0,r11
-	beq dm4_3					;@ Skip the rest if sprite Y=208
+	cmp r0,r11,lsr#16
+	beq dm4End					;@ Skip the rest if sprite Y=208
 
 	cmp r0,#0xEF
 	subpl r0,r0,#0x100
 	add r0,r0,#1
-	ldr r3,=yStart
-	ldrsb r3,[r3]
-	sub r0,r0,r3
+	sub r0,r0,r7,asr#24
 
-	mov r3,#4
-	tst r6,#0x02000000
-	movne r3,r3,lsl#1
-	tst r6,#0x04000000
-	movne r3,r3,lsl#1
-	add r0,r0,r3
+	and r3,r11,#0x1C00
+	add r0,r3,r0,lsl#8
 
 	mul r0,r5,r0
 	sub r0,r0,r3,lsl#16
-	and r0,r0,#0xFF0000
-	orr r0,r6,r0,lsr#16			;@ Size plus scaling?
+	orr r0,r6,r0,lsr#24			;@ Size plus scaling?
 	and r3,r4,#0xFF
 	rsb r3,r1,r3,lsl#23
 	orr r0,r0,r3,lsr#7
@@ -1390,67 +1390,67 @@ dm4_2:
 	orr r0,r7,r4,lsr#8			;@ Priority & tile offset
 	strh r0,[r2],#4				;@ Store OBJ Atr 2. Pattern, palette.
 	subs r8,r8,#1
-	bne dm4_2
+	bne dm4Loop
 	bx lr
 
-dm4_3:
+dm4End:
 	mov r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
-dm4_4:
+dm4_2:
 	str r0,[r2],#8
 	subs r8,r8,#1
-	bne dm4_4
+	bne dm4_2
 	bx lr
 
 ;@----------------------------------------------------------------------------
 pSprDo:
 	ldr r8,smsOamIndex
 	cmp r8,#0
-	beq pSpr3
+	beq pSprEnd
 	ldr r10,=SMSOAMBuff
 
-	mov r6,#0x100				;@ r6= scale obj
-
+	ldrb r6,[vdpptr,#vdpMode2]
 	ldr r11,[vdpptr,#vdpSprStop]
-	ldrb r0,[vdpptr,#vdpMode2]
-	movs r0,r0,lsl#31			;@ Double pixels/8x16 size
+	movs r6,r6,lsl#31			;@ Double pixels/8x16 size
+	mov r6,#0x100				;@ r6= scale obj
 	orrmi r6,r6,#0x00000200		;@ Doublesize
 	orrmi r6,r6,#0x04000000		;@ Scaling param
 	orrcs r6,r6,#0x00008000		;@ 8x16 shape
 	orrcs r6,r6,#0x02000000		;@ Scaling param
+	mov r11,r11,lsl#16
+	mov r3,#0x400				;@ Sprites are scaled around the center
+	movmi r3,r3,lsl#1			;@ That's why this is needed
+	movcs r3,r3,lsl#1
+	orr r11,r11,r3
 
 	ldr r5,bgScaleValue
 	add r5,r5,#1
-pSpr1:
+
 	add r9,r10,#0x80
 	mov r7,#PRIORITY
+	ldr r3,=yStart
+	ldrb r3,[r3]
+	orr r7,r7,r3,lsl#24
 	ldrb r1,[vdpptr,#vdpMode1]
 	and r1,r1,#8				;@ EC
 //	add r1,r1,#(GAME_WIDTH-SCREEN_WIDTH)/2
 	mov r1,r1,lsl#23
-pSpr2:
+pSprLoop:
 	ldrb r0,[r10],#1			;@ MasterSystem OBJ, r0=Ypos.
 	ldr r4,[r9],#4				;@ MasterSystem OBJ, r4=Tile,Xpos.
-	cmp r0,r11
-	beq pSpr3					;@ Skip the rest if sprite Y=208
+	cmp r0,r11,lsr#16
+	beq pSprEnd					;@ Skip the rest if sprite Y=208
 
 	cmp r0,#0xEF
 	subpl r0,r0,#0x100
 	add r0,r0,#1
-	ldr r3,=yStart
-	ldrsb r3,[r3]
-	sub r0,r0,r3
+	sub r0,r0,r7,asr#24
 
-	mov r3,#4
-	tst r6,#0x02000000
-	movne r3,r3,lsl#1
-	tst r6,#0x04000000
-	movne r3,r3,lsl#1
-	add r0,r0,r3
+	and r3,r11,#0x1C00
+	add r0,r3,r0,lsl#8
 
 	mul r0,r5,r0
 	sub r0,r0,r3,lsl#16
-	and r0,r0,#0xFF0000
-	orr r0,r6,r0,lsr#16			;@ Size plus scaling?
+	orr r0,r6,r0,lsr#24			;@ Size plus scaling?
 	and r3,r4,#0xFF
 	rsb r3,r1,r3,lsl#23
 	orr r0,r0,r3,lsr#7
@@ -1460,17 +1460,17 @@ pSpr2:
 	orr r0,r7,r4,lsr#8			;@ Priority & tile offset
 	strh r0,[r2],#4				;@ Store OBJ Atr 2. Pattern, palette.
 	subs r8,r8,#1
-	bne pSpr2
+	bne pSprLoop
 
-pSpr3:
+pSprEnd:
 	ldr r0,smsOamIndex
 	sub r8,r0,r8
 	rsb r8,r8,#0x80
 	mov r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
-pSpr4:
+pSpr2:
 	subs r8,r8,#1
 	strpl r0,[r2],#8
-	bhi pSpr4
+	bhi pSpr2
 	bx lr
 
 ;@----------------------------------------------------------------------------
@@ -1483,28 +1483,33 @@ sprDMADoM2:					;@ Called from endFrame.
 	and r1,r1,#0x7F
 	add r10,r10,r1,lsl#7
 
+	ldrb r6,[vdpptr,#vdpMode2]
+	movs r6,r6,lsl#31			;@ Double pixels/16x16 size
 	mov r6,#0x100				;@ r6= scale obj
-
-	ldrb r1,[vdpptr,#vdpMode2]
-	movs r1,r1,lsl#31			;@ Double pixels/16x16 size
 	orrmi r6,r6,#0x00000200		;@ Doublesize
 	orrmi r6,r6,#0x04000000		;@ Scaling param
 	orrcs r6,r6,#0x00008000		;@ 8x16 shape
 	orrcs r6,r6,#0x02000000		;@ Scaling param
+	mov r11,#0x400				;@ Sprites are scaled around the center
+	movmi r11,r11,lsl#1			;@ That's why this is needed
+	movcs r11,r11,lsl#1
 
 	ldr r5,bgScaleValue
 	add r5,r5,#1
 
 	mov r8,#32					;@ Number of sprites
 	cmp r0,#VDPMODE_1
-	beq dm2_3					;@ No sprites in Mode1
+	beq dm2End					;@ No sprites in Mode1
 	mov r7,#PRIORITY+0x100		;@ Tile nr offset
+	ldr r3,=yStart
+	ldrb r3,[r3]
+	orr r7,r7,r3,lsl#24
 	mov r1,#0x10000000
-dm2_2:
+dm2Loop:
 	ldr r4,[r10],#4				;@ MasterSystem OBJ, r0=Ypos.
 	mov r0,r4,lsl#24
 	cmp r0,#0xD0000000
-	beq dm2_3					;@ Skip the rest if sprite Y=208
+	beq dm2End					;@ Skip the rest if sprite Y=208
 	and r9,r4,#0xFF00
 	and r3,r1,r4,lsr#3			;@ EC early clock, x -=32.
 //	add r3,r3,#((GAME_WIDTH-SCREEN_WIDTH)/2)<<23
@@ -1514,20 +1519,13 @@ dm2_2:
 	cmp r0,#0xEF
 	subpl r0,r0,#0x100
 	add r0,r0,#1
-	ldr r3,=yStart
-	ldrsb r3,[r3]
-	sub r0,r0,r3
+	sub r0,r0,r7,asr#24
 
-	movs r3,r6,lsl#6			;@ 16x16 size + scaling?
-	mov r3,#4					;@ Sprites are scaled around the center
-	movmi r3,r3,lsl#1			;@ That's why this is needed
-	movcs r3,r3,lsl#1
-	add r0,r0,r3
+	add r0,r11,r0,lsl#8
 
 	mul r0,r5,r0
-	sub r0,r0,r3,lsl#16
-	and r0,r0,#0xFF0000
-	orr r0,r6,r0,lsr#16			;@ Size plus scaling?
+	sub r0,r0,r11,lsl#16
+	orr r0,r6,r0,lsr#24			;@ Size plus scaling?
 	tst r4,#0xF000000			;@ Color 0 sprite = invisible.
 	moveq r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
 	orr r3,r0,r9,lsr#7
@@ -1550,20 +1548,20 @@ dm2_2:
 	strh r3,[r2],#4				;@ Store OBJ Atr 2. Pattern, palette.
 
 	subs r8,r8,#1
-	bne dm2_2
+	bne dm2Loop
 
-dm2_3:
+dm2End:
 	add r8,r8,#32
 	mov r0,#0x200+SCREEN_HEIGHT	;@ Double, y=SCREEN_HEIGHT
-dm2_4:
+dm2_2:
 	str r0,[r2],#8
 	str r0,[r2],#8
 	subs r8,r8,#1
-	bne dm2_4
+	bne dm2_2
 	bx lr
 
 ;@----------------------------------------------------------------------------
-SystemESetVRAM:
+SystemESetVRAM:				;@ r0 = value, r1= changed bits
 ;@----------------------------------------------------------------------------
 	ldr vdpptr,=VDP1
 	ldr r2,=VDPRAM+0x8000

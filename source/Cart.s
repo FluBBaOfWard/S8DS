@@ -4,7 +4,7 @@
 #include "ARMZ80/ARMZ80mac.h"
 #include "SegaVDP/SegaVDP.i"
 
-#define EMBEDDED_ROM
+//#define EMBEDDED_ROM
 
 	.global loadCart
 	.global ejectCart
