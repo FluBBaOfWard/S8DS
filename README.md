@@ -67,12 +67,12 @@ better 3D effect, I have only tested with red/cyan glasses.
 * Load Game:
 * Load State: Select which state you want to load.
 * Save State: Select if you want to overwrite an old state or create a new.
-* Save SRAM:
+* Save NVRAM:
 * Save Settings:
 * Eject Game:
 * Power On/Off:
 * Reset Game:
-* Quit Emulator: (If your card supports it.)
+* Quit Emulator: (If your card/loader supports it.)
 
 ### Options
 

@@ -2,10 +2,11 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.8 - 2026-07-06 (FluBBa)
-	Ported NDS DevkitARM version back to GBA.
+V1.1.8 - 2026-07-09 (FluBBa)
+	Added IPS patch functionality.
 	Optimized the SN76496 chip.
 	Optimized the VDP chip.
+	Ported NDS DevkitARM version back to GBA.
 
 V1.1.7 - 2023-11-07 (FluBBa)
 	Added support for "Megumi Rescue" on System-E.
@@ -112,5 +113,7 @@ V0.1.0 - 2009-10-13 (FluBBa)
 	Initial DS release, allmost everything from SMSAdvance seems to work.
 
 V0.0.0 - 2009-07-25 (FluBBa)
-	Started Coding.
+	Started coding on S8DS for NDS.
 
+V0.0 - 2005-07-06 (FluBBa)
+   Started coding on SMSAdvance.

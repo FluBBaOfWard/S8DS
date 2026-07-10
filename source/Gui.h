@@ -17,6 +17,8 @@ void ejectGame(void);
 void sdscHandler(const unsigned char sdscChar);
 void debugIOUnimplR(u16 port);
 void debugIOUnimplW(u8 val, u16 port);
+void cartridgePortTouched(int keyHit);
+void powerOnOff(void);
 
 #ifdef __cplusplus
 } // extern "C"

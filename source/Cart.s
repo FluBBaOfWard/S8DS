@@ -6,12 +6,9 @@
 
 //#define EMBEDDED_ROM
 
-	.global loadCart
-	.global ejectCart
-	.global cartSaveState
-	.global cartLoadState
-	.global cartGetStateSize
 	.global cartBase
+	.global gRomSize
+	.global romSpacePtr
 	.global gEmuFlags
 //	.global scaling
 	.global gScalingSet
@@ -27,7 +24,30 @@
 	.global gDipSwitch0
 	.global gDipSwitch1
 	.global gDipSwitch2
-	
+
+	.global EMU_RAM
+	.global EMU_SRAM
+	.global BIOS_US_Space
+	.global BIOS_JP_Space
+	.global BIOS_GG_Space
+	.global BIOS_COLECO_Space
+	.global BIOS_MSX_Space
+	.global BIOS_SORDM5_Space
+	.global g_BIOSBASE_US
+	.global g_BIOSBASE_JP
+	.global g_BIOSBASE_GG
+	.global g_BIOSBASE_COLECO
+	.global g_BIOSBASE_MSX
+	.global g_BIOSBASE_SORDM5
+
+	.global machineInit
+	.global loadCart
+	.global cartEject
+	.global cartSaveState
+	.global cartLoadState
+	.global cartGetStateSize
+	.global cartInitSRAM
+
 	.global BankSwitchR_W
 	.global BankSwitch0_W
 	.global BankSwitch1_W
@@ -45,12 +65,12 @@
 	.global MSXMapRAM2W
 	.global MSXMapRAM3W
 /*
-	.global reBankSwitchB_W
-	.global reBankSwitchR_W
-	.global reBankSwitch0_W
-	.global reBankSwitch1_W
-	.global reBankSwitch2_W
-	.global reBankSwitch0C_W
+	.global reBankSwitchB
+	.global reBankSwitchR
+	.global reBankSwitch0
+	.global reBankSwitch1
+	.global reBankSwitch2
+	.global reBankSwitch0C
 */
 	.global BankSwitch0MSX_W
 	.global BankSwitch1MSX_W
@@ -60,24 +80,6 @@
 	.global BankSwitchB_GG_W
 	.global MemCtrl_SMS_W
 	.global MemCtrl_MD_W
-
-	.global EMU_RAM
-	.global EMU_SRAM
-	.global ROM_Space
-	.global BIOS_US_Space
-	.global BIOS_JP_Space
-	.global BIOS_GG_Space
-	.global BIOS_COLECO_Space
-	.global BIOS_MSX_Space
-	.global BIOS_SORDM5_Space
-	.global g_BIOSBASE_US
-	.global g_BIOSBASE_JP
-	.global g_BIOSBASE_GG
-	.global g_BIOSBASE_COLECO
-	.global g_BIOSBASE_MSX
-	.global g_BIOSBASE_SORDM5
-	.global g_ROM_Size
-
 
 	.syntax unified
 	.arm
@@ -102,6 +104,7 @@ rawRom:
 //	.incbin "sms/Fire & Forget 2 (UE) [!].sms"
 //	.incbin "sms/FM_Tool.sms"
 //	.incbin "sms/Gauntlet (UE) [!].sms"
+//	.incbin "sms/Haja no Fuuin (J) [!].sms"
 //	.incbin "sms/Jang Pung II [SMS-GG] (KR).sms"
 //	.incbin "sms/Master of Darkness (UE) [!].sms"
 //	.incbin "sms/MD6ButtonTest.sms"
@@ -204,7 +207,7 @@ rawBios:
 //	.incbin "COLECO.ROM"
 //	.incbin "MSX BIOS.rom"
 //	.incbin "SordM5/sordint.ic21"
-#endif
+#endif // EMBEDDED_ROM
 miniBios:
 	.incbin "MiniBios.sms"
 mdBios:
@@ -217,6 +220,33 @@ mdBios:
 	.section .ewram, "ax", %progbits
 	.align 2
 ;@----------------------------------------------------------------------------
+machineInit: 				;@ Called from C
+	.type machineInit STT_FUNC
+;@----------------------------------------------------------------------------
+	stmfd sp!,{lr}
+
+#ifdef EMBEDDED_ROM
+	ldr r3,=rawBios
+	str r3,g_BIOSBASE_US
+//	str r3,g_BIOSBASE_JP
+//	str r3,g_BIOSBASE_COLECO
+//	str r3,g_BIOSBASE_MSX
+//	str r3,g_BIOSBASE_SORDM5
+
+	mov r0,#endRom-rawRom
+	str r0,gRomSize
+	ldr r0,=rawRom
+#else
+	ldr r0,=ROM_Space
+#endif // EMBEDDED_ROM
+	str r0,romSpacePtr
+
+	bl gfxInit
+	bl soundInit
+
+	ldmfd sp!,{lr}
+	bx lr
+;@----------------------------------------------------------------------------
 loadCart: 		;@ Called from C:  r0=emuFlags
 	.type loadCart STT_FUNC
 ;@----------------------------------------------------------------------------
@@ -224,17 +254,9 @@ loadCart: 		;@ Called from C:  r0=emuFlags
 
 	ldr z80ptr,=Z80OpTable
 
-//	ldr r3,=rawBios
-//	str r3,g_BIOSBASE_US
-//	str r3,g_BIOSBASE_JP
-//	str r3,g_BIOSBASE_COLECO
-//	str r3,g_BIOSBASE_MSX
-//	str r3,g_BIOSBASE_SORDM5
-//	ldr r3,=rawRom
-	ldr r3,=ROM_Space
-
 //	orr r0,r0,#GG_MODE
 //	orr r0,r0,#SG_MODE
+//	orr r0,r0,#SC_MODE
 //	orr r0,r0,#COL_MODE
 //	orr r0,r0,#MSX_MODE
 //	orr r0,r0,#SORDM5_MODE
@@ -251,18 +273,18 @@ loadCart: 		;@ Called from C:  r0=emuFlags
 	strb r0,gMachine
 	ldrb r0,gConfigSet
 	strb r0,gConfig
+
+	ldr r3,romSpacePtr
 								;@ r3=romBase til end of loadCart so DON'T FUCK IT UP
 	str r3,romBase				;@ Set romBase
 	str r3,cartBase				;@ Set cartBase
 
-//	mov r0,#endRom-rawRom
-//	str r0,g_ROM_Size
-	ldr r0,g_ROM_Size
+	ldr r0,gRomSize
 	bl romSizeToPowerOf2
 	movs r2,r0,lsr#13			;@ Rom size in 8k banks
 	subne r2,r2,#1
-	str r2,romMask				;@ romMask=romsize-1
-	str r2,romMaskBackup		;@ romMask=romsize-1
+	str r2,romMask				;@ romMask=romSize-1
+	str r2,romMaskBackup		;@ romMask=romSize-1
 
 	mov r1,r0
 	mov r0,r3
@@ -397,10 +419,10 @@ isSGRam:
 
 	strb r4,BankMap4			;@ Address bus chipselects.
 	bl initMapper
-	bl reBankSwitch0_W
-	bl reBankSwitch1_W
-	bl reBankSwitch2_W
-	bl reBankSwitchB_W
+	bl reBankSwitch0
+	bl reBankSwitch1
+	bl reBankSwitch2
+	bl reBankSwitchB
 
 	ldrb r9,gMachine
 	cmp r9,#HW_COLECO
@@ -424,19 +446,19 @@ noMemClear:
 	bx lr
 
 ;@----------------------------------------------------------------------------
-ejectCart:
-	.type   ejectCart STT_FUNC
+cartEject:
+	.type   cartEject STT_FUNC
 ;@----------------------------------------------------------------------------
-	mov r2,#0x100000
-	str r2,g_ROM_Size
+	mov r2,#0x4000
+	str r2,gRomSize
 	movs r1,r2,lsr#13			;@ Rom size in 8k banks
 	subne r1,r1,#1
-	str r1,romMask				;@ romMask=romsize-1
-	str r1,romMaskBackup		;@ romMask=romsize-1
+	str r1,romMask				;@ romMask=romSize-1
+	str r1,romMaskBackup		;@ romMask=romSize-1
 
-	ldr r0,=ROM_Space
+	ldr r0,romSpacePtr
 	mov r1,#-1
-	mov r2,#0x100000/4
+	mov r2,#0x4000/4
 	b memset_
 
 ;@----------------------------------------------------------------------------
@@ -479,11 +501,6 @@ memReset:
 	ldr r0,=WRAP_RAM			;@ Fix for "Aerial Assault [v0].gg"
 	ldr r1,=0xC7C7C7C7
 	mov r2,#8/4
-	bl memset_
-
-	ldr r0,=EMU_SRAM			;@ Clear SRAM
-	mov r1,#0
-	mov r2,#0x8000/4
 	bl memset_
 
 	ldrb r11,gMachineSet
@@ -529,12 +546,25 @@ wramLoop1:
 	ldmfd sp!,{r4-r9,r11,lr}
 	bx lr
 ;@----------------------------------------------------------------------------
+cartInitSRAM:
+	.type   cartInitSRAM STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=EMU_SRAM			;@ Clear SRAM
+	mov r1,#0
+	mov r2,#0x8000/4
+	b memset_
+;@----------------------------------------------------------------------------
 checkMachine:				;@ Returns machine in r0.
 ;@----------------------------------------------------------------------------
 	ldr r0,romBase
 	add r0,r0,#0x8000
 	ldrb r2,[r0,#-1]
 	and r2,r2,#0xF0
+	stmfd sp!,{r2,lr}
+	bl checkForHeader
+	ldmfd sp!,{r2,lr}
+	cmp r0,#0
+	movne r2,#0
 	ldrb r0,gMachine
 	cmp r0,#HW_AUTO
 	bne cmNoCheck
@@ -569,11 +599,6 @@ checkMachine:				;@ Returns machine in r0.
 	and r1,r1,#GG_MODE
 	cmp r1,#GG_MODE
 	beq cmNoGGCheck
-	stmfd sp!,{r2,lr}
-	bl checkForHeader
-	ldmfd sp!,{r2,lr}
-	cmp r0,#0
-	movne r2,#0
 	cmp r2,#0x50				;@ GG Japan
 	cmpne r2,#0x60				;@ GG Export
 	cmpne r2,#0x70				;@ GG International
@@ -632,8 +657,8 @@ checkForHeader:				;@ Returns r0=0 if header found.
 	cmp r2,#0x40
 	bne headerCheckExit
 	and r1,r1,#0x1F
-	cmp r1,#0x15
-	orreq r3,#SRAMFLAG
+	cmp r1,#0x15				;@ Only PRN 55xx, 75xx & 95xx has SRAM.
+	orreq r3,r3,#SRAMFLAG
 headerCheckExit:
 	strb r3,gCartFlags
 
@@ -645,7 +670,7 @@ fillROMBANKMAP:
 	stmfd sp!,{r2-r4,lr}
 
 	ldr r3,romBase				;@ Get rom base
-	ldr r2,romMask				;@ romMask=romsize-1
+	ldr r2,romMask				;@ romMask=romSize-1
 
 	ldr r4,=ROMBANKMAP
 	mov r0,#0xFF
@@ -773,7 +798,7 @@ setupMDBios:	;@ This needs to run after cpu reset, enables MD Bios without banks
 ;@----------------------------------------------------------------------------
 initMSXMemory:
 ;@----------------------------------------------------------------------------
-	ldr r1,g_ROM_Size
+	ldr r1,gRomSize
 	ldr r2,romMaskBackup
 	ldr r3,cartBase
 	str r3,romBase0k
@@ -1067,10 +1092,12 @@ ls0:
 
 	str r1,romBase
 
+	ldr z80pc,[z80ptr,#z80Regs+6*4]
 	bl fillROMBANKMAP
-	bl reBankSwitch0_W
-	bl reBankSwitch1_W
-	bl reBankSwitch2_W
+	bl reBankSwitch0
+	bl reBankSwitch1
+	bl reBankSwitch2
+	str z80pc,[z80ptr,#z80Regs+6*4]
 dontInitMappers:
 	mov r0,r5
 	ldmfd sp!,{r4-r5,z80pc,z80ptr,lr}
@@ -1090,8 +1117,6 @@ sizeLoop1:
 
 	bx lr
 
-
-
 ;@----------------------------------------------------------------------------
 //	.section itcm
 ;@----------------------------------------------------------------------------
@@ -1104,7 +1129,7 @@ MemCtrl_MD_W:
 	b MemCtrl_SMS_W
 
 ;@------------------------------------------------------------------------------
-reBankSwitchB_W:			;@ Bankswitch BIOS
+reBankSwitchB:				;@ Bankswitch BIOS
 ;@------------------------------------------------------------------------------
 	ldrb r0,BankMap4
 ;@------------------------------------------------------------------------------
@@ -1156,10 +1181,10 @@ BankSwitchB_SMS_W:			;@ Switch to BIOS (SMS)
 
 	stmfd sp!,{lr}
 	bl fillROMBANKMAP
-	bl reBankSwitch0_W
-	bl reBankSwitch1_W
+	bl reBankSwitch0
+	bl reBankSwitch1
 	ldmfd sp!,{lr}
-	b reBankSwitch2_W
+	b reBankSwitch2
 
 ;@------------------------------------------------------------------------------
 BankSwitchB_GG_W:			;@ Switch to BIOS for 0x0000-0x03FF
@@ -1177,7 +1202,7 @@ BankSwitchB_GG_W:			;@ Switch to BIOS for 0x0000-0x03FF
 	b flush
 
 ;@----------------------------------------------------------------------------
-reBankSwitch0_W:			;@ 0x0000-0x3FFF
+reBankSwitch0:				;@ 0x0000-0x3FFF
 ;@----------------------------------------------------------------------------
 	ldrb r0,BankMap1
 ;@----------------------------------------------------------------------------
@@ -1196,7 +1221,7 @@ BankSwitch0_W:				;@ 0x0000-0x3FFF
 	b Map15k
 
 ;@----------------------------------------------------------------------------
-reBankSwitch1_W:			;@ 0x4000-0x7FFF
+reBankSwitch1:				;@ 0x4000-0x7FFF
 ;@----------------------------------------------------------------------------
 	ldrb r0,BankMap2
 ;@----------------------------------------------------------------------------
@@ -1211,7 +1236,7 @@ BankSwitch1_W:				;@ 0x4000-0x7FFF
 	b Map16k
 
 ;@----------------------------------------------------------------------------
-reBankSwitchR_W:			;@ 0x8000-0xBFFF
+reBankSwitchR:				;@ 0x8000-0xBFFF
 ;@----------------------------------------------------------------------------
 	ldrb r0,BankMap0
 ;@----------------------------------------------------------------------------
@@ -1219,7 +1244,7 @@ BankSwitchR_W:				;@ Switch between ROM & RAM for 0x8000
 ;@----------------------------------------------------------------------------
 	strb r0,BankMap0
 	tst r0,#0x08				;@ RAM or ROM?
-	beq reBankSwitch2_W
+	beq reBankSwitch2
 
 	and r0,r0,#0x04				;@ Bank 0/1?
 
@@ -1228,7 +1253,7 @@ BankSwitchR_W:				;@ Switch between ROM & RAM for 0x8000
 	ldr r1,[r2,#-8*4]			;@ WRMEMTBL_
 	b doBank2
 ;@----------------------------------------------------------------------------
-reBankSwitch2_W:			;@ 0x8000-0xBFFF
+reBankSwitch2:				;@ 0x8000-0xBFFF
 ;@----------------------------------------------------------------------------
 	ldrb r0,BankMap3
 ;@----------------------------------------------------------------------------
@@ -1237,7 +1262,7 @@ BankSwitch2_W:				;@ 0x8000-0xBFFF
 	strb r0,BankMap3
 	ldrb r1,BankMap0
 	tst r1,#8					;@ RAM or ROM?
-	bne reBankSwitchR_W
+	bne reBankSwitchR
 
 	and r0,r0,#0x7F
 	ldr r1,=ROMBANKMAP
@@ -1283,7 +1308,7 @@ Map8k_2:
 ;@						Codemasters mapper stuff
 ;@------------------------------------------------------------------------------
 ;@------------------------------------------------------------------------------
-reBankSwitch0C_W:			;@ 0x0000-0x3FFF, Codemasters mapper
+reBankSwitch0C:				;@ 0x0000-0x3FFF, Codemasters mapper
 ;@------------------------------------------------------------------------------
 	ldrb r0,BankMap1
 ;@------------------------------------------------------------------------------
@@ -1302,7 +1327,7 @@ BankSwitch0C_W:				;@ 0x0000-0x3FFF
 	ldr r0,[r1,r0,lsl#3]
 	b Map15k
 ;@------------------------------------------------------------------------------
-reBankSwitch1C_W:			;@ 0x4000-0x7FFF, Codemasters mapper
+reBankSwitch1C:				;@ 0x4000-0x7FFF, Codemasters mapper
 ;@------------------------------------------------------------------------------
 	ldrb r0,BankMap2
 ;@------------------------------------------------------------------------------
@@ -1312,7 +1337,7 @@ BankSwitch1C_W:				;@ 0x4000-0x7FFF
 	bl BankSwitch1_W
 	ldmfd sp!,{lr}
 ;@------------------------------------------------------------------------------
-reBankSwitch2C_W:			;@ 0x8000-0xBFFF
+reBankSwitch2C:				;@ 0x8000-0xBFFF
 ;@------------------------------------------------------------------------------
 	ldrb r0,BankMap3
 ;@------------------------------------------------------------------------------
@@ -1407,7 +1432,7 @@ Konami4:
 ;@----------------------------------------------------------------------------
 Konami5:					;@ Mapper + SCC
 ;@----------------------------------------------------------------------------
-	ldr r1,romMask				;@ romMask=romsize(8k)-1
+	ldr r1,romMask				;@ romMask=romSize(8k)-1
 	and r1,r1,r0
 	ldr r2,cartBase
 	add r1,r2,r1,lsl#13
@@ -1473,7 +1498,7 @@ BankMSX0_W:					;@ 0x0000-0x3FFF
 	ldrb r1,BankMap0
 	ands r1,r1,#0x03
 
-	ldr r2,=WRMEMTBL_			;@ RAM writeprotection
+	ldr r2,=WRMEMTBL_			;@ RAM write protection
 	ldr r0,[r2,r1,lsl#2]
 	add r2,z80ptr,#z80WriteTbl
 	str r0,[r2,#4*0]
@@ -1501,7 +1526,7 @@ BankMSX1_W:					;@ 0x4000-0x7FFF
 	ldrb r1,BankMap0
 	ands r1,r1,#0x0C
 
-	ldr r2,=WRMEMTBL_			;@ RAM writeprotection
+	ldr r2,=WRMEMTBL_			;@ RAM write protection
 	ldr r0,[r2,r1]
 	add r2,z80ptr,#z80WriteTbl
 	str r0,[r2,#4*2]
@@ -1528,7 +1553,7 @@ BankMSX2_W:					;@ 0x8000-0xBFFF
 	ldrb r1,BankMap0
 	ands r1,r1,#0x30
 
-	ldr r2,=WRMEMTBL_			;@ RAM writeprotection
+	ldr r2,=WRMEMTBL_			;@ RAM write protection
 	ldr r0,[r2,r1,lsr#2]
 	add r2,z80ptr,#z80WriteTbl
 	str r0,[r2,#4*4]
@@ -1608,7 +1633,9 @@ g_BIOSBASE_MSX:
 	.long 0						;@ MSX
 g_BIOSBASE_SORDM5:
 	.long 0						;@ Sord M5
-g_ROM_Size:
+romSpacePtr:
+	.long 0
+gRomSize:
 	.long 0
 romMask:
 	.long 0
@@ -1621,7 +1648,7 @@ gEmuFlags:
 gScalingSet:
 	.byte SCALED_FIT			;@ scalemode(saved display type), default scale to fit
 gCartFlags:
-	.byte 0 					;@ cartflags
+	.byte 0 					;@ Contains SRAMFLAG if cart supports save
 gMachine:
 	.byte 0
 gMachineSet:
@@ -1695,4 +1722,4 @@ BIOS_SORDM5_Space:
 
 ;@----------------------------------------------------------------------------
 	.end
-#endif // #ifdef __arm__
+#endif // __arm__

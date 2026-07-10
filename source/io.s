@@ -493,7 +493,7 @@ noPause:
 
 	mov r1,#0
 
-	tst r2,#0x20000000			;@ Player2?
+	tst r2,#0x40000000			;@ Player2?
 	strbeq r0,joy0State
 	strbeq r3,joy0Extra
 	strbne r0,joy1State
@@ -546,7 +546,7 @@ refreshColJoypads:
 	ldrb r3,colecoKey
 	orr r1,r1,r3
 
-	tst r2,#0x20000000			;@ Player2?
+	tst r2,#0x40000000			;@ Player2?
 	mov r2,#0
 	str r2,joy0State
 	strbeq r0,joy0State

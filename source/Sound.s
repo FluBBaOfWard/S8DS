@@ -13,15 +13,18 @@
 	.global SMSJSoundControlW
 	.global SMSJSoundControlR
 	.global SN76496_0
+	.global SN76496_1
 	.global SN76496_W
 	.global SN76496_0_W
 	.global SN76496_1_W
 	.global YM2413_0_AddressW
 	.global YM2413_0_DataW
 	.global YM2413_0_StatusR
+	.global AY38910_0
 	.global AY38910Index_0_W
 	.global AY38910Data_0_W
 	.global AY38910Data_0_R
+	.global SCC_0
 	.global SCCWrite_0
 	.global GG_Stereo_W
 	.global SoundVariables

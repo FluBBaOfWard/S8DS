@@ -58,10 +58,8 @@ int main(int argc, char **argv) {
 	if (argc > 1) {
 		enableExit = true;
 	}
-	setupGraphics();
-	soundInit();
-	gfxInit();
 
+	setupGraphics();
 	setupStream();
 	irqSet(IRQ_VBLANK, myVblank);
 	SetYtrigger(230);
@@ -69,7 +67,7 @@ int main(int argc, char **argv) {
 	irqEnable(IRQ_VCOUNT);
 	setupGUI();
 	initSettings();
-	ejectGame();
+	machineInit();
 //	loadCart(0);
 	if (initFileHelper()) {
 		loadSettings();

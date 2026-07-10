@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-extern u32 g_ROM_Size;
+extern u32 gRomSize;
 extern u32 gEmuFlags;
 extern u8 gCartFlags;
 extern u8 gConfigSet;
@@ -15,8 +15,8 @@ extern u8 gMachine;
 extern u8 gRegion;
 extern u8 gArcadeGameSet;
 
+extern u8 *romSpacePtr;
 extern u8 EMU_SRAM[0x8000];
-extern u8 ROM_Space[0x100000];
 extern u8 BIOS_US_Space[0x40000];
 extern u8 BIOS_JP_Space[0x2000];
 extern u8 BIOS_GG_Space[0x400];
@@ -30,8 +30,10 @@ extern void *g_BIOSBASE_COLECO;
 extern void *g_BIOSBASE_MSX;
 extern void *g_BIOSBASE_SORDM5;
 
+void machineInit(void);
 void loadCart(int);
-void ejectCart(void);
+void cartEject(void);
+void cartInitSRAM(void);
 
 /**
 * Saves the state of cart to the destination.

@@ -86,6 +86,9 @@ antWarsInit:
 	ldr r4,=VDP0
 	mov r0,#0x40
 	strb r0,[r4,#vdpMode2Bak2]
+	ldr r0,=BG_SCALING_1_1
+	bl loadScaleValues
+	bl VDP0ApplyScaling
 
 	ldr r0,=EMUPALBUFF			;@ Setup palette for antWars.
 	mov r1,#0
@@ -363,7 +366,7 @@ setBorderValues:
 	str r1,Window0HValue_normal
 	str r2,Window0HValue_col0
 	str r12,Window1HValue
-	
+
 	mov r1,#REG_BASE
 	mov r0,#0x0000
 	strh r0,[r1,#REG_WINOUT]
@@ -386,15 +389,14 @@ setupScaling:		;@ r0-r3, r12 modified.
 	adr r0,BG_SCALING_1_1
 
 	tst r3,#GG_MODE
-	adrne r0,BG_SCALING_1_1_GG
+	adrne r0,BG_SCALING_1_1_GGMODE
 	cmp r1,#SCALED_1_1
 	beq loadScaleValues
 
 	cmp r1,#SCALED_FIT
 	bne noFit
-	adr r0,BG_SCALING_TO_FIT
 	tst r3,#GG_MODE
-	adrne r0,BG_SCALING_1_1_GG
+	adreq r0,BG_SCALING_TO_FIT
 	b loadScaleValues
 noFit:
 	cmp r1,#SCALED_ASPECT
@@ -424,7 +426,7 @@ loadScaleValues:
 	ldmia r0!,{r1-r3}
 	adr r12,scaleSprParam
 	stmia r12,{r1-r3}
-	
+
 	b buildSpriteScaling
 
 BG_SCALING_TO_FIT:	;@ 1:1, 7:6, 5:4
@@ -437,21 +439,21 @@ BG_SCALING_1_1:
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0010,0x0018
 	.long 0x0100,0x0100,0x0080
-BG_SCALING_1_1_GG:
+BG_SCALING_1_1_GGMODE:
 	.long 0xFFFF,0xFFFF,0xFFFF
 	.long 0x18A8,0x18A8,0x18A8
 	.long 0x0000,0x0010,0x0018
 	.long 0x0100,0x0100,0x0080
-BG_SCALING_ASPECT_PAL:			;@ 192->142, 224->165, 240->177
-	.long 0xBD56,0xBD56,0xBD56
-	.long 0x19A7,0x0DB2,SCREEN_HEIGHT
-	.long    -34,   -17,    -8
-	.long 0x0150,0x0150,0x00AD
+BG_SCALING_ASPECT_PAL:			;@ (4->3) 192->144, 224->168, 240->180
+	.long 0xC000,0xC000,0xC000
+	.long 0x18A8,0x0CB4,0x0800+SCREEN_HEIGHT-8
+	.long    -32,   -13,   -10
+	.long 0x0155,0x0155,0x00AD
 BG_SCALING_ASPECT_NTSC:			;@ 192->170, 224->199, 240->213, 216->192, 9->8
-	.long 0xE38F,0xE2AB,0xE2AB
+	.long 0xE38F,0xE38F,0xE38F
 	.long 0x0BB5,SCREEN_HEIGHT,SCREEN_HEIGHT
-	.long    -12,0x0004,0x000C
-	.long 0x0100,0x0120,0x0090
+	.long    -12,     4,    12
+	.long 0x0100,0x0120,0x0092
 BG_SCALING_ASPECT_GG:			;@ 192->160, 216->180, 6->5
 	.long 0xD555,0xD555,0xD555
 	.long 0x10B0,0x07BA,0x06BA
@@ -477,7 +479,7 @@ scaleParms:
 scaleSprParam:
 	.long 0x0100				;@ Scaled Normal Vertical
 	.long 0x0120				;@ Scaled 8x16 Vertical
-	.long 0x0090				;@ Scaled Double Vertical
+	.long 0x0092				;@ Scaled Double Vertical
 	.long OAMBuffer1+6
 	.long OAM+768+6
 ;@----------------------------------------------------------------------------
@@ -525,7 +527,7 @@ VDP0ApplyScaling:		;@ r0-r2, r12 modified.
 applyScaling:		;@ r0-r2 modified, r12 = vdpptr.
 ;@----------------------------------------------------------------------------
 	ldrb r0,[vdpptr,#vdpHeightMode]
-	and r0,r0,#VDPMODE_HEIGHTMASK	;@ 224 and/or 240 height
+	and r0,r0,#VDPMODE_HEIGHTMASK		;@ 224 and/or 240 height
 	adr r2,BG_SCALING_TBL
 	ldr r1,[r2,r0,lsr#2]
 	str r1,bgScaleValue
@@ -1145,7 +1147,7 @@ sDMARet:
 	beq setBc
 	ldrb r0,[vdpptr,#vdpRealMode]
 	add r3,r2,#0x80				;@ SG palette
-	cmp r0,#0x04				;@ Mode4?
+	cmp r0,#VDPMODE_4			;@ Mode4?
 	addpl r3,r3,#0x180			;@ Use normal palette
 	ldrb r4,[vdpptr,#vdpBDColor]
 	and r1,r4,#0xF				;@ Border color

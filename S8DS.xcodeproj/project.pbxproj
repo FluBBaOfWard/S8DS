@@ -46,6 +46,8 @@
 		9C2F502A2FBA23720063ACDD /* SordM5Kb.grit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SordM5Kb.grit; sourceTree = "<group>"; };
 		9C2F502B2FBA23720063ACDD /* SordM5Kb.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SordM5Kb.png; sourceTree = "<group>"; };
 		9C2F50312FEC271D0063ACDD /* RendererGBA.s */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.asm; path = RendererGBA.s; sourceTree = "<group>"; };
+		9C2F50332FFE6D5B0063ACDD /* IPSPatch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IPSPatch.h; sourceTree = "<group>"; };
+		9C2F50342FFE6D5B0063ACDD /* IPSPatch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = IPSPatch.c; sourceTree = "<group>"; };
 		9C35484D24BB837B00CCD030 /* YM2413.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = YM2413.i; sourceTree = "<group>"; };
 		9C35484E24BB837B00CCD030 /* YM2413.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YM2413.h; sourceTree = "<group>"; };
 		9C3D5AD825E2C54400E8CD56 /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
@@ -85,12 +87,14 @@
 		9CBEE0D326EE24A50095347A /* EmuSettings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EmuSettings.h; sourceTree = "<group>"; };
 		9CC0AADA259FA95B009020F3 /* SegaVDP.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = SegaVDP.i; sourceTree = "<group>"; };
 		9CC0AADB259FA95B009020F3 /* SegaVDP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SegaVDP.h; sourceTree = "<group>"; };
+		9CCEF3703001062C00D401BB /* MSX.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MSX.h; sourceTree = "<group>"; };
+		9CCEF3713001062C00D401BB /* MSX.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MSX.c; sourceTree = "<group>"; };
 		A40EA24C1CB000AA002807DB /* OmvBgr.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = OmvBgr.grit; sourceTree = "<group>"; };
 		A40EA24D1CB000AA002807DB /* OmvBgr.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = OmvBgr.png; sourceTree = "<group>"; };
 		A43DE7991ACE994D00112CE8 /* SG1000-II.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SG1000-II.grit"; sourceTree = "<group>"; };
 		A43DE79A1ACE994D00112CE8 /* SG1000-II.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "SG1000-II.png"; sourceTree = "<group>"; };
-		A43DE79B1AD2E1EC00112CE8 /* MSX.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MSX.grit; sourceTree = "<group>"; };
-		A43DE79C1AD2E1EC00112CE8 /* MSX.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MSX.png; sourceTree = "<group>"; };
+		A43DE79B1AD2E1EC00112CE8 /* MSXKb.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = MSXKb.grit; sourceTree = "<group>"; };
+		A43DE79C1AD2E1EC00112CE8 /* MSXKb.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MSXKb.png; sourceTree = "<group>"; };
 		A43DE79D1AD2E1EC00112CE8 /* SC3000.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = SC3000.grit; sourceTree = "<group>"; };
 		A43DE79E1AD2E1EC00112CE8 /* SC3000.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = SC3000.png; sourceTree = "<group>"; };
 		A43DE79F1AD47EBC00112CE8 /* Mark3.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Mark3.grit; sourceTree = "<group>"; };
@@ -186,8 +190,8 @@
 				9C2F502B2FBA23720063ACDD /* SordM5Kb.png */,
 				359D278818C85E840087F5FD /* ColecoNumpad.grit */,
 				359D278918C85E840087F5FD /* ColecoNumpad.png */,
-				A43DE79B1AD2E1EC00112CE8 /* MSX.grit */,
-				A43DE79C1AD2E1EC00112CE8 /* MSX.png */,
+				A43DE79B1AD2E1EC00112CE8 /* MSXKb.grit */,
+				A43DE79C1AD2E1EC00112CE8 /* MSXKb.png */,
 			);
 			path = graphics;
 			sourceTree = "<group>";
@@ -296,6 +300,8 @@
 				A47F09232085FDBF004E1DA6 /* EmuMenu.c */,
 				A47F0934208731E9004E1DA6 /* FileHelper.h */,
 				A47F0933208731E9004E1DA6 /* FileHelper.c */,
+				9C2F50332FFE6D5B0063ACDD /* IPSPatch.h */,
+				9C2F50342FFE6D5B0063ACDD /* IPSPatch.c */,
 				A47F094820879537004E1DA6 /* crc32.h */,
 				A47F094720879536004E1DA6 /* crc32.c */,
 				A4D0E1282089EDF200401463 /* AsmExtra.h */,
@@ -361,6 +367,8 @@
 				35E683AE1C66478D00FCFE8A /* Gfx.h */,
 				A49D343D1757E54900BD9B4B /* Gfx.s */,
 				A49D34461757E54900BD9B4B /* Memory.s */,
+				9CCEF3703001062C00D401BB /* MSX.h */,
+				9CCEF3713001062C00D401BB /* MSX.c */,
 				A4DA20381B18D56C00034389 /* MSXIO.s */,
 				A495D80D2104D3FB005939E0 /* SordM5.s */,
 				35DFC3891B175E26000E0F8D /* SystemE.s */,

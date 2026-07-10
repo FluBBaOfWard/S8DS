@@ -8,7 +8,10 @@
 #include "Shared/EmuMenu.h"
 #include "Shared/EmuSettings.h"
 #include "Shared/FileHelper.h"
+#include "Shared/IPSPatch.h"
 #include "Gui.h"
+#include "MasterSystem.h"
+#include "MSX.h"
 #include "RomLoading.h"
 #include "Equates.h"
 #include "SegaVDP/SegaVDP.h"
@@ -59,7 +62,7 @@ void updateConfigData(void) {
 
 void initSettings() {
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
+	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSAVE_NVRAM | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
 	cfg.sprites     = 1;		// SpriteScanning On/Off;
 	cfg.glasses     = 1;
 	cfg.config      = 0x80;		// config, bit 7=BIOS on/off, bit 6=X as GG Start, bit 5=Select as Reset, bit 4=R as FastForward
@@ -135,9 +138,11 @@ int loadSRAM() {
 	return 0;
 }
 void saveNVRAM() {
-	saveSRAM();
+	if (gCartFlags & SRAMFLAG) {
+		forceSaveNVRAM();
+	}
 }
-void saveSRAM() {
+void forceSaveNVRAM() {
 	FILE *file;
 	char sramName[FILENAME_MAX_LENGTH];
 
@@ -148,7 +153,7 @@ void saveSRAM() {
 	if ((file = fopen(sramName, "w"))) {
 		fwrite(EMU_SRAM, 1, 0x2000, file);
 		fclose(file);
-		infoOutput("Saved SRAM.");
+		infoOutput("Saved NVRAM.");
 	}
 }
 
@@ -160,17 +165,36 @@ void saveState() {
 	saveDeviceState(folderName);
 }
 
+int packState(void *statePtr) {
+	if (gMachine == HW_MSX) {
+		return msxPackState(statePtr);
+	}
+	return smsPackState(statePtr);
+}
+void unpackState(const void *statePtr) {
+	if (gMachine == HW_MSX) {
+		msxUnpackState(statePtr);
+	}
+	smsUnpackState(statePtr);
+}
+int getStateSize(void) {
+	if (gMachine == HW_MSX) {
+		return msxGetStateSize();
+	}
+	return smsGetStateSize();
+}
+
 bool loadGame(const char *gameName) {
 	char fileExt[8];
 	if (gameName) {
 		cls(0);
 		drawText("   Please wait, loading.", 11, 0);
 		gEmuFlags &= ~(MD_MODE|GG_MODE|SG_MODE|SC_MODE|COL_MODE|MSX_MODE|SORDM5_MODE|SGAC_MODE|SYSE_MODE|MT_MODE);
-		g_ROM_Size = loadROM(ROM_Space, gameName, 0x100000);
-		if (!g_ROM_Size) {
-			g_ROM_Size = loadArcadeROM(ROM_Space, gameName);
+		gRomSize = loadROM(romSpacePtr, gameName, 0x100000);
+		if (!gRomSize) {
+			gRomSize = loadArcadeROM(romSpacePtr, gameName);
 		}
-		if (g_ROM_Size) {
+		if (gRomSize) {
 			getFileExtension(fileExt, currentFilename);
 			if (strstr(fileExt, ".gg")) {
 				gEmuFlags |= GG_MODE;
@@ -182,18 +206,19 @@ bool loadGame(const char *gameName) {
 				gEmuFlags |= SC_MODE;
 			}
 			else if ((strstr(fileExt, ".mx1") || strstr(fileExt, ".mx2") || strstr(fileExt, ".rom"))
-					 && ((ROM_Space[0] == 0x41 && ROM_Space[1] == 0x42) || (ROM_Space[0x4000] == 0x41 && ROM_Space[0x4001] == 0x42))) {
+					 && ((romSpacePtr[0] == 0x41 && romSpacePtr[1] == 0x42) || (romSpacePtr[0x4000] == 0x41 && romSpacePtr[0x4001] == 0x42))) {
 				gEmuFlags |= MSX_MODE;
 			}
 			else if ((strstr(fileExt, ".col") || strstr(fileExt, ".rom"))
-					 && ((ROM_Space[0] == 0xAA && ROM_Space[1] == 0x55) || (ROM_Space[0] == 0x55 && ROM_Space[1] == 0xAA))) {
+					 && ((romSpacePtr[0] == 0xAA && romSpacePtr[1] == 0x55) || (romSpacePtr[0] == 0x55 && romSpacePtr[1] == 0xAA))) {
 				gEmuFlags |= COL_MODE;
 			}
 			else if (strstr(fileExt, ".rom")
-					 && (ROM_Space[0] == 0x00 || ROM_Space[0] == 0x02)) {
+					 && (romSpacePtr[0] == 0x00 || romSpacePtr[0] == 0x02)) {
 				gEmuFlags |= SORDM5_MODE;
 			}
 			setEmuSpeed(0);
+			cartInitSRAM();
 			loadCart(gEmuFlags);
 			loadSRAM();
 			if (emuSettings & AUTOLOAD_STATE) {
@@ -333,4 +358,14 @@ int loadSORDM5BIOS(void) {
 	}
 	g_BIOSBASE_SORDM5 = NULL;
 	return 0;
+}
+
+void selectIPS() {
+	pauseEmulation = true;
+	ui10();
+	const char *ipsName = browseForFileType(".ips");
+	if (ipsName && patchRom(romSpacePtr, ipsName, gRomSize)) {
+		loadCart(gEmuFlags);
+	}
+	backOutOfMenu();
 }

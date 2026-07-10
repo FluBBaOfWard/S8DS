@@ -1,6 +1,9 @@
 S8DS To do
 ------------
 
+	Update sound more often? See NitroSwan.
+	Break out all the keyboard handling from GUI.c
+	Fix SystemE.
 	Make sure Region is saved in settings. #13
 	Save region & machine?
 	Add mapper select to MSX.
@@ -12,8 +15,6 @@ S8DS To do
 	AK Miracle World (jap)
 	AK Shinobi World
 	Makai Retsuden
-
-	Update sound more often? See NitroSwan.
 
 	Add Casio PV-2000? http://www43.tok2.com/home/cmpslv/Pv2000/EnrPV.htm
 	Add TOMY PuyTa? Tomy Tutor?
