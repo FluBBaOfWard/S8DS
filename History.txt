@@ -2,7 +2,7 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.8 - 2026-07-09 (FluBBa)
+V1.1.8 - 2026-07-25 (FluBBa)
 	Added IPS patch functionality.
 	Optimized the SN76496 chip.
 	Optimized the VDP chip.

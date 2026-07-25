@@ -6,8 +6,8 @@
 #include "EmuBase.h"
 #include "Main.h"
 #include "MasterSystem.h"
+#include "Coleco.h"
 #include "MSX.h"
-#include "ColecoNumpad.h"
 #include "SordM5Kb.h"
 #include "FileHandling.h"
 #include "RomLoading.h"
@@ -23,14 +23,12 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-07-10"
+#define EMUVERSION "V1.1.8 2026-07-25"
 
 extern u8 sordM5Input;		// SordM5.s
 
-static void nullUIColeco(int key);
 static void nullUISordM5(int key);
 
-static void setupColecoBackground(void);
 static void setupSordM5Background(void);
 
 static void resetConsole(void);
@@ -298,33 +296,46 @@ void quickSelectGame(void) {
 }
 
 void uiNullNormal() {
-	if (gMachine == HW_SMS1) {
-		setupSMS1Background();
-	} else if (gMachine == HW_SMS2) {
-		setupSMS2Background();
-	} else if (gMachine == HW_GG) {
-		setupGGBackground();
-	} else if (gMachine == HW_MEGADRIVE) {
-		setupMDBackground();
-	} else if (gMachine == HW_OMV) {
-		setupOMVBackground();
-	} else if (gMachine == HW_SC3000) {
-		setupSC3000Background();
-	} else if (gMachine == HW_SG1000) {
-		setupSG1000Background();
-	} else if (gMachine == HW_SG1000II) {
-		setupSG1000IIBackground();
-	} else if (gMachine == HW_MARK3) {
-		setupMARK3Background();
-	} else if (gMachine == HW_COLECO) {
-		setupColecoBackground();
-	} else if (gMachine == HW_MSX) {
-		msxSetupBackground();
-	} else if (gMachine == HW_SORDM5) {
-		setupSordM5Background();
-	} else {
-		uiNullDefault();
-		return;
+	switch (gMachine) {
+		case HW_SMS1:
+			setupSMS1Background();
+			break;
+		case HW_SMS2:
+			setupSMS2Background();
+			break;
+		case HW_GG:
+			setupGGBackground();
+			break;
+		case HW_MEGADRIVE:
+			setupMDBackground();
+			break;
+		case HW_OMV:
+			setupOMVBackground();
+			break;
+		case HW_SC3000:
+			setupSC3000Background();
+			break;
+		case HW_SG1000:
+			setupSG1000Background();
+			break;
+		case HW_SG1000II:
+			setupSG1000IIBackground();
+			break;
+		case HW_MARK3:
+			setupMARK3Background();
+			break;
+		case HW_COLECO:
+			colecoSetupBackground();
+			break;
+		case HW_MSX:
+			msxSetupBackground();
+			break;
+		case HW_SORDM5:
+			setupSordM5Background();
+			break;
+		default:
+			uiNullDefault();
+			return;
 	}
 	drawItem("Menu",27,1,0);
 }
@@ -559,49 +570,6 @@ void cartridgePortTouched(int keyHit) {
 	}
 }
 
-void nullUIColeco(int keyHit) {
-	colecoKey = 0;
-	if (EMUinput & KEY_TOUCH) {
-		touchPosition myTouch;
-		touchRead(&myTouch);
-		int xpos = (myTouch.px>>3);
-		int ypos = (myTouch.py>>3);
-		if ((xpos > 25) && (ypos < 3)) {
-			openMenu();
-		}
-		else if (xpos > 7 && xpos < 12) {
-			if (ypos > 0 && ypos < 5)
-				colecoKey = 0x02;
-			else if (ypos > 6 && ypos < 11)
-				colecoKey = 0x0D;
-			else if (ypos > 12 && ypos < 17)
-				colecoKey = 0x0A;
-			else if (ypos > 18 && ypos < 23)
-				colecoKey = 0x06;
-		}
-		else if (xpos > 13 && xpos < 18) {
-			if (ypos > 0 && ypos < 5)
-				colecoKey = 0x08;
-			else if (ypos > 6 && ypos < 11)
-				colecoKey = 0x0C;
-			else if (ypos > 12 && ypos < 17)
-				colecoKey = 0x0E;
-			else if (ypos > 18 && ypos < 23)
-				colecoKey = 0x05;
-		}
-		else if (xpos > 19 && xpos < 24) {
-			if (ypos > 0 && ypos < 5)
-				colecoKey = 0x03;
-			else if (ypos > 6 && ypos < 11)
-				colecoKey = 0x01;
-			else if (ypos > 12 && ypos < 17)
-				colecoKey = 0x04;
-			else if (ypos > 18 && ypos < 23)
-				colecoKey = 0x09;
-		}
-	}
-}
-
 void nullUISordM5(int keyHit) {
 
 	keyboardRows[0] &= ~0xC0;
@@ -775,11 +743,6 @@ void debugIOUnimplW(u8 val, u16 port) {
 }
 
 //---------------------------------------------------------------------------------
-void setupColecoBackground(void) {
-	setupCompressedBackground(ColecoNumpadTiles, ColecoNumpadMap, 0);
-	memcpy(BG_PALETTE_SUB+0x80, ColecoNumpadPal, ColecoNumpadPalLen);
-}
-
 void setupSordM5Background(void) {
 	setupCompressedBackground(SordM5KbTiles, SordM5KbMap, 8);
 	memcpy(BG_PALETTE_SUB+0x80, SordM5KbPal, SordM5KbPalLen);

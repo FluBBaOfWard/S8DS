@@ -6,10 +6,15 @@
 #include "YM2413/YM2413.i"
 #include "SCC/SCC.i"
 
+	.extern pauseEmulation
+	.extern powerIsOn
+
 	.global soundInit
 	.global soundReset
-	.global soundSetFrequency
 	.global soundRender
+	.global soundSetMuteGUI
+	.global soundSetMuteGame
+	.global soundSetFrequency
 	.global SMSJSoundControlW
 	.global SMSJSoundControlR
 	.global SN76496_0
@@ -28,11 +33,6 @@
 	.global SCCWrite_0
 	.global GG_Stereo_W
 	.global SoundVariables
-	.global soundSetMuteGUI
-	.global soundSetMuteGame
-
-	.extern pauseEmulation
-	.extern powerIsOn
 
 ;@----------------------------------------------------------------------------
 	.syntax unified
@@ -139,7 +139,7 @@ soundSetMuteGame:			;@ For System E ?
 	strb r0,muteSoundGame
 	bx lr
 ;@----------------------------------------------------------------------------
-soundRender:					;@ r0=length, r1=pointer
+soundRender:				;@ r0=length, r1=pointer
 ;@----------------------------------------------------------------------------
 	ldr r2,muteSound
 	cmp r2,#0
@@ -403,4 +403,4 @@ mixSpace1:
 	.space 0x8000
 ;@----------------------------------------------------------------------------
 	.end
-#endif // #ifdef __arm__
+#endif // __arm__

@@ -89,6 +89,8 @@
 		9CC0AADB259FA95B009020F3 /* SegaVDP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SegaVDP.h; sourceTree = "<group>"; };
 		9CCEF3703001062C00D401BB /* MSX.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MSX.h; sourceTree = "<group>"; };
 		9CCEF3713001062C00D401BB /* MSX.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MSX.c; sourceTree = "<group>"; };
+		9CCEF3A23014B5C900D401BB /* Coleco.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Coleco.h; sourceTree = "<group>"; };
+		9CCEF3A33014B5C900D401BB /* Coleco.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Coleco.c; sourceTree = "<group>"; };
 		A40EA24C1CB000AA002807DB /* OmvBgr.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = OmvBgr.grit; sourceTree = "<group>"; };
 		A40EA24D1CB000AA002807DB /* OmvBgr.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = OmvBgr.png; sourceTree = "<group>"; };
 		A43DE7991ACE994D00112CE8 /* SG1000-II.grit */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SG1000-II.grit"; sourceTree = "<group>"; };
@@ -370,6 +372,8 @@
 				9CCEF3703001062C00D401BB /* MSX.h */,
 				9CCEF3713001062C00D401BB /* MSX.c */,
 				A4DA20381B18D56C00034389 /* MSXIO.s */,
+				9CCEF3A23014B5C900D401BB /* Coleco.h */,
+				9CCEF3A33014B5C900D401BB /* Coleco.c */,
 				A495D80D2104D3FB005939E0 /* SordM5.s */,
 				35DFC3891B175E26000E0F8D /* SystemE.s */,
 				A4DA20391B190C0400034389 /* MegaTech.s */,

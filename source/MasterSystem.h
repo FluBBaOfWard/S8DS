@@ -37,4 +37,4 @@ void setupMDBackground(void);
 } // extern "C"
 #endif
 
-#endif // MASTERSYSTEM_HEADER
+#endif // !MASTERSYSTEM_HEADER

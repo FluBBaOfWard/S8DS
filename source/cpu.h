@@ -23,4 +23,4 @@ void cpuReset(void);
 } // extern "C"
 #endif
 
-#endif // CPU_HEADER
+#endif // !CPU_HEADER
