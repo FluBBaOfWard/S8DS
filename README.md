@@ -25,7 +25,6 @@ Features:
 Missing:
 
 	Correct sprite collision.
-	Speech samples.
 	Good YM2413 emulation.
 	EEPROM save for the few GG games that use it.
 
@@ -41,12 +40,8 @@ Check your roms!
  zipped files (as long as they use the deflate compression).
 3. Depending on your flashcart you might have to DLDI patch the emulator.
 
-Put your games on your flash card, max 768 games per folder (though shouldn't
-be a problem if you separate SMS, GG, SG & Coleco games into different
-folders). Filenames must not be longer than 127 chars. You can use zipped
-files (as long as they use the deflate compression). The emulator should also
-recognise SMS games for SEGAs MegaTech arcade machine, the SG-1000 arcade
-games and System-E (using MAME zip files).
+The emulator should also recognise SMS games for SEGAs MegaTech arcade machine,
+the SG-1000 arcade games and System-E (using MAME zip files).
 
 The GUI is accessed by pressing L+R (shoulder buttons) or by touching the
 screen, tabs are changed by pressing the L or R button, going to the left most

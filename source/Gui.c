@@ -23,7 +23,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-07-25"
+#define EMUVERSION "V1.1.8 2026-07-26"
 
 extern u8 sordM5Input;		// SordM5.s
 

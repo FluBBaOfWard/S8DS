@@ -121,6 +121,7 @@ rawRom:
 //	.incbin "sms/VDPTest.sms"
 //	.incbin "sms/Won-Si-In (KR).sms"
 //	.incbin "sms/Xenon 2 (Image Works) (UE) [!].sms"
+//	.incbin "sms/Y's (J).sms"
 //	.incbin "sms/Zaxxon 3D (UE) [!].sms"
 //	.incbin "sms/zexall.sms"
 //	.incbin "sms/zexdoc.sms"

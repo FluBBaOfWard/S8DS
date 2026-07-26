@@ -2,11 +2,12 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.8 - 2026-07-25 (FluBBa)
+V1.1.8 - 2026-07-26 (FluBBa)
+	Added sound sample support.
 	Added IPS patch functionality.
 	Optimized the SN76496 chip.
 	Optimized the VDP chip.
-	Ported NDS DevkitARM version back to GBA.
+	Ported NDS version back to GBA.
 
 V1.1.7 - 2023-11-07 (FluBBa)
 	Added support for "Megumi Rescue" on System-E.

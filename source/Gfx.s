@@ -757,7 +757,7 @@ vblIrqHandler:
 
 	ldrb r3,[vdpptr,#vdpYScrollBak1]
 	ldr r7,[vdpptr,#vdpScrollMask]
-	add r5,vdpptr,#scrollBuff
+	add r5,vdpptr,#scrollTMapBuff
 	ldr r4,=yStart
 	ldrsb r4,[r4]
 	add r5,r5,r4,lsl#1
@@ -970,10 +970,10 @@ SysEVBlHandler:
 
 	ldr vdpptr,=VDP0
 	ldrb r3,[vdpptr,#vdpYScrollBak1]
-	add r5,vdpptr,#scrollBuff
+	add r5,vdpptr,#scrollTMapBuff
 	ldr r7,=VDP1
 	ldrb lr,[r7,#vdpYScrollBak1]
-	add r7,r7,#scrollBuff
+	add r7,r7,#scrollTMapBuff
 
 	ldr r0,=yStart
 	ldrsb r0,[r0]

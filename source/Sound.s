@@ -192,9 +192,12 @@ SMSMix:
 	add r0,r2,r0
 	mov r0,r0,asr#3
 	str r0,neededExtra
-	bic r0,r0,#1		// 7
-//	str r0,[spxptr,#missingSamplesCnt]
+//	bic r0,r0,#1		// 7
+	mov r0,r0,asr#2
+	add r0,r0,#228
+	str r0,samplesCnt
 
+//	blx debugIOUnimplR
 	ldmfd sp!,{r0,r1,r4,r5,lr}
 	bx lr
 ;@----------------------------------------------------------------------------
@@ -421,17 +424,29 @@ soundUpdate:				;@ r0 = samples to render
 	stmfd sp!,{r3,r4,lr}
 	ldr r1,=WAVBUFFER
 	ldr r2,sndWritePtr
-	mov r0,#228
+//	mov r0,#228
+	ldr r0,samplesCnt
+	mov r4,#0
 	adds r3,r2,r0,lsl#SHIFTVAL-(8-SN_UPSHIFT)	;@ Only use top 11 bits
+	movcs r4,r3,lsr#SHIFTVAL
+	subcs r3,r3,r4,lsl#SHIFTVAL
 	str r3,sndWritePtr
-	mov r3,r3,lsr#SHIFTVAL
 	mov r2,r2,lsr#SHIFTVAL
-	sub r0,r3,r2
+	rsb r0,r2,r3,lsr#SHIFTVAL
 	and r0,#7
 	add r1,r1,r2,lsl#2
 //	subcs r0,r0,r3,lsr#SHIFTVAL-(8-SN_UPSHIFT)
 
 	ldr r2,=SN76496_0
+	bl sn76496Mixer
+	cmp r4,#0
+	ldmfdeq sp!,{r3,r4,pc}
+
+	ldr r1,=WAVBUFFER
+	ldr r3,sndWritePtr
+	add r3,r3,r4,lsl#SHIFTVAL
+	str r3,sndWritePtr
+	mov r0,r4
 	bl sn76496Mixer
 	ldmfd sp!,{r3,r4,pc}
 
@@ -440,6 +455,7 @@ sndWritePtr:	.long 0
 pcmWritePtr:	.long 0
 pcmReadPtr:		.long 0
 neededExtra:	.long 0
+samplesCnt:		.long 228
 
 muteSound:
 muteSoundGUI:
@@ -471,7 +487,7 @@ mixSpace1:
 	.space 0x8000
 WAVBUFFER:
 	.space SOUND_BUFFER_SIZE*4
-	.space 8
+//	.space 8
 ;@----------------------------------------------------------------------------
 	.end
 #endif // __arm__

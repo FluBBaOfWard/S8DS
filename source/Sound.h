@@ -10,7 +10,7 @@ extern "C" {
 #include "AY38910/AY38910.h"
 #include "SCC/SCC.h"
 
-#define sample_rate  55930
+#define sample_rate  55920
 #define buffer_size  (512+10)
 
 extern SN76496 SN76496_0;
