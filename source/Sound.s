@@ -53,6 +53,11 @@ soundInit:
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{lr}
 
+	ldr r0,=SoundVariables
+	ldr r1,=SoundVariablesEnd
+	sub r1,r1,r0
+	mov r1,r1,lsr#2
+	bl memclr_
 	bl soundSetFrequency
 
 	ldmfd sp!,{lr}
@@ -170,9 +175,6 @@ soundRender:				;@ r0=length, r1=pointer
 SMSMix:
 	ldr r2,=SN76496_0
 	ldmfd sp,{r0,r1}
-//	bl sn76496Mixer
-//	ldmfd sp!,{r0,r1,r4,r5,lr}
-//	bx lr
 
 	ldr r4,pcmReadPtr
 	add r5,r4,r0
@@ -192,9 +194,9 @@ SMSMix:
 	add r0,r2,r0
 	mov r0,r0,asr#3
 	str r0,neededExtra
-//	bic r0,r0,#1		// 7
-	mov r0,r0,asr#2
-	add r0,r0,#228
+	mov r0,r0,asr#3
+	adds r0,r0,#228
+	movmi r0,#10
 	str r0,samplesCnt
 
 //	blx debugIOUnimplR
@@ -487,7 +489,7 @@ mixSpace1:
 	.space 0x8000
 WAVBUFFER:
 	.space SOUND_BUFFER_SIZE*4
-//	.space 8
+SoundVariablesEnd:
 ;@----------------------------------------------------------------------------
 	.end
 #endif // __arm__
