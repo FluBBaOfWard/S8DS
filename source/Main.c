@@ -96,7 +96,6 @@ int main(int argc, char **argv) {
 
 	while (1) {
 		waitVBlank();
-//		mmStreamUpdate();
 		guiRunLoop();
 		if (powerIsOn) {
 			if (!pauseEmulation) {
