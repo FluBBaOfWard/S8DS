@@ -39,4 +39,4 @@ void VDP0ScanlineBPReset(void);
 } // extern "C"
 #endif
 
-#endif // GFX_HEADER
+#endif // !GFX_HEADER

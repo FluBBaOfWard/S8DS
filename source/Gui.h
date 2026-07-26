@@ -24,4 +24,4 @@ void powerOnOff(void);
 } // extern "C"
 #endif
 
-#endif // GUI_HEADER
+#endif // !GUI_HEADER

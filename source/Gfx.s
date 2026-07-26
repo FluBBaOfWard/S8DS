@@ -180,7 +180,7 @@ gfxReset:					;@ Called with cpuReset
 	bl VDP0Reset
 	bl VDP1Reset
 
-	bl clearTileMaps
+//	bl clearTileMaps
 
 	ldr r0,=OAMBuffer1			;@ No stray sprites please
 	mov r1,#0x200+SCREEN_HEIGHT
@@ -267,7 +267,7 @@ VDP0Reset:
 
 	mov r0,#0x0000				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs0]
-	mov r0,#0x0300				;@ BGR map
+	mov r0,#0x0000				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs1]
 //	mov r0,#0x08000				;@ BGR tiles
 	ldr r0,=BG_GFX+0x05800		;@ BGR tiles

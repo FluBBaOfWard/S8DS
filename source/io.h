@@ -35,4 +35,4 @@ int convertInput(int input);
 } // extern "C"
 #endif
 
-#endif // IO_HEADER
+#endif // !IO_HEADER

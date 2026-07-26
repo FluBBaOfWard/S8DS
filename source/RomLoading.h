@@ -14,4 +14,4 @@ void strcasel(char *dest, const char *source);
 } // extern "C"
 #endif
 
-#endif // ROMLOADING_HEADER
+#endif // !ROMLOADING_HEADER

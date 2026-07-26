@@ -1781,7 +1781,7 @@ static void cymfile_callback (int n)
 		fputc( (unsigned char)8, cymfile );
 	}
 }
-#endif
+#endif // LOG_CYM_FILE
 
 /* lock/unlock for common table */
 static int OPLL_LockTable(void)
@@ -1805,7 +1805,7 @@ static int OPLL_LockTable(void)
 		timer_pulse ( TIME_IN_HZ(110), 0, cymfile_callback); /*110 Hz pulse timer*/
 	else
 		logerror("Could not create file 2413_.cym\n");
-#endif
+#endif // LOG_CYM_FILE
 
 	return 0;
 }

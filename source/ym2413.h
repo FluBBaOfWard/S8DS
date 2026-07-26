@@ -43,4 +43,4 @@ void YM2413SetUpdateHandler(int which, OPLL_UPDATEHANDLER UpdateHandler, int par
 } // extern "C"
 #endif
 
-#endif // _H_YM2413_
+#endif // !_H_YM2413_

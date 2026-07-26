@@ -10,7 +10,6 @@ extern "C" {
 #include "AY38910/AY38910.h"
 #include "SCC/SCC.h"
 
-//#define sample_rate  32768
 #define sample_rate  55930
 #define buffer_size  (512+10)
 
@@ -27,4 +26,4 @@ mm_word soundRender(mm_word length, mm_addr dest, mm_stream_formats format);
 } // extern "C"
 #endif
 
-#endif // SOUND_HEADER
+#endif // !SOUND_HEADER

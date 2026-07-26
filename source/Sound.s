@@ -14,6 +14,7 @@
 	.global soundRender
 	.global soundSetMuteGUI
 	.global soundSetMuteGame
+	.global soundUpdate
 	.global soundSetFrequency
 	.global SMSJSoundControlW
 	.global SMSJSoundControlR
@@ -34,7 +35,13 @@
 	.global GG_Stereo_W
 	.global SoundVariables
 
-;@----------------------------------------------------------------------------
+#define SHIFTVAL (21)
+#define SOUND_BUFFER_SIZE (1<<(32-SHIFTVAL))
+
+#if !defined(SN_UPSHIFT)
+	#define SN_UPSHIFT (2)
+#endif
+
 	.syntax unified
 	.arm
 
@@ -163,9 +170,44 @@ soundRender:				;@ r0=length, r1=pointer
 SMSMix:
 	ldr r2,=SN76496_0
 	ldmfd sp,{r0,r1}
-	bl sn76496Mixer
+//	bl sn76496Mixer
+//	ldmfd sp!,{r0,r1,r4,r5,lr}
+//	bx lr
+
+	ldr r4,pcmReadPtr
+	add r5,r4,r0
+	str r5,pcmReadPtr
+
+	bl soundCopyBuff
+
+	ldr r2,sndWritePtr
+	ldr r0,pcmWritePtr
+	sub r2,r2,r0,lsl#SHIFTVAL
+	add r0,r0,r2,lsr#SHIFTVAL
+	str r0,pcmWritePtr
+	sub r0,r5,r0
+	add r0,r0,#SOUND_BUFFER_SIZE/2
+	ldr r2,neededExtra
+	rsb r2,r2,r2,lsl#3			;@ mul 7
+	add r0,r2,r0
+	mov r0,r0,asr#3
+	str r0,neededExtra
+	bic r0,r0,#1		// 7
+//	str r0,[spxptr,#missingSamplesCnt]
 
 	ldmfd sp!,{r0,r1,r4,r5,lr}
+	bx lr
+;@----------------------------------------------------------------------------
+soundCopyBuff:				;@ r0=length, r1=destination
+;@----------------------------------------------------------------------------
+	ldr r2,=WAVBUFFER			;@ Source
+	mov r4,r4,lsl#SHIFTVAL
+sndCopyLoop:
+	subs r0,r0,#1
+	ldrpl r3,[r2,r4,lsr#SHIFTVAL-2]
+	addpl r4,r4,#1<<SHIFTVAL
+	strpl r3,[r1],#4
+	bhi sndCopyLoop
 	bx lr
 
 ;@----------------------------------------------------------------------------
@@ -372,7 +414,33 @@ SCCWrite_0:
 	mov r1,r12
 	ldr r2,=SCC_0
 	b SCCWrite
+
 ;@----------------------------------------------------------------------------
+soundUpdate:				;@ r0 = samples to render
+;@----------------------------------------------------------------------------
+	stmfd sp!,{r3,r4,lr}
+	ldr r1,=WAVBUFFER
+	ldr r2,sndWritePtr
+	mov r0,#228
+	adds r3,r2,r0,lsl#SHIFTVAL-(8-SN_UPSHIFT)	;@ Only use top 11 bits
+	str r3,sndWritePtr
+	mov r3,r3,lsr#SHIFTVAL
+	mov r2,r2,lsr#SHIFTVAL
+	sub r0,r3,r2
+	and r0,#7
+	add r1,r1,r2,lsl#2
+//	subcs r0,r0,r3,lsr#SHIFTVAL-(8-SN_UPSHIFT)
+
+	ldr r2,=SN76496_0
+	bl sn76496Mixer
+	ldmfd sp!,{r3,r4,pc}
+
+;@----------------------------------------------------------------------------
+sndWritePtr:	.long 0
+pcmWritePtr:	.long 0
+pcmReadPtr:		.long 0
+neededExtra:	.long 0
+
 muteSound:
 muteSoundGUI:
 	.byte 0
@@ -381,7 +449,7 @@ muteSoundGame:
 	.space 2
 SMSJSoundControl:
 	.byte 0
-	.space 3
+	.skip 3
 
 
 	.section .bss
@@ -401,6 +469,9 @@ mixSpace0:
 	.space 0x8000
 mixSpace1:
 	.space 0x8000
+WAVBUFFER:
+	.space SOUND_BUFFER_SIZE*4
+	.space 8
 ;@----------------------------------------------------------------------------
 	.end
 #endif // __arm__

@@ -22,4 +22,4 @@ void msxSetupBackground(void);
 } // extern "C"
 #endif
 
-#endif // MSX_HEADER
+#endif // !MSX_HEADER

@@ -132,6 +132,7 @@ SYSEFrameLoop:
 SMSFrameRun:
 	stmfd sp!,{lr}
 SMSFrameLoop:
+	bl soundUpdate
 	ldr vdpptr,=VDP0
 	bl VDPDoScanline
 	cmp r0,#0

@@ -25,4 +25,4 @@ typedef struct {				//(config struct)
 	char biosSORDM5[256];
 } ConfigData;
 
-#endif // EMUBASE
+#endif // !EMUBASE
