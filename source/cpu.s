@@ -179,7 +179,7 @@ cpuReset:		;@ Called by loadCart/resetConsole
 
 
 	adr r0,SMSFrameRun
-	cmpne r4,#HW_MEGATECH
+//	cmpne r4,#HW_MEGATECH
 	adreq r0,SYSEFrameRun
 	cmp r4,#HW_SORDM5
 	adreq r0,SM5FrameRun

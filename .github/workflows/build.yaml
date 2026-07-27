@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-nds:
+    name: Build
+    runs-on: ubuntu-latest
+    container: skylyrac/blocksds:slim-latest
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Build
+        run: make
+
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: S8DS
+          path: |
+            History.txt
+            S8DS.nds
+            README.md

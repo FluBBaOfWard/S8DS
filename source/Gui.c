@@ -3,7 +3,7 @@
 #include "Gui.h"
 #include "Shared/EmuMenu.h"
 #include "Shared/EmuSettings.h"
-#include "EmuBase.h"
+#include "Emubase.h"
 #include "Main.h"
 #include "MasterSystem.h"
 #include "Coleco.h"
