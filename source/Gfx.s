@@ -161,8 +161,7 @@ gfxInit:					;@ (called from main.c) only need to call once
 	stmfd sp!,{lr}
 	bl rendererInit
 	ldmfd sp!,{lr}
-	ldr vdpptr,=VDP0
-	b vdpSetupPtrs
+	b VDP0Init
 ;@----------------------------------------------------------------------------
 gfxReset:					;@ Called with cpuReset
 ;@----------------------------------------------------------------------------
@@ -236,7 +235,7 @@ HWToVDP:
 	.byte VDPTMS9918,     VDPSega3155124, VDPTMS9918,     VDPSega3155246
 	.pool
 ;@----------------------------------------------------------------------------
-VDP0Reset:
+VDP0Init:
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{lr}
 	ldr vdpptr,=VDP0
@@ -258,22 +257,7 @@ VDP0Reset:
 	orrne r0,r0,#TVTYPEPAL
 	tst r3,#GG_MODE
 	orrne r0,r0,#GGMODE
-	bl VDPReset				;@ r0=vdp/tv type, r1 = IRQ function ptr, r2 = debounce routine, r12 = vdpptr.
-	bl vdpSetupPtrs
-	mov r0,#1
-	strb r0,[vdpptr,#vdpSprScan]
-
-	ldr r0,=gEmuFlags
-	ldr r0,[r0]
-	tst r0,#PALTIMING
-	moveq r0,#60
-	movne r0,#50
-	bl setTargetFPS
-	ldmfd sp!,{pc}
-
-;@----------------------------------------------------------------------------
-vdpSetupPtrs:
-;@----------------------------------------------------------------------------
+	bl VDPInit				;@ r0=vdp/tv type, r1 = IRQ function ptr, r2 = debounce routine, r12 = vdpptr.
 	ldr r0,=OAMBuffer1
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer2
@@ -286,9 +270,28 @@ vdpSetupPtrs:
 	str r0,[vdpptr,#vdpBgrTileOfs]
 	ldr r0,=BG_GFX+0x400000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
-	bx lr
+	mov r0,#1
+	strb r0,[vdpptr,#vdpSprScan]
+
+	ldmfd sp!,{pc}
+
 ;@----------------------------------------------------------------------------
-VDP1Reset:
+VDP0Reset:
+;@----------------------------------------------------------------------------
+	stmfd sp!,{lr}
+	bl VDP0Init
+	bl VDPReset				;@ r12 = vdpptr.
+
+	ldr r0,=gEmuFlags
+	ldr r0,[r0]
+	tst r0,#PALTIMING
+	moveq r0,#60
+	movne r0,#50
+	bl setTargetFPS
+	ldmfd sp!,{pc}
+
+;@----------------------------------------------------------------------------
+VDP1Init:
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{lr}
 	ldr vdpptr,=VDP1
@@ -300,15 +303,11 @@ VDP1Reset:
 	ldrb r0,[r1,r3]
 	ldr r1,=Z80SetNMIPinCurrentCpu
 	mov r2,#0
-	bl VDPReset				;@ r0=vdp type, r1 = IRQ function ptr, r2 = debounce routine, r12 = vdpptr.
-	ldr r1,=VDP0
-	ldr r0,[r1,#vdpScanline]
-	bl VDPSetScanline
+	bl VDPInit				;@ r0=vdp type, r1 = IRQ function ptr, r2 = debounce routine, r12 = vdpptr.
 	ldr r0,=OAMBuffer3
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer4
 	str r0,[vdpptr,#vdpDMAOAMBuffer]
-
 	mov r0,#0x0900				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs0]
 	mov r0,#0x0C00				;@ BGR map
@@ -317,6 +316,16 @@ VDP1Reset:
 	str r0,[vdpptr,#vdpBgrTileOfs]
 	ldr r0,=BG_GFX+0x404000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
+	ldmfd sp!,{pc}
+;@----------------------------------------------------------------------------
+VDP1Reset:
+;@----------------------------------------------------------------------------
+	stmfd sp!,{lr}
+	bl VDP1Init
+	bl VDPReset				;@ r12 = vdpptr.
+	ldr r1,=VDP0
+	ldr r0,[r1,#vdpScanline]
+	bl VDPSetScanline
 	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 clearTileMaps:
@@ -1195,8 +1204,12 @@ setBc:
 VDP0SetMode:
 	.type VDP0SetMode STT_FUNC
 ;@----------------------------------------------------------------------------
+	stmfd sp!,{z80ptr,lr}
+	ldr z80ptr,=Z80OpTable
 	ldr vdpptr,=VDP0
-	b VDPSetMode
+	bl VDPSetMode
+	ldmfd sp!,{z80ptr,lr}
+	bx lr
 ;@----------------------------------------------------------------------------
 SysESprFix:
 ;@----------------------------------------------------------------------------

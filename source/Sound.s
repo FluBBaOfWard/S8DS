@@ -111,6 +111,7 @@ isMSX:
 ;@----------------------------------------------------------------------------
 SMSJSoundControlW:
 ;@----------------------------------------------------------------------------
+	and r0,r0,#3
 	strb r0,SMSJSoundControl
 	bx lr
 ;@----------------------------------------------------------------------------
@@ -163,24 +164,38 @@ soundRender:				;@ r0=length, r1=pointer
 
 	ldr r2,=gMachine
 	ldrb r2,[r2]
-	cmp r2,#HW_SYSE
-	beq sysEMix
 	cmp r2,#HW_MSX
 	beq MSXMix
+	cmp r2,#HW_SYSE
+	beq sysEMix
 	ldrb r2,SMSJSoundControl
-	tst r2,#0x1
-	bne YM2413Mix
-//	bne YM2413MixC
-;@----------------------------------------------------------------------------
-SMSMix:
-	ldr r2,=SN76496_0
+	cmp r2,#1				;@ Only YM2413 enabled?
 	ldmfd sp,{r0,r1}
-
+	blne sn76496Render
+	ldrb r2,SMSJSoundControl
+	tst r2,#1				;@ YM2413 enabled?
+	ldmfd sp,{r0}
+	bne YM2413Mix
+	ldmfd sp!,{r0,r1,r4,r5,lr}
+	bx lr
+;@----------------------------------------------------------------------------
+sn76496Render:
+;@----------------------------------------------------------------------------
 	ldr r4,pcmReadPtr
 	add r5,r4,r0
 	str r5,pcmReadPtr
 
-	bl soundCopyBuff
+;@------------------------------
+soundCopyBuff:				;@ r0=length, r1=destination
+	ldr r2,=WAVBUFFER			;@ Source
+	mov r4,r4,lsl#SHIFTVAL
+sndCopyLoop:
+	subs r0,r0,#1
+	ldrpl r3,[r2,r4,lsr#SHIFTVAL-2]
+	addpl r4,r4,#1<<SHIFTVAL
+	strpl r3,[r1],#4
+	bhi sndCopyLoop
+;@------------------------------
 
 	ldr r2,sndWritePtr
 	ldr r0,pcmWritePtr
@@ -200,21 +215,7 @@ SMSMix:
 	str r0,samplesCnt
 
 //	blx debugIOUnimplR
-	ldmfd sp!,{r0,r1,r4,r5,lr}
 	bx lr
-;@----------------------------------------------------------------------------
-soundCopyBuff:				;@ r0=length, r1=destination
-;@----------------------------------------------------------------------------
-	ldr r2,=WAVBUFFER			;@ Source
-	mov r4,r4,lsl#SHIFTVAL
-sndCopyLoop:
-	subs r0,r0,#1
-	ldrpl r3,[r2,r4,lsr#SHIFTVAL-2]
-	addpl r4,r4,#1<<SHIFTVAL
-	strpl r3,[r1],#4
-	bhi sndCopyLoop
-	bx lr
-
 ;@----------------------------------------------------------------------------
 sysEMix:
 	ldr r2,=SN76496_1
@@ -247,12 +248,13 @@ mixLoop02:
 YM2413Mix:
 ;@----------------------------------------------------------------------------
 	mov r0,r0,lsl#3
+	ldr r1,=mixSpace0
 	ldr ymptr,=YM2413_0
 	bl YM2413Mixer
-	ldrb r2,SMSJSoundControl
-	tst r2,#0x2
-	bne addExtraSN76496
 	ldmfd sp,{r0,r1}
+	ldrb r2,SMSJSoundControl
+	tst r2,#2				;@ SN76496 enabled?
+	bne mixYMAndSN76496
 	ldr r2,=mixSpace0
 mixLoop03:
 	ldrsh r4,[r2],#2
@@ -280,6 +282,38 @@ mixLoop03:
 	subs r0,r0,#1
 	strpl r4,[r1],#4
 	bhi mixLoop03
+
+	ldmfd sp!,{r0,r1,r4,r5,lr}
+	bx lr
+
+mixYMAndSN76496:
+	ldr r2,=mixSpace0
+mixLoop03b:
+	ldrsh r4,[r2],#2
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r2],#2
+	add r4,r4,r5
+	ldrsh r5,[r1]
+	add r4,r4,r5,lsl#3
+
+	mov r4,r4,lsl#16-4
+	mov r4,r4,lsr#16
+	orr r4,r4,r4,lsl#16
+
+	subs r0,r0,#1
+	strpl r4,[r1],#4
+	bhi mixLoop03b
 
 	ldmfd sp!,{r0,r1,r4,r5,lr}
 	bx lr

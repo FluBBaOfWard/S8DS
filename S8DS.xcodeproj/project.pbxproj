@@ -122,7 +122,7 @@
 		A47F093B20876332004E1DA6 /* puff.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = puff.c; sourceTree = "<group>"; };
 		A47F094720879536004E1DA6 /* crc32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = crc32.c; sourceTree = "<group>"; };
 		A47F094820879537004E1DA6 /* crc32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crc32.h; sourceTree = "<group>"; };
-		A495D80D2104D3FB005939E0 /* SordM5.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = SordM5.s; sourceTree = "<group>"; };
+		A495D80D2104D3FB005939E0 /* SordM5IO.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = SordM5IO.s; sourceTree = "<group>"; };
 		A495D80F21061EF8005939E0 /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
 		A495D81121061EF8005939E0 /* History.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = History.txt; sourceTree = "<group>"; };
 		A495D81221061EF8005939E0 /* ARMZ80CTC.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = ARMZ80CTC.i; sourceTree = "<group>"; };
@@ -374,7 +374,7 @@
 				A4DA20381B18D56C00034389 /* MSXIO.s */,
 				9CCEF3A23014B5C900D401BB /* Coleco.h */,
 				9CCEF3A33014B5C900D401BB /* Coleco.c */,
-				A495D80D2104D3FB005939E0 /* SordM5.s */,
+				A495D80D2104D3FB005939E0 /* SordM5IO.s */,
 				35DFC3891B175E26000E0F8D /* SystemE.s */,
 				A4DA20391B190C0400034389 /* MegaTech.s */,
 				A45C01521B6ABD3D00AE1110 /* ym2413.h */,
