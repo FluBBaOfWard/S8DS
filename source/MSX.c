@@ -4,7 +4,7 @@
 #include "Main.h"
 #include "Gui.h"
 #include "Shared/EmuMenu.h"
-#include "MsxKb.h"
+#include "MSXKb.h"
 #include "Cart.h"
 #include "Sound.h"
 #include "Gfx.h"
