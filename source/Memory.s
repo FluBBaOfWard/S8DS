@@ -195,10 +195,8 @@ LCDGlasses:
 ram4k_W:					;@ Write ram (Sord M5 $7000-$7FFF)
 ;@----------------------------------------------------------------------------
 	tst addy,#0x1000
-	bicne r2,addy,#0xF000
-//	ldrne r1,=EMU_RAM
 	ldrne r1,[z80ptr,#z80MemTbl+28*4]
-	strbne r0,[r1,r2]
+	strbne r0,[r1,addy]
 	bx lr
 ;@----------------------------------------------------------------------------
 sram0_W:					;@ Write sram bank0 ($8000-$BFFF)
