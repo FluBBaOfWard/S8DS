@@ -308,14 +308,16 @@ VDP1Init:
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer4
 	str r0,[vdpptr,#vdpDMAOAMBuffer]
-	mov r0,#0x0900				;@ BGR map
+	mov r0,#0x1b00				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs0]
-	mov r0,#0x0C00				;@ BGR map
+	mov r0,#0x1b00				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs1]
 	ldr r0,=BG_GFX+0x09800		;@ BGR tiles
 	str r0,[vdpptr,#vdpBgrTileOfs]
 	ldr r0,=BG_GFX+0x404000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
+	ldr r0,=0x20002000
+	str r0,[vdpptr,#vdpPaletteOfs]
 	ldmfd sp!,{pc}
 ;@----------------------------------------------------------------------------
 VDP1Reset:
@@ -1080,7 +1082,7 @@ scrolELoop2:
 	stmia r0,{r1-r3}			;@ DMA3 go
 
 	ldr r1,[vdpptr,#vdpBgrTileOfs]
-	ldr r2,[vdpptr,#vdpBgrMapOfs1]
+	ldr r2,[vdpptr,#vdpBgrMapOfs0]
 	and r1,r1,#0xC000
 	add r2,r2,r1,lsr#12
 	add r0,r2,#0x0001
@@ -1091,12 +1093,13 @@ scrolELoop2:
 
 	ldr r11,=VDP1
 	ldr r1,[r11,#vdpBgrTileOfs]
-	ldr r2,[r11,#vdpBgrMapOfs1]
+	ldr r2,[r11,#vdpBgrMapOfs0]
 	and r1,r1,#0xC000
 	add r2,r2,r1,lsr#12
 	add r0,r2,r3
 	strh r0,[r8,#REG_BG3CNT]
 	add r0,r2,r3,lsr#16
+	sub r0,r0,#0x4
 	strh r0,[r8,#REG_BG2CNT]
 
 	mov r0,#0x001F
