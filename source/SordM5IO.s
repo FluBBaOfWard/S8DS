@@ -5,6 +5,8 @@
 #include "ARMZ80CTC/ARMZ80CTC.i"
 #include "PPI8255/PPI8255.i"
 
+	.global CTC_0
+
 	.global sordM5Reset
 	.global IO_Params_SordM5_R
 	.global IO_Params_SordM5_W

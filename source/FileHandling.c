@@ -12,6 +12,7 @@
 #include "Gui.h"
 #include "MasterSystem.h"
 #include "MSX.h"
+#include "SordM5.h"
 #include "RomLoading.h"
 #include "Equates.h"
 #include "SegaVDP/SegaVDP.h"
@@ -169,17 +170,26 @@ int packState(void *statePtr) {
 	if (gMachine == HW_MSX) {
 		return msxPackState(statePtr);
 	}
+	else if (gMachine == HW_SORDM5) {
+		return sordM5PackState(statePtr);
+	}
 	return smsPackState(statePtr);
 }
 void unpackState(const void *statePtr) {
 	if (gMachine == HW_MSX) {
 		msxUnpackState(statePtr);
 	}
+	else if (gMachine == HW_SORDM5) {
+		sordM5UnpackState(statePtr);
+	}
 	smsUnpackState(statePtr);
 }
 int getStateSize(void) {
 	if (gMachine == HW_MSX) {
 		return msxGetStateSize();
+	}
+	if (gMachine == HW_SORDM5) {
+		return sordM5GetStateSize();
 	}
 	return smsGetStateSize();
 }

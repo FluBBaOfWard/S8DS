@@ -1,7 +1,6 @@
 S8DS To do
 ------------
 
-	Break out all the keyboard handling from GUI.c
 	Fix SystemE.
 	Make sure Region is saved in settings. #13
 	Save region & machine?

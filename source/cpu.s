@@ -105,6 +105,7 @@ waitMaskOut:		.byte 0
 SM5FrameRun:
 	stmfd sp!,{lr}
 SM5FrameLoop:
+	bl soundUpdate
 	ldr r0,scanlineCycles
 	bl CTC0Update
 	ldr vdpptr,=VDP0
@@ -206,4 +207,4 @@ cpuReset:		;@ Called by loadCart/resetConsole
 
 ;@----------------------------------------------------------------------------
 	.end
-#endif // #ifdef __arm__
+#endif // __arm__
