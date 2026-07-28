@@ -2,9 +2,10 @@ S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.1.8 - 2026-07-27 (FluBBa)
+V1.1.8 - 2026-07-28 (FluBBa)
 	Added sound sample support.
 	Added IPS patch functionality.
+	Added saving of Region/Machine.
 	Fixed mixing of YM2413 + PSG.
 	Optimized the SN76496 chip.
 	Optimized the VDP chip.

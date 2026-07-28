@@ -124,6 +124,30 @@ better 3D effect, I have only tested with red/cyan glasses.
 
 Some dumb info...
 
+## Controls
+
+### Master System
+
+```text
+Dpad is mapped to up, down, left & right.
+B is mapped to Button 1.
+A is mapped to Button 2.
+Start is mapped to Pause on console.
+Select can be mapped to Reset on console.
+```
+
+### Game Gear
+
+```text
+Start is mapped to Start on console.
+```
+
+### Arcade
+
+```text
+Select is mapped to Coin1.
+```
+
 ## Arcade roms
 
 ### MegaTech

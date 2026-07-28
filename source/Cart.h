@@ -23,12 +23,14 @@ extern u8 BIOS_GG_Space[0x400];
 extern u8 BIOS_COLECO_Space[0x2000];
 extern u8 BIOS_MSX_Space[0x8000];
 extern u8 BIOS_SORDM5_Space[0x2000];
+extern u8 BIOS_PV2000_Space[0x4000];
 extern void *g_BIOSBASE_US;
 extern void *g_BIOSBASE_JP;
 extern void *g_BIOSBASE_GG;
 extern void *g_BIOSBASE_COLECO;
 extern void *g_BIOSBASE_MSX;
 extern void *g_BIOSBASE_SORDM5;
+extern void *g_BIOSBASE_PV2000;
 
 void machineInit(void);
 void loadCart(int);

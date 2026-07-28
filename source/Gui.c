@@ -23,7 +23,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-07-27"
+#define EMUVERSION "V1.1.8 2026-07-28"
 
 static void resetConsole(void);
 
@@ -240,7 +240,7 @@ static char sdscBuffer[80];
 static char *const ctrlTxt[] = {"1P", "2P"};
 static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect"};
 
-static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"};
+static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"/*, "PV-2000"*/};
 static char *const bordTxt[] = {"Black", "Border Color", "None"};
 static char *const cntrTxt[] = {"Auto", "US (NTSC)", "Europe (PAL)", "Japan (NTSC)"};
 static char *const joypadTxt[] = {"Auto", "SMS 2 Buttton", "MD 3 Button", "MD 6 Button"};

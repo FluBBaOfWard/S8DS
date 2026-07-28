@@ -31,31 +31,32 @@ static ConfigData cfg;
 //---------------------------------------------------------------------------------
 void applyConfigData(void) {
 	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	SPRS         = cfg.sprites;
-	g3DEnable    = cfg.glasses;
-	gConfigSet   = cfg.config;
-	gScalingSet  = cfg.scaling & 3;
+	gScalingSet  = cfg.display & 3;
+	g3DEnable    = (cfg.display>>4) & 1;
 	gFlicker     = cfg.flicker & 1;
 	gGammaValue  = cfg.gammaValue & 0x7;
 	gColorValue  = (cfg.gammaValue >> 4) & 0x7;
-	sleepTime    = cfg.sleepTime;
+	SPRS         = cfg.sprites;
+	gMachineSet  = cfg.machine & 0x1F;
+	gRegion      = (cfg.machine >> 5) & 3;
+	gConfigSet   = cfg.config;
 	joyCfg       = (joyCfg & ~0x400) | ((cfg.controller & 1) << 10);
 	strlcpy(currentDir, cfg.currentPath, sizeof(currentDir));
 //	gDipSwitch0  = cfg.dipSwitch0;
 //	gDipSwitch1  = cfg.dipSwitch1;
 	pauseEmulation = (emuSettings & AUTOPAUSE_EMULATION);
+	sleepTime    = 0x7F000000; // 360 days...
 }
 
 void updateConfigData(void) {
 	strcpy(cfg.magic, "cfg");
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	cfg.sprites     = SPRS;
-	cfg.glasses     = g3DEnable;
-	cfg.config      = gConfigSet;
-	cfg.scaling     = gScalingSet & 3;
+	cfg.display     = (gScalingSet & 3) | ((g3DEnable & 1)<<4);
 	cfg.flicker     = gFlicker & 1;
 	cfg.gammaValue  = (gGammaValue & 0x7) | ((gColorValue & 0x7) << 4);
-	cfg.sleepTime   = sleepTime;
+	cfg.sprites     = SPRS;
+	cfg.machine     = (gMachineSet & 0x1F) | ((gRegion & 3)<<5);
+	cfg.config      = gConfigSet;
 	cfg.controller  = (joyCfg>>10) & 1;
 	strlcpy(cfg.currentPath, currentDir, sizeof(cfg.currentPath));
 //	cfg.dipSwitch0  = gDipSwitch0;
@@ -64,13 +65,11 @@ void updateConfigData(void) {
 void initSettings() {
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSAVE_NVRAM | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
-	cfg.sprites     = 1;		// SpriteScanning On/Off;
-	cfg.glasses     = 1;
-	cfg.config      = 0x80;		// config, bit 7=BIOS on/off, bit 6=X as GG Start, bit 5=Select as Reset, bit 4=R as FastForward
-	cfg.scaling     = SCALED_FIT;
+	cfg.display     = SCALED_FIT | 0x10; // Scaling + 3DGlasses
 	cfg.flicker     = 1;
 	cfg.gammaValue  = 0x40;		// ColorValue = 4
-	cfg.sleepTime   = 60*60*5;
+	cfg.sprites     = 1;		// SpriteScanning On/Off;
+	cfg.config      = 0x80;		// config, bit 7=BIOS on/off, bit 6=X as GG Start, bit 5=Select as Reset, bit 4=R as FastForward
 
 	applyConfigData();
 }

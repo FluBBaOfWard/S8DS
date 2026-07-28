@@ -223,9 +223,9 @@ Mark III.
  - IO port $3F (IO control) doesn't exist.
 
 SMS1.
- - IO ports $00-$3F return the last byte of the instruction that read the port.
+ - IO ports $00-$3F return open bus (the last byte of the instruction that read the port).
  - On cold boot WRAM is ????.
- - Disabling RAM makes it return the last byte of the instruction that read the port.
+ - Disabling RAM makes it return open bus (the last byte of the instruction that read the port).
 
 SMS2.
  - IO ports $00-$3F return 0xFF?

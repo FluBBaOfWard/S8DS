@@ -14,6 +14,7 @@
 #define HW_COLECO		(0x0A)
 #define HW_MSX			(0x0B)
 #define HW_SORDM5		(0x0C)
+//#define HW_PV2000		(0x0D)
 #define HW_SYSE			(0x0D)
 #define HW_SGAC			(0x0E)
 #define HW_MEGATECH		(0x0F)
@@ -38,6 +39,7 @@
 #define COL_MODE		(1<<8)		// 0=SMS mode, 1=Coleco mode
 #define MSX_MODE		(1<<9)		// 0=SMS mode, 1=MSX mode
 #define SORDM5_MODE		(1<<10)		// 0=SMS mode, 1=SordM5 mode
+//#define PV2000_MODE		(1<<11)		// 0=SMS mode, 1=PV-2000 mode
 #define SYSE_MODE		(1<<11)		// 0=SMS mode, 1=System E mode
 #define MT_MODE			(1<<12)		// 0=SMS mode, 1=MegaTech mode
 

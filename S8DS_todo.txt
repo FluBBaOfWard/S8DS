@@ -1,9 +1,7 @@
 S8DS To do
 ------------
 
-	Fix SystemE.
-	Make sure Region is saved in settings. #13
-	Save region & machine?
+	Fix sound 
 	Add mapper select to MSX.
 	Games that crash the emulator when machine is set to 'auto' :
 	Master of Darkness
@@ -60,6 +58,8 @@ Games:
 	Moldorian(JP).gg - Sensitive to startup timing, HIrq timing?
 	Super Tetris - doesn't work on export SMS?
 	Excellent Dizzy Collection - Changes screen resolution before it hangs?
+
+	Coleco UpNDown, graphics glitches. Check NoCash.
 
 CPU:
 

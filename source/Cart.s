@@ -33,12 +33,14 @@
 	.global BIOS_COLECO_Space
 	.global BIOS_MSX_Space
 	.global BIOS_SORDM5_Space
+	.global BIOS_PV2000_Space
 	.global g_BIOSBASE_US
 	.global g_BIOSBASE_JP
 	.global g_BIOSBASE_GG
 	.global g_BIOSBASE_COLECO
 	.global g_BIOSBASE_MSX
 	.global g_BIOSBASE_SORDM5
+	.global g_BIOSBASE_PV2000
 
 	.global machineInit
 	.global loadCart
@@ -171,6 +173,16 @@ rawRom:
 //	.incbin "SordM5/digdug.rom"
 //	.incbin "SordM5/mappy.rom"
 //	.incbin "SordM5/poo-yan.rom"
+//	.incbin "PV-2000/ExciteMahjongPV2k.bin"
+//	.incbin "PV-2000/FrontLinePV2k.bin"
+//	.incbin "PV-2000/GalagaPV2k.bin"
+//	.incbin "PV-2000/MrPacknPV2k.bin"
+//	.incbin "PV-2000/PachinkoUFOPV2k.bin"
+//	.incbin "PV-2000/PooyanPV2k.bin"
+//	.incbin "PV-2000/RakuygakiPV2k.bin"
+//	.incbin "PV-2000/RocNRopePV2k.bin"
+//	.incbin "PV-2000/SkiCommandPV2k.bin"
+//	.incbin "PV-2000/SuperCobraPV2k.bin"
 //	.incbin "ac/epr-7356.ic1"				// Doki Doki Penguin Arcade
 //	.incbin "ac/epr-7357.ic2"
 //	.incbin "ac/epr-7358.ic3"
@@ -208,6 +220,7 @@ rawBios:
 //	.incbin "COLECO.ROM"
 //	.incbin "MSX BIOS.rom"
 //	.incbin "SordM5/sordint.ic21"
+//	.incbin "PV-2000/hn613128pc64.bin"
 #endif // EMBEDDED_ROM
 miniBios:
 	.incbin "MiniBios.sms"
@@ -233,6 +246,7 @@ machineInit: 				;@ Called from C
 //	str r3,g_BIOSBASE_COLECO
 //	str r3,g_BIOSBASE_MSX
 //	str r3,g_BIOSBASE_SORDM5
+//	str r3,g_BIOSBASE_PV2000
 
 	mov r0,#endRom-rawRom
 	str r0,gRomSize
@@ -1634,6 +1648,8 @@ g_BIOSBASE_MSX:
 	.long 0						;@ MSX
 g_BIOSBASE_SORDM5:
 	.long 0						;@ Sord M5
+g_BIOSBASE_PV2000:
+	.long 0						;@ PV-2000
 romSpacePtr:
 	.long 0
 gRomSize:
@@ -1717,6 +1733,7 @@ BIOS_GG_Space:
 BIOS_COLECO_Space:
 	.space 0x2000				;@ Coleco 8kB BIOS max
 BIOS_MSX_Space:
+BIOS_PV2000_Space:
 	.space 0x8000				;@ MSX 32kB BIOS max
 BIOS_SORDM5_Space:
 	.space 0x2000				;@ Sord M5 8kB BIOS max
