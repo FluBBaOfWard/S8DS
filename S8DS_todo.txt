@@ -1,7 +1,6 @@
 S8DS To do
 ------------
 
-	Fix sound 
 	Add mapper select to MSX.
 	Games that crash the emulator when machine is set to 'auto' :
 	Master of Darkness
@@ -37,7 +36,7 @@ Misc:
 	Add Arcade System-1 & System-2?
 	SG-1000 has 1kB RAM. Done.
 	SC-3000 (and OMV?) has 2kB RAM. Done.
-	Add MegaDrive joypad emulation. Done?
+	Add MegaDrive 6 buttons joypad emulation?
 	50Hz fps display wrong? Done.
 	System-E, decryption?
 	Check 2player in F-16 Fightin Falcon (J).

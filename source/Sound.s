@@ -471,7 +471,6 @@ soundUpdate:				;@ r0 = samples to render
 	rsb r0,r2,r3,lsr#SHIFTVAL
 	and r0,#7
 	add r1,r1,r2,lsl#2
-//	subcs r0,r0,r3,lsr#SHIFTVAL-(8-SN_UPSHIFT)
 
 	ldr r2,=SN76496_0
 	bl sn76496Mixer
