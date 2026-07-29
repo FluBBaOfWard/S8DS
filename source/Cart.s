@@ -360,11 +360,10 @@ tbLoop1:
 	ldreq r1,g_BIOSBASE_SORDM5	;@ SORD M5
 	cmp r9,#HW_GG
 	ldreq r1,g_BIOSBASE_GG		;@ GG
-	bicne r2,r2,#0x40			;@ X as Start/Pause only on HW_GG
 	bicne r0,r0,#GG_MODE
 	cmpne r9,#HW_SMS2
 	cmpne r9,#HW_MEGADRIVE
-	biceq r2,r2,#0x20			;@ Reset unavailable on HW_GG, HW_SMS2 & HW_MEGADRIVE
+	biceq r2,r2,#0x20			;@ Reset unavailable on GG, SMS2 & MEGADRIVE
 	str r0,gEmuFlags
 	strb r2,gConfig
 	cmp r1,#0
@@ -808,7 +807,7 @@ setupMDBios:	;@ This needs to run after cpu reset, enables MD Bios without banks
 	bxeq lr
 	ldr r0,=mdBios
 	storeLastBank r0
-	str r0,[z80ptr,#z80Regs + 6*4]
+	str r0,[z80ptr,#z80PC]
 	bx lr
 ;@----------------------------------------------------------------------------
 initMSXMemory:
@@ -1107,12 +1106,12 @@ ls0:
 
 	str r1,romBase
 
-	ldr z80pc,[z80ptr,#z80Regs+6*4]
+	ldr z80pc,[z80ptr,#z80PC]
 	bl fillROMBANKMAP
 	bl reBankSwitch0
 	bl reBankSwitch1
 	bl reBankSwitch2
-	str z80pc,[z80ptr,#z80Regs+6*4]
+	str z80pc,[z80ptr,#z80PC]
 dontInitMappers:
 	mov r0,r5
 	ldmfd sp!,{r4-r5,z80pc,z80ptr,lr}

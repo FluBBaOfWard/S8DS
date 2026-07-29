@@ -23,7 +23,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-07-28"
+#define EMUVERSION "V1.1.8 2026-07-29"
 
 static void resetConsole(void);
 
@@ -33,7 +33,6 @@ static void swapABSet(void);
 static const char *getSwapABText(void);
 static void rffSet(void);
 static const char *getRffText(void);
-//static void xStartSet(void);
 static void joypadSet(void);
 static const char *getJoypadText(void);
 static void selectSet(void);
@@ -60,6 +59,7 @@ static const char *getCountryText(void);
 static void selectMachine(void);
 static const char *getMachineText(void);
 static void biosSet(void);
+static const char *getBiosText(void);
 static void ym2413Set(void);
 static const char *getYM2413Text(void);
 static void refreshChgSet(void);
@@ -376,7 +376,7 @@ void uiSelectMachine() {
 
 static void uiBios() {
 	setupSubMenuText();
-	drawSubItem("Use BIOS:", biosTxt[(gConfigSet >> 7) & 1]);
+	drawSubItem("Use BIOS:", getBiosText());
 	drawMenuItem(" Select Export Bios ->");
 	drawMenuItem(" Select Japanese Bios ->");
 	drawMenuItem(" Select GameGear Bios ->");
@@ -639,15 +639,18 @@ const char *getSwapABText() {
 }
 
 void rffSet() {
-	gConfigSet ^= 0x10;
+	gConfigSet ^= CFG_R_AS_FASTFORWARD;
 	settingsChanged = 1;
 }
 const char *getRffText() {
 	return autoTxt[(gConfigSet>>4)&1];
 }
 /*
-void xStartSet() {
-	gConfigSet ^= 0x40;
+void xAsStartSet() {
+	gConfigSet ^= CFG_X_AS_START;
+}
+const char *getXAsStartText() {
+	return autoTxt[(gConfigSet>>6)&1];
 }
 */
 void joypadSet() {
@@ -661,7 +664,7 @@ const char *getJoypadText() {
 }
 
 void selectSet() {
-	gConfigSet ^= 0x20;
+	gConfigSet ^= CFG_SELECT_AS_RESET;
 }
 const char *getSelectText() {
 	return autoTxt[(gConfigSet>>5)&1];
@@ -748,7 +751,10 @@ const char *getGlassesText() {
 }
 
 void biosSet() {
-	gConfigSet ^= 0x80;
+	gConfigSet ^= CFG_USE_BIOS;
+}
+const char *getBiosText() {
+	return biosTxt[(gConfigSet >> 7) & 1];
 }
 
 void countrySet() {

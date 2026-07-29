@@ -129,9 +129,10 @@ Some dumb info...
 ### Master System
 
 ```text
-Dpad is mapped to up, down, left & right.
+Dpad is mapped to Up, Down, Left & Right.
 B is mapped to Button 1.
 A is mapped to Button 2.
+X is mapped to Pause on console.
 Start is mapped to Pause on console.
 Select can be mapped to Reset on console.
 ```
@@ -139,6 +140,7 @@ Select can be mapped to Reset on console.
 ### Game Gear
 
 ```text
+X is mapped to Start on console.
 Start is mapped to Start on console.
 ```
 

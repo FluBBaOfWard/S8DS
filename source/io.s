@@ -426,7 +426,7 @@ convertInput:			;@ Convert from device keys to target r0=input/output
 ;@----------------------------------------------------------------------------
 	mvn r1,r0
 	tst r1,#KEY_L|KEY_R				;@ Keys to open menu
-	orreq r0,r0,#KEY_OPEN_MENU
+	orreq r0,r0,#ACT_OPEN_MENU
 	bx lr
 ;@----------------------------------------------------------------------------
 refreshEMUjoypads:			;@ Call every frame
@@ -449,7 +449,7 @@ refreshEMUjoypads:			;@ Call every frame
 	andne r0,r1,#3
 	bic r4,r4,#3
 	orr r4,r4,r0
-	and r3,r4,#0xf0
+	and r3,r4,#KEY_JOY_MASK
 
 	ldr r1,=gMachine
 	ldrb r1,[r1]
@@ -468,14 +468,14 @@ refreshSMSJoypads:
 	beq noPause
 	ldr r0,=gConfig
 	ldrb r0,[r0]
-	tst r0,#0x20
+	tst r0,#0x20				;@ Select as Reset?
 	biceq r4,r4,#0x04			;@ Remove Reset if disabled
 	ldr r0,=gEmuFlags
 	ldrb r0,[r0]
 	tst r0,#GG_MODE
 	bne noPause
-	orr r0,r4,r4,lsr#7			;@ NDS X
-	and r0,r0,#0x08				;@ NDS START
+	orr r0,r4,r4,lsr#7			;@ OR NDS X & START
+	and r0,r0,#KEY_START		;@ NDS START
 	cmp r1,#HW_SG1000
 	cmpne r1,#HW_OMV
 	cmpne r1,#HW_SC3000
@@ -485,11 +485,11 @@ refreshSMSJoypads:
 	bleq Z80SetNMIPinCurrentCpu
 noPause:
 	bl refreshArcadeInput
-	adr addy,rlud2durl
-	ldrb r0,[addy,r3,lsr#4]		;@ DownUpLeftRight
+	adr r12,rlud2durl
+	ldrb r0,[r12,r3,lsr#4]		;@ DownUpRightLeft
 
 	orr r0,r0,r4,lsl#4
-	mov r3,r4,lsr#8
+	mov r3,r4,lsr#8				;@ R+L+X+Y in bottom 4 bits
 
 	mov r1,#0
 
@@ -521,25 +521,25 @@ noPause:
 ;@----------------------------------------------------------------------------
 refreshColJoypads:
 ;@----------------------------------------------------------------------------
-	adr addy,joy2Coleco
-	ldrb r0,[addy,r3,lsr#4]		;@ downupleftright
+	adr r12,joy2Coleco
+	ldrb r0,[r12,r3,lsr#4]		;@ DownUpLeftRight
 
 	orr r0,r0,r4,lsl#5			;@ Button 1
 	mov r1,r4,lsl#6				;@ Button 2
-	tst r4,#0x4					;@ Select
+	tst r4,#KEY_SELECT			;@ Select
 //	ldrb r3,gKeymapSelect
 	mov r3,#0x03
 	orrne r1,r1,r3				;@ (3)
-	tst r4,#0x8					;@ Start
+	tst r4,#KEY_START			;@ Start
 //	ldrb r3,gKeymapStart
 	mov r3,#0x02
 	orrne r1,r1,r3				;@ (1)
 
-	tst r4,#0x200				;@ L
+	tst r4,#KEY_L				;@ L
 //	ldrb r3,gKeymapL
 	mov r3,#0x09
 	orrne r1,r1,r3				;@ (#)
-	tst r4,#0x100				;@ R
+	tst r4,#KEY_R				;@ R
 //	ldrb r3,gKeymapR
 	mov r3,#0x06
 	orrne r1,r1,r3				;@ (*)
@@ -558,8 +558,8 @@ refreshColJoypads:
 ;@----------------------------------------------------------------------------
 refreshMSXJoypads:			;@ Call every frame
 ;@----------------------------------------------------------------------------
-	adr addy,rlud2durl
-	ldrb r0,[addy,r3,lsr#4]		;@ downupleftright
+	adr r12,rlud2durl
+	ldrb r0,[r12,r3,lsr#4]		;@ DownUpRightLeft
 
 	orr r0,r0,r4,lsl#4
 	and r0,r0,#0x3F
@@ -576,8 +576,8 @@ refreshMSXJoypads:			;@ Call every frame
 ;@----------------------------------------------------------------------------
 refreshSM5Joypads:			;@ Call every frame
 ;@----------------------------------------------------------------------------
-	adr addy,rlud2ruld
-	ldrb r0,[addy,r3,lsr#4]		;@ downupleftright
+	adr r12,rlud2ruld
+	ldrb r0,[r12,r3,lsr#4]		;@ RightUpLeftDown
 	and r1,r4,#0x03
 
 	tst r2,#0x40000000			;@ Player 2?
@@ -592,17 +592,17 @@ refreshSM5Joypads:			;@ Call every frame
 refreshArcadeInput:
 ;@----------------------------------------------------------------------------
 	mov r1,#0
-	and r0,r4,#0x0F0
-	tst r4,#0x008				;@ NDS Start
+	and r0,r4,#KEY_JOY_MASK
+	tst r4,#KEY_START			;@ NDS Start
 	orrne r1,r1,r0,lsr#4
 	orrne r1,r1,#0x010
-	tst r4,#0x004				;@ NDS Select
+	tst r4,#KEY_SELECT			;@ NDS Select
 	orrne r1,r1,r0,lsl#1
 	orrne r1,r1,#0x200
-	tst r4,#0x200				;@ NDS L
-	orrne r1,r1,r0,lsl#6
-	orrne r1,r1,#0x4000
-	tst r4,#0x100				;@ NDS R
+	tst r4,#KEY_L				;@ NDS L
+	orrne r1,r1,r0,lsl#8
+//	orrne r1,r1,#0x4000
+	tst r4,#KEY_R				;@ NDS R
 	orrne r1,r1,#0x8000
 
 	str r1,acExtra

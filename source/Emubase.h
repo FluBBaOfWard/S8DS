@@ -1,8 +1,15 @@
 #ifndef EMUBASE
 #define EMUBASE
 
-#define ENABLE_LIVE_UI		(1<<12)
-#define ALLOW_REFRESH_CHG	(1<<19)
+// For emuSettings
+#define ENABLE_LIVE_UI			(1<<12)
+#define ALLOW_REFRESH_CHG		(1<<19)
+
+// For config
+#define CFG_R_AS_FASTFORWARD	(1<<4)
+#define CFG_SELECT_AS_RESET		(1<<5)
+#define CFG_X_AS_START			(1<<6)
+#define CFG_USE_BIOS			(1<<7)
 
 typedef struct {				//(config struct)
 	char magic[4];				//="CFG",0
