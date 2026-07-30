@@ -63,10 +63,11 @@ better 3D effect, I have only tested with red/cyan glasses.
 * Load State: Select which state you want to load.
 * Save State: Select if you want to overwrite an old state or create a new.
 * Save NVRAM:
+* Load Patch: Load an IPS patch for the current game.
 * Save Settings:
 * Eject Game:
 * Power On/Off:
-* Reset Game:
+* Reset Console:
 * Quit Emulator: (If your card/loader supports it.)
 
 ### Options
@@ -96,6 +97,7 @@ better 3D effect, I have only tested with red/cyan glasses.
     * Select GameGear Bios: Browse for GameGear bios.
     * Select Coleco Bios: Browse for Coleco bios.
     * Select MSX Bios: Browse for MSX bios.
+    * Select Sord M5 Bios: Browse for Sord M5 bios.
   * YM2413: Enable YM2413 emulation for SMS1 & Mark 3.
 * Settings:
   * Speed: Switch between speed modes, can also be toggled with L+START.
@@ -103,8 +105,11 @@ better 3D effect, I have only tested with red/cyan glasses.
     * 200%: Game can run up to double speed.
     * Max: Games can run up to 4 times normal speed.
     * 50%: Game runs at half speed.
-  * Autoload State: Toggle Savestate autoloading. Automagicaly load the
+  * Allow Refresh Change: Allow the emulator to change NDS refresh rate.
+  * Autoload State: Toggle Savestate autoloading. Automatically load the
    savestate associated with the selected game.
+  * Autoload NVRAM: Toggle EEPROM/SRAM autoloading. Automatically load the EEPROM/SRAM associated with the selected game.
+  * Autosave NVRAM: Toggle EEPROM/SRAM autosaving. Automatically save NVRAM when entering UI.
   * Autosave Settings: This will save settings when leaving menu if any
    changes are made.
   * Autopause Game: Toggle if the game should pause when opening the menu.
@@ -112,7 +117,8 @@ better 3D effect, I have only tested with red/cyan glasses.
    screen when menu is not active.
   * Emulator on Bottom: Select if top or bottom screen should be used for
    emulator, when menu is active emulator screen is allways on top.
-  * Autosleep: Change the autosleep time, also see Sleep. !!!DoesntWork!!!
+  * Show Clock: Show current time in the UI.
+  * Console Touch: Turn on/off interaction with the console graphics.
 * Debug:
   * Debug Output: Toggle fps meter & more.
   * Disable Background: Turn on/off background rendering.

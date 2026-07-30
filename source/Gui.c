@@ -23,7 +23,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-07-29"
+#define EMUVERSION "V1.1.8 2026-07-30"
 
 static void resetConsole(void);
 
