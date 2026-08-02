@@ -23,7 +23,7 @@
 #include "AY38910/Version.h"
 #include "SCC/Version.h"
 
-#define EMUVERSION "V1.1.8 2026-07-30"
+#define EMUVERSION "V1.1.9 2026-08-02"
 
 static void resetConsole(void);
 
@@ -676,7 +676,9 @@ void scalingSet() {
 		gScalingSet = 0;
 	}
 	setupScaling();
-	VDP0ApplyScaling();
+	if (powerIsOn) {
+		VDP0ApplyScaling();
+	}
 }
 const char *getScalingText() {
 	return dispTxt[gScalingSet];

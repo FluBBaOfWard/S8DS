@@ -100,6 +100,7 @@ rawRom:
 //	.incbin "sms/Back to the Future 3 (E) [!].sms"
 //	.incbin "sms/Battlemaniacs (BR) [!].sms"
 //	.incbin "sms/Cosmic Spacehead (UE) [!].sms"
+//	.incbin "sms/Double Dragon.sms"
 //	.incbin "sms/Excellent Dizzy Collection, The [SMS-GG].sms"
 //	.incbin "sms/Fantastic Dizzy [SMS-GG].sms"
 //	.incbin "sms/Fantastic Dizzy.sms"

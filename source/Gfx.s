@@ -84,8 +84,12 @@ antWarsInit:
 	stmfd sp!,{r4,lr}
 
 	ldr r4,=VDP0
+	mov r0,#0x04
+	strb r0,[r4,#vdpMode1]
 	mov r0,#0x40
 	strb r0,[r4,#vdpMode2Bak2]
+	mov r0,#VDPMODE_4
+	strb r0,[r4,#vdpHeightMode]
 	ldr r0,=BG_SCALING_1_1
 	bl loadScaleValues
 	bl VDP0ApplyScaling
@@ -95,7 +99,7 @@ antWarsInit:
 	strh r1,[r0]
 	strh r1,[r0,#0x40]
 	ldr r1,=0x7FFF
-	strh r1,[r0,#0x1E]
+	strh r1,[r0,#0x5E]
 
 	ldr r0,[r4,#vdpBgrMapOfs0]
 	mov r1,#BG_GFX
@@ -106,8 +110,9 @@ antWarsInit:
 	bl memclr_					;@ BG1/BG3 clear
 
 	ldr r0,[r4,#vdpBgrTileOfs]
+	add r0,r0,#4*8				;@ Skip first tile.
 	ldr r3,antSeed
-	ldr r1,=32*240
+	ldr r1,=32*128
 antLoop0:
 antLoop1:
 	movs r3,r3,lsr#1
@@ -137,7 +142,9 @@ antWars:
 	ldr r0,[r4,#vdpBgrMapOfs0]
 	ldr r3,[r4,#vdpBgrTileOfs]
 	and r3,r3,#0x3FC0
+	add r3,r3,#4*8				;@ Skip first tile.
 	mov r3,r3,lsr#5
+	orr r3,r3,#0x2000			;@ Palette 2
 	mov r1,#BG_GFX
 	add r0,r1,r0,lsl#3
 	ldr r4,antSeed
@@ -262,11 +269,11 @@ VDP0Init:
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer2
 	str r0,[vdpptr,#vdpDMAOAMBuffer]
-	mov r0,#0x0000				;@ BGR map
+	mov r0,#0x0100				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs0]
-	mov r0,#0x0000				;@ BGR map
+	mov r0,#0x0100				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs1]
-	ldr r0,=BG_GFX+0x05800		;@ BGR tiles
+	ldr r0,=BG_GFX+0x04000		;@ BGR tiles
 	str r0,[vdpptr,#vdpBgrTileOfs]
 	ldr r0,=BG_GFX+0x400000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
@@ -308,11 +315,11 @@ VDP1Init:
 	str r0,[vdpptr,#vdpTmpOAMBuffer]
 	ldr r0,=OAMBuffer4
 	str r0,[vdpptr,#vdpDMAOAMBuffer]
-	mov r0,#0x1b00				;@ BGR map
+	mov r0,#0x0300				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs0]
-	mov r0,#0x1b00				;@ BGR map
+	mov r0,#0x0300				;@ BGR map
 	str r0,[vdpptr,#vdpBgrMapOfs1]
-	ldr r0,=BG_GFX+0x09800		;@ BGR tiles
+	ldr r0,=BG_GFX+0x08000		;@ BGR tiles
 	str r0,[vdpptr,#vdpBgrTileOfs]
 	ldr r0,=BG_GFX+0x404000		;@ SPR tiles
 	str r0,[vdpptr,#vdpSprTileOfs]
@@ -863,9 +870,9 @@ scaleLoop4:
 	ldr r2,[vdpptr,#vdpBgrMapOfs0]
 	and r1,r1,#0xC000
 	add r2,r2,r1,lsr#12
-	add r0,r2,#0x0001
+	add r0,r2,#0x0001			;@ Prio
 	strh r0,[r8,#REG_BG0CNT]
-	ldr r3,=0x02870102
+	ldr r3,=0x03830102
 	add r0,r2,r3
 	strh r0,[r8,#REG_BG1CNT]
 	strh r0,[r8,#REG_BG3CNT]
@@ -876,8 +883,11 @@ scaleLoop4:
 	ldrb r1,gGfxMask
 	bic r0,r0,r1
 	ldrb r1,[vdpptr,#vdpMode2Bak2]
-	tst r1,#0x40
+	ldrb r2,[vdpptr,#vdpHeightMode]
+	tst r1,#0x40				;@ Screen on?
 	biceq r0,r0,#0x001F			;@ Turn off sprites and bg
+	cmp r2,#VDPMODE_4
+	bicmi r0,r0,#0x0005			;@ Turn off bg 0 & 2 for TMS9918 modes.
 	orr r0,r0,r0,lsl#8
 	bic r0,r0,#0x0008
 
@@ -1099,7 +1109,7 @@ scrolELoop2:
 	add r0,r2,r3
 	strh r0,[r8,#REG_BG3CNT]
 	add r0,r2,r3,lsr#16
-	sub r0,r0,#0x4
+	bic r0,r0,#0xC
 	strh r0,[r8,#REG_BG2CNT]
 
 	mov r0,#0x001F
