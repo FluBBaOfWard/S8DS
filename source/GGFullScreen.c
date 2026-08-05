@@ -6,8 +6,10 @@
 
 #define GG_ACTIVE_X             48
 #define GG_ACTIVE_Y             24
-#define GG_SCALE_NUMERATOR       4
-#define GG_SCALE_DENOMINATOR     3
+#define GG_VERTICAL_SCALE_NUMERATOR       4
+#define GG_VERTICAL_SCALE_DENOMINATOR     3
+#define GG_FULL_HEIGHT_HORIZONTAL_STEP 0xC0
+#define GG_FULL_SCREEN_HORIZONTAL_STEP 0xA0
 #define GG_SCALED_WIDTH        214
 #define GG_PILLAR_LEFT          21
 #define GG_PILLAR_RIGHT        (GG_PILLAR_LEFT + GG_SCALED_WIDTH)
@@ -42,10 +44,15 @@ static bool affineBufferReady;
 
 static bool ggFullscreenActive(void) {
 	u32 tileAddress = (u32)getVDP0BgrTileAddress();
-	return gScalingSet == SCALED_GG_FULLSCREEN
+	return (gScalingSet == SCALED_GG_FULLSCREEN
+			|| gScalingSet == SCALED_GG_FULL_SCREEN)
 		&& (gEmuFlags & GG_MODE)
 		&& tileAddress >= (u32)BG_GFX
 		&& tileAddress < (u32)BG_GFX + 0x20000;
+}
+
+static bool ggFullScreenMode(void) {
+	return gScalingSet == SCALED_GG_FULL_SCREEN;
 }
 
 static void expandBackgroundTiles(void) {
@@ -143,11 +150,12 @@ static void updateExtendedPalettes(void) {
 	paletteCacheValid = true;
 }
 
-static u32 affineXFromTextScroll(u32 packedScroll) {
+static u32 affineXFromTextScroll(u32 packedScroll, int horizontalStep,
+								 int outputLeft) {
 	u32 x = packedScroll & 0x1FF;
-	// Place source x=48 exactly at window x=21. The quarter-pixel component
-	// avoids sampling one column of the hidden GG border at the left edge.
-	return (((x + GG_ACTIVE_X) << 8) - GG_PILLAR_LEFT * 0xC0) & 0x1FFFF;
+	// Place source x=48 exactly at the output's left edge. Keeping the fractional
+	// reference point avoids sampling a hidden GG border column in full-height mode.
+	return (((x + GG_ACTIVE_X) << 8) - outputLeft * horizontalStep) & 0x1FFFF;
 }
 
 static u32 affineYFromTextScroll(u32 packedScroll, int sourceLine) {
@@ -155,9 +163,16 @@ static u32 affineYFromTextScroll(u32 packedScroll, int sourceLine) {
 	return ((y + sourceLine) & 0x1FF) << 8;
 }
 
-static void buildAffineDmaBuffer(void) {
+static void buildAffineDmaBuffer(int horizontalStep, int outputLeft) {
+	static int previousHorizontalStep;
+	if (horizontalStep != previousHorizontalStep) {
+		affineBufferReady = false;
+		previousHorizontalStep = horizontalStep;
+	}
+
 	for (int line = 0; line < SCREEN_HEIGHT; line++) {
-		int scaledLine = (line * GG_SCALE_DENOMINATOR) / GG_SCALE_NUMERATOR;
+		int scaledLine = (line * GG_VERTICAL_SCALE_DENOMINATOR)
+			/ GG_VERTICAL_SCALE_NUMERATOR;
 		int sourceLine = GG_ACTIVE_Y + scaledLine;
 		const u32 *src = &DMA0Buff[scaledLine * 4];
 		u32 *dst = affineDmaBuffer[line];
@@ -170,19 +185,19 @@ static void buildAffineDmaBuffer(void) {
 			dst[3] = 0;
 
 			// PB, PC and PD are zero because each scanline receives an explicit
-			// reference point. PA is the inverse of the 4:3 enlargement.
-			dst[4] = 0x000000C0;
+			// reference point. PA is the inverse horizontal enlargement.
+			dst[4] = horizontalStep;
 			dst[5] = 0;
-			dst[8] = 0x000000C0;
+			dst[8] = horizontalStep;
 			dst[9] = 0;
 		}
 
 		// BG2: foreground-priority tiles.
-		dst[6] = affineXFromTextScroll(src[0]);
+		dst[6] = affineXFromTextScroll(src[0], horizontalStep, outputLeft);
 		dst[7] = affineYFromTextScroll(src[0], sourceLine);
 
 		// BG3: tiles behind sprites.
-		dst[10] = affineXFromTextScroll(src[1]);
+		dst[10] = affineXFromTextScroll(src[1], horizontalStep, outputLeft);
 		dst[11] = affineYFromTextScroll(src[1], sourceLine);
 	}
 	affineBufferReady = true;
@@ -205,7 +220,8 @@ static void spriteSize(u16 attr0, u16 attr1, int *width, int *height) {
 	*height = shape < 3 ? heights[shape][size] : 8;
 }
 
-static void scaleSprites(void) {
+static void scaleSprites(int horizontalNumerator, int horizontalDenominator,
+						 int outputLeft) {
 	vu16 *oam = (vu16 *)0x07000000;
 
 	for (int i = 0; i < 128; i++) {
@@ -227,10 +243,11 @@ static void scaleSprites(void) {
 		int width;
 		int height;
 		spriteSize(attr0, attr1, &width, &height);
-		int scaledX = GG_PILLAR_LEFT
-			+ ((x - GG_ACTIVE_X) * GG_SCALE_NUMERATOR) / GG_SCALE_DENOMINATOR
-			- width / 3;
-		int scaledY = ((y - GG_ACTIVE_Y) * GG_SCALE_NUMERATOR) / GG_SCALE_DENOMINATOR
+		int scaledX = outputLeft
+			+ ((x - GG_ACTIVE_X) * horizontalNumerator) / horizontalDenominator
+			- width / horizontalDenominator;
+		int scaledY = ((y - GG_ACTIVE_Y) * GG_VERTICAL_SCALE_NUMERATOR)
+			/ GG_VERTICAL_SCALE_DENOMINATOR
 			- height / 3;
 
 		// Affine sprites need the double-size bounding box when enlarged.
@@ -274,22 +291,31 @@ void ggFullscreenVBlank(void) {
 	REG_BG3CNT = BG_PRIORITY(2) | BG_TILE_BASE(GG_EXT_BACKGROUND_TILE_BASE)
 			   | BG_MAP_BASE(GG_EXT_BACKGROUND_MAP_BASE) | BG_RS_32x32 | BG_WRAP_ON;
 
-	// The 160x144 viewport becomes 213.33x192. An integer window of 214
-	// pixels gives symmetric 21-pixel pillarboxes without aspect stretching.
-	REG_WIN0H = (GG_PILLAR_LEFT << 8) | GG_PILLAR_RIGHT;
-	REG_WIN0V = SCREEN_HEIGHT;
-	REG_WININ = GG_WINDOW_LAYERS;
-	REG_WINOUT = 0;
-
-	videoSetMode(MODE_5_2D
+	bool fullScreen = ggFullScreenMode();
+	int horizontalStep = fullScreen ? GG_FULL_SCREEN_HORIZONTAL_STEP
+		: GG_FULL_HEIGHT_HORIZONTAL_STEP;
+	int horizontalNumerator = fullScreen ? 8 : 4;
+	int horizontalDenominator = fullScreen ? 5 : 3;
+	int outputLeft = fullScreen ? 0 : GG_PILLAR_LEFT;
+	u32 displayMode = MODE_5_2D
 			 | DISPLAY_SPR_1D_LAYOUT
 			 | DISPLAY_BG_EXT_PALETTE
 			 | DISPLAY_CHAR_BASE(2)
 			 | DISPLAY_SCREEN_BASE(2)
 			 | DISPLAY_BG2_ACTIVE
 			 | DISPLAY_BG3_ACTIVE
-			 | DISPLAY_SPR_ACTIVE
-			 | DISPLAY_WIN0_ON);
+			 | DISPLAY_SPR_ACTIVE;
+
+	if (!fullScreen) {
+		// The 160x144 viewport becomes 213.33x192. An integer window of 214
+		// pixels gives symmetric 21-pixel pillarboxes without aspect stretching.
+		REG_WIN0H = (GG_PILLAR_LEFT << 8) | GG_PILLAR_RIGHT;
+		REG_WIN0V = SCREEN_HEIGHT;
+		REG_WININ = GG_WINDOW_LAYERS;
+		REG_WINOUT = 0;
+		displayMode |= DISPLAY_WIN0_ON;
+	}
+	videoSetMode(displayMode);
 
 	if (!ggFullscreenWasActive) {
 		tileCacheValid = false;
@@ -299,7 +325,7 @@ void ggFullscreenVBlank(void) {
 	expandBackgroundTiles();
 	convertBackgroundMaps();
 	updateExtendedPalettes();
-	buildAffineDmaBuffer();
+	buildAffineDmaBuffer(horizontalStep, outputLeft);
 
 	for (int i = 0; i < 12; i++) {
 		MAIN_BG_REG_BASE[i] = affineDmaBuffer[0][i];
@@ -308,6 +334,6 @@ void ggFullscreenVBlank(void) {
 	DMA0_DEST_REG = 0x04000010;
 	DMA0_CONTROL_REG = 0x9660000C;
 
-	scaleSprites();
+	scaleSprites(horizontalNumerator, horizontalDenominator, outputLeft);
 	ggFullscreenWasActive = true;
 }

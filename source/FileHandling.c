@@ -31,7 +31,10 @@ static ConfigData cfg;
 //---------------------------------------------------------------------------------
 void applyConfigData(void) {
 	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	gScalingSet  = cfg.display & 3;
+	gScalingSet  = cfg.display & 7;
+	if (gScalingSet > SCALED_GG_FULL_SCREEN) {
+		gScalingSet = SCALED_FIT;
+	}
 	g3DEnable    = (cfg.display>>4) & 1;
 	gFlicker     = cfg.flicker & 1;
 	gGammaValue  = cfg.gammaValue & 0x7;
@@ -51,7 +54,7 @@ void applyConfigData(void) {
 void updateConfigData(void) {
 	strcpy(cfg.magic, "cfg");
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	cfg.display     = (gScalingSet & 3) | ((g3DEnable & 1)<<4);
+	cfg.display     = (gScalingSet & 7) | ((g3DEnable & 1)<<4);
 	cfg.flicker     = gFlicker & 1;
 	cfg.gammaValue  = (gGammaValue & 0x7) | ((gColorValue & 0x7) << 4);
 	cfg.sprites     = SPRS;

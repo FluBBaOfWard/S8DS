@@ -423,9 +423,11 @@ setupScaling:		;@ r0-r3, r12 modified.
 	ldr r1,=gScalingSet
 	ldrb r1,[r1]
 
-	;@ GG full-height deliberately ignores the border option: it always crops
-	;@ the native 160x144 LCD viewport before applying a uniform 4:3 scale.
+	;@ Both GG viewport modes deliberately ignore the border option and crop
+	;@ the native 160x144 LCD viewport before applying their affine scales.
 	cmp r1,#SCALED_GG_FULLSCREEN
+	beq checkGGFullscreen
+	cmp r1,#SCALED_GG_FULL_SCREEN
 	beq checkGGFullscreen
 	ldrb r0,bColor
 	cmp r0,#2
@@ -469,8 +471,11 @@ noFit:
 
 useGGFullscreen:
 	adr r12,scaleParms
-	mov r0,#0x00C0				;@ Uniform 4:3 enlargement (inverse matrix).
-	mov r2,#0x0060				;@ Double-size GG sprites.
+	cmp r1,#SCALED_GG_FULL_SCREEN
+	moveq r0,#0x00A0			;@ Full screen: horizontal 8:5 inverse matrix.
+	moveq r2,#0x0050			;@ Full screen double-size GG sprites.
+	movne r0,#0x00C0			;@ Full height: uniform 4:3 inverse matrix.
+	movne r2,#0x0060			;@ Full height double-size GG sprites.
 	str r0,[r12,#4]
 	str r2,[r12,#8]
 	adr r0,BG_SCALING_GG_FULLSCREEN
@@ -529,7 +534,7 @@ BG_SCALING_ASPECT_GGMODE:		;@ 160x144 -> 160x120, 6->5
 	.long 0x249C,0x249C,0x249C
 	.long    -19,    -3,0x0008
 	.long 0x0133,0x0133,0x0092
-BG_SCALING_GG_FULLSCREEN:		;@ 160x144 -> 213x192, uniform 4:3 scale
+BG_SCALING_GG_FULLSCREEN:		;@ C affine renderer handles both GG viewport scales.
 	.long 0xFFFF,0xFFFF,0xFFFF	;@ C affine renderer performs the vertical scale.
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long      0,    16,    24
