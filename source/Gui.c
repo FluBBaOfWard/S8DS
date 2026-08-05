@@ -238,7 +238,7 @@ static char sdscBuffer[80];
 
 
 static char *const ctrlTxt[] = {"1P", "2P"};
-static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect"};
+static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect", "GG full height"};
 
 static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"/*, "PV-2000"*/};
 static char *const bordTxt[] = {"Black", "Border Color", "None"};
@@ -672,7 +672,7 @@ const char *getSelectText() {
 
 void scalingSet() {
 	gScalingSet++;
-	if (gScalingSet >= 3) {
+	if (gScalingSet >= 4) {
 		gScalingSet = 0;
 	}
 	setupScaling();

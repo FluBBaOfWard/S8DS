@@ -19,12 +19,15 @@
 	.global VDP1
 	.global VDPRAM				;@ Used by cart.s, init ram.
 	.global EMUPALBUFF			;@ Needs to be flushed before dma copied.
+	.global DMA0Buff
 
 	.global antWarsInit
 	.global antWars
 	.global gfxInit
 	.global gfxReset
 	.global setupScaling
+	.global getVDP0BgrTileAddress
+	.global getVDP0BgrMapOffset
 	.global VDP0ApplyScaling
 	.global paletteInit
 	.global mapSGPalette
@@ -169,6 +172,20 @@ gfxInit:					;@ (called from main.c) only need to call once
 	bl rendererInit
 	ldmfd sp!,{lr}
 	b VDP0Init
+;@----------------------------------------------------------------------------
+getVDP0BgrTileAddress:
+	.type getVDP0BgrTileAddress STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r1,=VDP0
+	ldr r0,[r1,#vdpBgrTileOfs]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0BgrMapOffset:
+	.type getVDP0BgrMapOffset STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r1,=VDP0
+	ldr r0,[r1,#vdpBgrMapOfs0]
+	bx lr
 ;@----------------------------------------------------------------------------
 gfxReset:					;@ Called with cpuReset
 ;@----------------------------------------------------------------------------
@@ -399,15 +416,32 @@ setBorderValues:
 setupScaling:		;@ r0-r3, r12 modified.
 	.type   setupScaling STT_FUNC
 ;@----------------------------------------------------------------------------
-	ldrb r0,bColor
-	cmp r0,#2
 	ldr r3,=gEmuFlags
 	ldrb r3,[r3]
-	biceq r3,r3,#GG_MODE
 	ldr r2,=gMachine
 	ldrb r2,[r2]
 	ldr r1,=gScalingSet
 	ldrb r1,[r1]
+
+	;@ GG full-height deliberately ignores the border option: it always crops
+	;@ the native 160x144 LCD viewport before applying a uniform 4:3 scale.
+	cmp r1,#SCALED_GG_FULLSCREEN
+	beq checkGGFullscreen
+	ldrb r0,bColor
+	cmp r0,#2
+	biceq r3,r3,#GG_MODE
+	b selectHorizontalScale
+checkGGFullscreen:
+	tst r3,#GG_MODE
+	bne useGGFullscreen
+	mov r1,#SCALED_FIT			;@ Sensible fallback for non-GG machines.
+
+selectHorizontalScale:
+	adr r12,scaleParms
+	mov r0,#0x0100
+	mov r2,#0x0080
+	str r0,[r12,#4]
+	str r2,[r12,#8]
 	adr r0,BG_SCALING_1_1
 
 	tst r3,#GG_MODE
@@ -431,6 +465,15 @@ noFit:
 	adreq r0,BG_SCALING_ASPECT_GG
 	tst r3,#GG_MODE
 	adrne r0,BG_SCALING_ASPECT_GGMODE
+	b loadScaleValues
+
+useGGFullscreen:
+	adr r12,scaleParms
+	mov r0,#0x00C0				;@ Uniform 4:3 enlargement (inverse matrix).
+	mov r2,#0x0060				;@ Double-size GG sprites.
+	str r0,[r12,#4]
+	str r2,[r12,#8]
+	adr r0,BG_SCALING_GG_FULLSCREEN
 
 loadScaleValues:
 	ldmia r0!,{r1-r3}
@@ -486,6 +529,11 @@ BG_SCALING_ASPECT_GGMODE:		;@ 160x144 -> 160x120, 6->5
 	.long 0x249C,0x249C,0x249C
 	.long    -19,    -3,0x0008
 	.long 0x0133,0x0133,0x0092
+BG_SCALING_GG_FULLSCREEN:		;@ 160x144 -> 213x192, uniform 4:3 scale
+	.long 0xFFFF,0xFFFF,0xFFFF	;@ C affine renderer performs the vertical scale.
+	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
+	.long      0,    16,    24
+	.long 0x00C0,0x00C0,0x0060
 
 BG_SCALING_TBL:
 	.long 0,0,0
@@ -915,6 +963,9 @@ scaleLoop4:
 @	biceq r0,r0,#0x1700			;@ Turn off sprites and bg
 @	ldrb r2,gfxLayerMask
 @	bic r0,r0,r2,lsl#8
+
+	bl ggFullscreenVBlank
+	ldr vdpptr,=VDP0			;@ C may clobber the caller-saved r12 register.
 
 	ldrb r4,[vdpptr,#vdpTVType]
 	blx scanKeys

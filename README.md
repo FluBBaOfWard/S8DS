@@ -81,6 +81,7 @@ better 3D effect, I have only tested with red/cyan glasses.
   * Use R as FastForward: Select turbo speed as long as R button is held.
 * Display:
   * Display: Here you can select if you want scaled or unscaled screenmode.
+    * GG full height: Scales the Game Gear's 160x144 active LCD viewport to approximately 213x192 while preserving its 10:9 aspect ratio. The image is centered with narrow pillarboxes.
   * Scaling: Here you can select if you want flicker or barebones lineskip.
   * Gamma: Lets you change the gamma ("brightness").
   * Color: Lets you change the color.

@@ -16,7 +16,8 @@ extern u8 bColor;
 extern u8 SPRS;
 
 extern SegaVDP VDP0;
-extern u16 EMUPALBUFF[200];
+extern u16 EMUPALBUFF[];
+extern u32 DMA0Buff[];
 
 void gfxInit(void);
 void vblIrqHandler(void);
@@ -30,6 +31,9 @@ void makeBorder(void);
 void setupScaling(void);
 void updateLCDRefresh(void);
 void hz50Refresh(void);
+void ggFullscreenVBlank(void);
+u8 *getVDP0BgrTileAddress(void);
+u32 getVDP0BgrMapOffset(void);
 
 void VDP0ApplyScaling(void);
 void VDP0SetMode(void);

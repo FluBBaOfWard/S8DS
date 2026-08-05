@@ -47,6 +47,7 @@
 #define SCALED_1_1		0		// Display types
 #define SCALED_FIT		1
 #define SCALED_ASPECT	2
+#define SCALED_GG_FULLSCREEN	3	// Scale the 160x144 GG viewport to 213x192
 
 //------------------------------------------------------- Arcade games
 #define AC_NONE					(0x00)
