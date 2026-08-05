@@ -1,6 +1,7 @@
 S8DS.xcodeproj/xcuserdata
 S8DS.xcodeproj/project.xcworkspace/xcuserdata
 contents.xcworkspacedata
+.DS_Store
 build
 compile_commands.json
 *.elf
