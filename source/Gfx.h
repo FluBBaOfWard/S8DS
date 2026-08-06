@@ -32,8 +32,17 @@ void setupScaling(void);
 void updateLCDRefresh(void);
 void hz50Refresh(void);
 void ggFullscreenVBlank(void);
+void ggHardwareSmoothedRender(void);
+void ggSmoothedRender(void);
 u8 *getVDP0BgrTileAddress(void);
 u32 getVDP0BgrMapOffset(void);
+bool getVDP0ScreenEnabled(void);
+u8 getVDP0DisplayMode(void);
+u8 *getVDP0ScrollTMapBuffer(void);
+u8 getVDP0YScroll(void);
+u32 getVDP0ScrollMask(void);
+u16 *getVDP0OAMBuffer(void);
+u8 *getVDP0SpriteTileAddress(void);
 
 void VDP0ApplyScaling(void);
 void VDP0SetMode(void);

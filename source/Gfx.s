@@ -28,6 +28,13 @@
 	.global setupScaling
 	.global getVDP0BgrTileAddress
 	.global getVDP0BgrMapOffset
+	.global getVDP0ScreenEnabled
+	.global getVDP0DisplayMode
+	.global getVDP0ScrollTMapBuffer
+	.global getVDP0YScroll
+	.global getVDP0ScrollMask
+	.global getVDP0OAMBuffer
+	.global getVDP0SpriteTileAddress
 	.global VDP0ApplyScaling
 	.global paletteInit
 	.global mapSGPalette
@@ -185,6 +192,57 @@ getVDP0BgrMapOffset:
 ;@----------------------------------------------------------------------------
 	ldr r1,=VDP0
 	ldr r0,[r1,#vdpBgrMapOfs0]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0ScreenEnabled:
+	.type getVDP0ScreenEnabled STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r1,=VDP0
+	ldrb r0,[r1,#vdpMode2Bak2]
+	and r0,r0,#0x40
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0DisplayMode:
+	.type getVDP0DisplayMode STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldrb r0,[r0,#vdpHeightMode]
+	and r0,r0,#VDPMODE_MASK
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0ScrollTMapBuffer:
+	.type getVDP0ScrollTMapBuffer STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	add r0,r0,#scrollTMapBuff
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0YScroll:
+	.type getVDP0YScroll STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldrb r0,[r0,#vdpYScrollBak1]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0ScrollMask:
+	.type getVDP0ScrollMask STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldr r0,[r0,#vdpScrollMask]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0OAMBuffer:
+	.type getVDP0OAMBuffer STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldr r0,[r0,#vdpDMAOAMBuffer]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0SpriteTileAddress:
+	.type getVDP0SpriteTileAddress STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldr r0,[r0,#vdpSprTileOfs]
 	bx lr
 ;@----------------------------------------------------------------------------
 gfxReset:					;@ Called with cpuReset
@@ -423,11 +481,13 @@ setupScaling:		;@ r0-r3, r12 modified.
 	ldr r1,=gScalingSet
 	ldrb r1,[r1]
 
-	;@ Both GG viewport modes deliberately ignore the border option and crop
+	;@ All GG fullscreen modes deliberately ignore the border option and crop
 	;@ the native 160x144 LCD viewport before applying their affine scales.
-	cmp r1,#SCALED_GG_FULLSCREEN
-	beq checkGGFullscreen
 	cmp r1,#SCALED_GG_FULL_SCREEN
+	beq checkGGFullscreen
+	cmp r1,#SCALED_GG_FULL_SCREEN_SMOOTHED
+	beq checkGGFullscreen
+	cmp r1,#SCALED_GG_FULL_SCREEN_SMOOTHED2
 	beq checkGGFullscreen
 	ldrb r0,bColor
 	cmp r0,#2
@@ -471,11 +531,8 @@ noFit:
 
 useGGFullscreen:
 	adr r12,scaleParms
-	cmp r1,#SCALED_GG_FULL_SCREEN
-	moveq r0,#0x00A0			;@ Full screen: horizontal 8:5 inverse matrix.
-	moveq r2,#0x0050			;@ Full screen double-size GG sprites.
-	movne r0,#0x00C0			;@ Full height: uniform 4:3 inverse matrix.
-	movne r2,#0x0060			;@ Full height double-size GG sprites.
+	mov r0,#0x00A0				;@ Full screen: horizontal 8:5 inverse matrix.
+	mov r2,#0x0050				;@ Full screen double-size GG sprites.
 	str r0,[r12,#4]
 	str r2,[r12,#8]
 	adr r0,BG_SCALING_GG_FULLSCREEN

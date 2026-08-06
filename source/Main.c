@@ -96,10 +96,12 @@ int main(int argc, char **argv) {
 
 	while (1) {
 		waitVBlank();
+		ggHardwareSmoothedRender();
 		guiRunLoop();
 		if (powerIsOn) {
 			if (!pauseEmulation) {
 				run();
+				ggSmoothedRender();
 			}
 		}
 		else {

@@ -8,11 +8,7 @@
 #define GG_ACTIVE_Y             24
 #define GG_VERTICAL_SCALE_NUMERATOR       4
 #define GG_VERTICAL_SCALE_DENOMINATOR     3
-#define GG_FULL_HEIGHT_HORIZONTAL_STEP 0xC0
 #define GG_FULL_SCREEN_HORIZONTAL_STEP 0xA0
-#define GG_SCALED_WIDTH        214
-#define GG_PILLAR_LEFT          21
-#define GG_PILLAR_RIGHT        (GG_PILLAR_LEFT + GG_SCALED_WIDTH)
 #define GG_EXT_FOREGROUND_TILE_BASE     0
 #define GG_EXT_BACKGROUND_TILE_BASE     4
 #define GG_EXT_FOREGROUND_MAP_BASE     16
@@ -21,7 +17,11 @@
 #define GG_EXT_FOREGROUND_MAP_ADDRESS  ((vu16 *)((u8 *)BG_GFX + 0x28000))
 #define GG_EXT_BACKGROUND_MAP_ADDRESS  ((vu16 *)((u8 *)BG_GFX + 0x28800))
 #define GG_EXT_BACKGROUND_TILE_ADDRESS ((vu16 *)((u8 *)BG_GFX + 0x30000))
-#define GG_WINDOW_LAYERS        ((1 << 2) | (1 << 3) | (1 << 4))
+#define GG_SMOOTH_BITMAP_C_BASE        16
+#define GG_SMOOTH_BITMAP_D_BASE        24
+#define GG_BACKGROUND_TILE_BYTES       0x4000
+#define GG_SPRITE_TILE_BYTES           0x8000
+#define GG_BACKGROUND_MAP_BYTES        0x1000
 
 #define DMA0_SOURCE_REG         (*(vu32 *)0x040000B0)
 #define DMA0_DEST_REG           (*(vu32 *)0x040000B4)
@@ -36,23 +36,46 @@ static u32 packedTileCache[0x1000] __attribute__((aligned(4)));
 static u16 foregroundExpansion[0x100];
 static u16 backgroundExpansion[0x100];
 static u16 paletteCache[0x100];
+static DTCM_DATA u16 ggSourceLines[2][GAME_WIDTH_GG]
+	__attribute__((aligned(4)));
+static DTCM_DATA u16 ggHorizontalLines[2][SCREEN_WIDTH]
+	__attribute__((aligned(4)));
+static u8 smoothedBackgroundTiles[GG_BACKGROUND_TILE_BYTES]
+	__attribute__((aligned(32)));
+static u8 smoothedSpriteTiles[GG_SPRITE_TILE_BYTES]
+	__attribute__((aligned(32)));
+static u16 smoothedBackgroundMaps[GG_BACKGROUND_MAP_BYTES / sizeof(u16)]
+	__attribute__((aligned(32)));
 static bool ggFullscreenWasActive;
 static bool expansionTablesReady;
 static bool tileCacheValid;
 static bool paletteCacheValid;
 static bool affineBufferReady;
+static volatile int smoothedReadyBitmapBase = -1;
+static volatile int smoothedDisplayedBitmapBase = -1;
+static bool smoothed2VideoInitialised;
+static bool smoothedCacheInitialised;
+static bool smoothed2BanksActive;
+static bool smoothed2FilterPass;
+static bool smoothed2FilteredReady;
+static volatile bool smoothed2DrawPending;
 
 static bool ggFullscreenActive(void) {
 	u32 tileAddress = (u32)getVDP0BgrTileAddress();
-	return (gScalingSet == SCALED_GG_FULLSCREEN
-			|| gScalingSet == SCALED_GG_FULL_SCREEN)
+	return (gScalingSet == SCALED_GG_FULL_SCREEN
+			|| gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED
+			|| gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED2)
 		&& (gEmuFlags & GG_MODE)
 		&& tileAddress >= (u32)BG_GFX
 		&& tileAddress < (u32)BG_GFX + 0x20000;
 }
 
-static bool ggFullScreenMode(void) {
-	return gScalingSet == SCALED_GG_FULL_SCREEN;
+static bool ggCpuSmoothedMode(void) {
+	return gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED;
+}
+
+static bool ggHardwareSmoothedMode(void) {
+	return gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED2;
 }
 
 static void expandBackgroundTiles(void) {
@@ -174,7 +197,11 @@ static void buildAffineDmaBuffer(int horizontalStep, int outputLeft) {
 		int scaledLine = (line * GG_VERTICAL_SCALE_DENOMINATOR)
 			/ GG_VERTICAL_SCALE_NUMERATOR;
 		int sourceLine = GG_ACTIVE_Y + scaledLine;
-		const u32 *src = &DMA0Buff[scaledLine * 4];
+		// DMA0Buff contains the normal renderer's per-source-line scroll and its
+		// 224-line map-wrap correction. Read the cropped GG line, not the output's
+		// zero-based line; otherwise the correction arrives 24 lines too late and
+		// exposes the four unused rows at the bottom of the 32-row DS tilemap.
+		const u32 *src = &DMA0Buff[sourceLine * 4];
 		u32 *dst = affineDmaBuffer[line];
 
 		if (!affineBufferReady) {
@@ -220,6 +247,402 @@ static void spriteSize(u16 attr0, u16 attr1, int *width, int *height) {
 	*height = shape < 3 ? heights[shape][size] : 8;
 }
 
+static u8 tilePixel(const vu8 *tiles, u16 entry, int x, int y) {
+	if (entry & BIT(10)) {
+		x = 7 - x;
+	}
+	if (entry & BIT(11)) {
+		y = 7 - y;
+	}
+	const vu8 *tile = tiles + (entry & 0x3FF) * 32;
+	u8 packed = tile[y * 4 + (x >> 1)];
+	return (packed >> ((x & 1) * 4)) & 0x0F;
+}
+
+static void drawSmoothedBackgroundLine(u16 *dst, int y, const vu16 *map,
+									   const vu8 *tiles, const u8 *scrollTMap,
+									   int yScroll, int scrollMask,
+									   bool foreground) {
+	int sourceLine = GG_ACTIVE_Y + y;
+	int scrollX = scrollTMap[sourceLine * 2 + 1];
+	int mapY = yScroll + sourceLine;
+	if (mapY >= scrollMask) {
+		mapY -= scrollMask;
+	}
+
+	for (int x = 0; x < GAME_WIDTH_GG; x++) {
+		int mapX = (scrollX + GG_ACTIVE_X + x) & 0xFF;
+		u16 entry = map[(mapY >> 3) * 32 + (mapX >> 3)];
+		if (foreground && (entry & 0x3FF) == 0x3FF) {
+			continue;
+		}
+
+		u8 color = tilePixel(tiles, entry, mapX & 7, mapY & 7);
+		if (foreground && color == 0) {
+			continue;
+		}
+
+		int palette = (entry >> 12) & 0x0F;
+		if (!foreground && color == 0) {
+			dst[x] = EMUPALBUFF[(palette & 1) ? 0x40 : 0x30];
+		}
+		else {
+			dst[x] = EMUPALBUFF[palette * 16 + color];
+		}
+	}
+}
+
+static void drawSmoothedSpriteLine(u16 *dst, int y, const u16 *oam,
+								   const vu8 *tiles) {
+	int screenY = GG_ACTIVE_Y + y;
+
+	// Draw in reverse order so lower OAM indexes retain the DS priority rule.
+	for (int i = 127; i >= 0; i--) {
+		u16 attr0 = oam[i * 4];
+		u16 attr1 = oam[i * 4 + 1];
+		u16 attr2 = oam[i * 4 + 2];
+		if ((attr0 & 0xFF) == SCREEN_HEIGHT || !(attr0 & ATTR0_ROTSCALE)) {
+			continue;
+		}
+
+		int spriteX = attr1 & 0x1FF;
+		if (spriteX >= 256) {
+			spriteX -= 512;
+		}
+		int spriteY = attr0 & 0xFF;
+		if (spriteY >= SCREEN_HEIGHT) {
+			spriteY -= 256;
+		}
+
+		int width;
+		int height;
+		spriteSize(attr0, attr1, &width, &height);
+		int affineIndex = (attr1 >> 9) & 0x1F;
+		int zoomShift = (affineIndex & 2) ? 1 : 0;
+		int zoom = 1 << zoomShift;
+		int outputY = screenY - spriteY;
+		if ((unsigned)outputY >= (unsigned)(height * zoom)) {
+			continue;
+		}
+		int baseTile = attr2 & 0x3FF;
+		int palette = (attr2 >> 12) & 0x0F;
+		int tilesPerRow = width >> 3;
+		int sourceY = outputY >> zoomShift;
+
+		for (int outputX = 0; outputX < width * zoom; outputX++) {
+			int dstX = spriteX - GG_ACTIVE_X + outputX;
+			if ((unsigned)dstX >= GAME_WIDTH_GG) {
+				continue;
+			}
+			int sourceX = outputX >> zoomShift;
+			int tileNumber = baseTile + (sourceY >> 3) * tilesPerRow
+				+ (sourceX >> 3);
+			const vu8 *tile = tiles + tileNumber * 32;
+			u8 packed = tile[(sourceY & 7) * 4 + ((sourceX & 7) >> 1)];
+			u8 color = (packed >> ((sourceX & 1) * 4)) & 0x0F;
+			if (color != 0) {
+				dst[dstX] = EMUPALBUFF[0x100 + palette * 16 + color];
+			}
+		}
+	}
+}
+
+static inline u16 averageRgb15(u16 first, u16 second) {
+	return (first & second) + (((first ^ second) & 0x7BDE) >> 1);
+}
+
+static inline u32 averageRgb15Pair(u32 first, u32 second) {
+	return (first & second) + (((first ^ second) & 0x7BDE7BDE) >> 1);
+}
+
+static inline u16 blendRgb15Eighth(u16 first, u16 second, int weight) {
+	if (first == second) {
+		return first;
+	}
+
+	u16 half = averageRgb15(first, second);
+	switch (weight) {
+	case 1: {
+		u16 quarter = averageRgb15(first, half);
+		return averageRgb15(first, quarter);
+	}
+	case 2:
+		return averageRgb15(first, half);
+	case 3: {
+		u16 quarter = averageRgb15(first, half);
+		return averageRgb15(quarter, half);
+	}
+	case 4:
+		return half;
+	case 5: {
+		u16 threeQuarter = averageRgb15(half, second);
+		return averageRgb15(half, threeQuarter);
+	}
+	case 6:
+		return averageRgb15(half, second);
+	default: {
+		u16 threeQuarter = averageRgb15(half, second);
+		return averageRgb15(threeQuarter, second);
+	}
+	}
+}
+
+static void composeSmoothedLine(u16 *source, int sourceY,
+								const vu16 *foregroundMap,
+								const vu16 *backgroundMap,
+								const vu8 *backgroundTiles, const u8 *scrollTMap,
+								int yScroll, int scrollMask, const u16 *oam,
+								const vu8 *spriteTiles) {
+	drawSmoothedBackgroundLine(source, sourceY, backgroundMap, backgroundTiles,
+		scrollTMap, yScroll, scrollMask, false);
+	drawSmoothedSpriteLine(source, sourceY, oam, spriteTiles);
+	drawSmoothedBackgroundLine(source, sourceY, foregroundMap, backgroundTiles,
+		scrollTMap, yScroll, scrollMask, true);
+}
+
+static void ITCM_CODE prepareSmoothedLine(int sourceY, int slot,
+								const vu16 *foregroundMap,
+								const vu16 *backgroundMap,
+								const vu8 *backgroundTiles, const u8 *scrollTMap,
+								int yScroll, int scrollMask, const u16 *oam,
+								const vu8 *spriteTiles) {
+	u16 *source = ggSourceLines[slot];
+	u16 *horizontal = ggHorizontalLines[slot];
+	composeSmoothedLine(source, sourceY, foregroundMap, backgroundMap,
+		backgroundTiles, scrollTMap, yScroll, scrollMask, oam, spriteTiles);
+
+	// These source coordinates match the nearest-neighbour 5:8 mapping. The
+	// fractional remainder supplies the contribution from the adjacent pixel.
+	for (int x = 0, sourceX = 0; x < SCREEN_WIDTH; x += 8, sourceX += 5) {
+		int nextBlockPixel = sourceX < GAME_WIDTH_GG - 5
+			? sourceX + 5 : GAME_WIDTH_GG - 1;
+		horizontal[x] = source[sourceX];
+		horizontal[x + 1] = blendRgb15Eighth(source[sourceX],
+			source[sourceX + 1], 5);
+		horizontal[x + 2] = blendRgb15Eighth(source[sourceX + 1],
+			source[sourceX + 2], 2);
+		horizontal[x + 3] = blendRgb15Eighth(source[sourceX + 1],
+			source[sourceX + 2], 7);
+		horizontal[x + 4] = blendRgb15Eighth(source[sourceX + 2],
+			source[sourceX + 3], 4);
+		horizontal[x + 5] = blendRgb15Eighth(source[sourceX + 3],
+			source[sourceX + 4], 1);
+		horizontal[x + 6] = blendRgb15Eighth(source[sourceX + 3],
+			source[sourceX + 4], 6);
+		horizontal[x + 7] = blendRgb15Eighth(source[sourceX + 4],
+			source[nextBlockPixel], 3);
+	}
+}
+
+static void ITCM_CODE __attribute__((noinline)) scaleSmoothedFrame(
+								vu16 *dst, const vu16 *foregroundMap,
+								const vu16 *backgroundMap,
+								const vu8 *backgroundTiles, const u8 *scrollTMap,
+								int yScroll, int scrollMask, const u16 *oam,
+								const vu8 *spriteTiles) {
+	int bufferedLine[2] = { -1, -1 };
+
+	for (int y = 0; y < SCREEN_HEIGHT; y++) {
+		int fixedY = y * 3;
+		int sourceY = fixedY >> 2;
+		int nextY = sourceY < GAME_HEIGHT_GG - 1 ? sourceY + 1 : sourceY;
+		int firstSlot = sourceY & 1;
+		int secondSlot = nextY & 1;
+		if (bufferedLine[firstSlot] != sourceY) {
+			prepareSmoothedLine(sourceY, firstSlot, foregroundMap, backgroundMap,
+				backgroundTiles, scrollTMap, yScroll, scrollMask, oam, spriteTiles);
+			bufferedLine[firstSlot] = sourceY;
+		}
+		if (bufferedLine[secondSlot] != nextY) {
+			prepareSmoothedLine(nextY, secondSlot, foregroundMap, backgroundMap,
+				backgroundTiles, scrollTMap, yScroll, scrollMask, oam, spriteTiles);
+			bufferedLine[secondSlot] = nextY;
+		}
+		const u16 *first = ggHorizontalLines[firstSlot];
+		const u16 *second = ggHorizontalLines[secondSlot];
+		const u32 *firstPairs = (const u32 *)first;
+		const u32 *secondPairs = (const u32 *)second;
+		int weight = fixedY & 3;
+		vu32 *output = (vu32 *)(dst + y * SCREEN_WIDTH);
+		if (weight == 0) {
+			for (int pair = 0; pair < SCREEN_WIDTH / 2; pair++) {
+				output[pair] = firstPairs[pair] | 0x80008000;
+			}
+		}
+		else {
+			for (int pair = 0; pair < SCREEN_WIDTH / 2; pair++) {
+				u32 firstPair = firstPairs[pair];
+				u32 secondPair = secondPairs[pair];
+				u32 half = averageRgb15Pair(firstPair, secondPair);
+				u32 blended = weight == 2 ? half
+					: weight == 1 ? averageRgb15Pair(firstPair, half)
+					: averageRgb15Pair(half, secondPair);
+				output[pair] = blended | 0x80008000;
+			}
+		}
+	}
+}
+
+static void renderCpuSmoothedFrame(void) {
+	if (!ggCpuSmoothedMode() || !(gEmuFlags & GG_MODE)) {
+		return;
+	}
+	// Do not overwrite a completed frame which VBlank has not displayed yet.
+	if (smoothedReadyBitmapBase >= 0) {
+		return;
+	}
+
+	int destinationBitmapBase = smoothedDisplayedBitmapBase
+		== GG_SMOOTH_BITMAP_C_BASE
+		? GG_SMOOTH_BITMAP_D_BASE : GG_SMOOTH_BITMAP_C_BASE;
+	vu16 *destination = (vu16 *)((u8 *)BG_GFX + destinationBitmapBase * 0x4000);
+	u32 mapOffset = getVDP0BgrMapOffset() & 0x1F00;
+	const vu16 *vramForegroundMap =
+		(const vu16 *)((const u8 *)BG_GFX + mapOffset * 8);
+	const vu8 *vramBackgroundTiles = (const vu8 *)getVDP0BgrTileAddress();
+	const u8 *scrollTMap = getVDP0ScrollTMapBuffer();
+	int yScroll = getVDP0YScroll();
+	int scrollMask = getVDP0ScrollMask();
+	const u16 *oam = getVDP0OAMBuffer();
+	const vu8 *vramSpriteTiles = (const vu8 *)getVDP0SpriteTileAddress();
+
+	if (!smoothedCacheInitialised) {
+		DC_FlushRange(smoothedBackgroundTiles, sizeof(smoothedBackgroundTiles));
+		DC_FlushRange(smoothedSpriteTiles, sizeof(smoothedSpriteTiles));
+		DC_FlushRange(smoothedBackgroundMaps, sizeof(smoothedBackgroundMaps));
+		smoothedCacheInitialised = true;
+	}
+	dmaCopyWords(1, (const void *)vramBackgroundTiles, smoothedBackgroundTiles,
+		sizeof(smoothedBackgroundTiles));
+	dmaCopyWords(1, (const void *)vramSpriteTiles, smoothedSpriteTiles,
+		sizeof(smoothedSpriteTiles));
+	dmaCopyWords(1, (const void *)vramForegroundMap, smoothedBackgroundMaps,
+		sizeof(smoothedBackgroundMaps));
+	DC_InvalidateRange(smoothedBackgroundTiles, sizeof(smoothedBackgroundTiles));
+	DC_InvalidateRange(smoothedSpriteTiles, sizeof(smoothedSpriteTiles));
+	DC_InvalidateRange(smoothedBackgroundMaps, sizeof(smoothedBackgroundMaps));
+
+	const u16 *foregroundMap = smoothedBackgroundMaps;
+	const u16 *backgroundMap = foregroundMap + 0x400;
+
+	scaleSmoothedFrame(destination, foregroundMap, backgroundMap,
+		smoothedBackgroundTiles,
+		scrollTMap, yScroll, scrollMask, oam, smoothedSpriteTiles);
+	smoothedReadyBitmapBase = destinationBitmapBase;
+}
+
+static void initialiseSmoothed2Video(void) {
+	if (smoothed2VideoInitialised) {
+		return;
+	}
+
+	glInit();
+	glEnable(GL_BLEND);
+	glEnable(GL_TEXTURE_2D);
+	glClearColor(0, 0, 0, 31);
+	glClearPolyID(63);
+	glClearDepth(GL_MAX_DEPTH);
+	glViewport(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	// v16 vertices only have four integer bits, so use a normalized 0..1
+	// coordinate system. Passing pixel coordinates directly silently overflows
+	// when converted to v16 and produces a partially drawn texture.
+	glOrthof32(0, inttof32(1), inttof32(1), 0,
+		-inttof32(1), inttof32(1));
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	smoothed2VideoInitialised = true;
+}
+
+static void drawSmoothed2Quad(int xOffset, int yOffset, int alpha, int id,
+									  bool equalDepth) {
+	const v16 pixelX = inttov16(1) / SCREEN_WIDTH;
+	const v16 pixelY = inttov16(1) / SCREEN_HEIGHT;
+	v16 left = xOffset * pixelX;
+	v16 top = yOffset * pixelY;
+	v16 right = inttov16(1) + left;
+	v16 bottom = inttov16(1) + top;
+	u32 format = POLY_ALPHA(alpha) | POLY_CULL_NONE | POLY_ID(id);
+	if (equalDepth) {
+		format |= POLY_DEPTH_TEST_EQUAL;
+	}
+	glPolyFmt(format);
+	glBegin(GL_QUADS);
+	glTexCoord2i(0, 0);
+	glVertex3v16(left, top, 0);
+	glTexCoord2i(0, SCREEN_HEIGHT);
+	glVertex3v16(left, bottom, 0);
+	glTexCoord2i(SCREEN_WIDTH, SCREEN_HEIGHT);
+	glVertex3v16(right, bottom, 0);
+	glTexCoord2i(SCREEN_WIDTH, 0);
+	glVertex3v16(right, top, 0);
+	glEnd();
+}
+
+static void drawSmoothed2Texture(void) {
+	initialiseSmoothed2Video();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glColor(RGB15(31, 31, 31));
+
+	// The DS texture sampler is nearest-neighbour. A half-alpha copy shifted by
+	// one output pixel averages adjacent horizontal samples. Two full-screen
+	// texture taps exactly fit the 3D engine's 512-pixel-per-scanline fill limit.
+	glBindTexture(0, -1);
+	GFX_TEX_FORMAT = (GL_RGBA << 26)
+		| (TEXTURE_SIZE_256 << 20)
+		| (TEXTURE_SIZE_256 << 23)
+		| TEXGEN_OFF;
+	drawSmoothed2Quad(0, 0, 31, 1, false);
+	drawSmoothed2Quad(-1, 0, 16, 2, true);
+	glFlush(GL_TRANS_MANUALSORT);
+}
+
+void ggSmoothedRender(void) {
+	if (ggCpuSmoothedMode()) {
+		renderCpuSmoothedFrame();
+	}
+}
+
+void ggHardwareSmoothedRender(void) {
+	if (!ggHardwareSmoothedMode() || !smoothed2DrawPending) {
+		return;
+	}
+
+	// Submit the filter while the raw frame is being captured. Texture pixels are
+	// only fetched after the geometry buffers swap at the following VBlank, when
+	// bank C has been remapped as a texture. This gives the geometry engine a full
+	// frame to finish instead of racing display capture at scanline 0.
+	smoothed2DrawPending = false;
+	drawSmoothed2Texture();
+}
+
+static bool presentSmoothedFrame(void) {
+	int bitmapBase = smoothedReadyBitmapBase;
+	if (bitmapBase >= 0) {
+		smoothedDisplayedBitmapBase = bitmapBase;
+		smoothedReadyBitmapBase = -1;
+	}
+	else {
+		bitmapBase = smoothedDisplayedBitmapBase;
+	}
+	if (bitmapBase < 0) {
+		return false;
+	}
+
+	DMA0_CONTROL_REG = 0;
+	videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+	REG_BG2CNT = BG_PRIORITY(0) | BG_BMP16_256x256 | BG_BMP_BASE(bitmapBase);
+	REG_BG2PA = 0x100;
+	REG_BG2PB = 0;
+	REG_BG2PC = 0;
+	REG_BG2PD = 0x100;
+	REG_BG2X = 0;
+	REG_BG2Y = 0;
+	return true;
+}
+
 static void scaleSprites(int horizontalNumerator, int horizontalDenominator,
 						 int outputLeft) {
 	vu16 *oam = (vu16 *)0x07000000;
@@ -257,6 +680,8 @@ static void scaleSprites(int horizontalNumerator, int horizontalDenominator,
 }
 
 static void restoreNormalVideoMode(void) {
+	vramSetBankC(VRAM_C_MAIN_BG_0x06040000);
+	vramSetBankD(VRAM_D_MAIN_BG_0x06060000);
 	vramSetBankF(VRAM_F_LCD);
 	vramSetBankG(VRAM_G_LCD);
 	videoSetMode(MODE_0_2D
@@ -267,11 +692,59 @@ static void restoreNormalVideoMode(void) {
 			 | DISPLAY_BG3_ACTIVE
 			 | DISPLAY_SPR_ACTIVE
 			 | DISPLAY_WIN0_ON
-			 | DISPLAY_WIN1_ON);
+				 | DISPLAY_WIN1_ON);
+}
+
+static void resetSmoothed2State(void) {
+	REG_DISPCAPCNT = 0;
+	if (smoothed2BanksActive) {
+		vramSetBankC(VRAM_C_MAIN_BG_0x06040000);
+		vramSetBankD(VRAM_D_MAIN_BG_0x06060000);
+		smoothed2BanksActive = false;
+	}
+	smoothed2FilterPass = false;
+	smoothed2FilteredReady = false;
+	smoothed2DrawPending = false;
+	smoothed2VideoInitialised = false;
+}
+
+static bool runSmoothed2FilterPass(void) {
+	if (!smoothed2FilterPass) {
+		initialiseSmoothed2Video();
+		vramSetBankC(VRAM_C_LCD);
+		vramSetBankD(VRAM_D_LCD);
+		smoothed2BanksActive = true;
+		smoothed2DrawPending = true;
+		return false;
+	}
+	vramSetBankC(VRAM_C_TEXTURE_SLOT0);
+	vramSetBankD(VRAM_D_LCD);
+	smoothed2BanksActive = true;
+	DMA0_CONTROL_REG = 0;
+	// BG0's horizontal offset also shifts the DS 3D output. The normal renderer's
+	// HBlank DMA leaves the GG map scroll in this register, which otherwise
+	// scrolls the captured texture a second time and exposes a black strip.
+	REG_BG0HOFS = 0;
+	REG_BG0VOFS = 0;
+	REG_DISPCAPCNT = DCAP_BANK(DCAP_BANK_VRAM_D)
+		| DCAP_SIZE(DCAP_SIZE_256x192)
+		| DCAP_MODE(DCAP_MODE_A)
+		| DCAP_SRC_A(DCAP_SRC_A_3DONLY)
+		| DCAP_ENABLE;
+	// Direct VRAM display is explicitly designed to scan a capture destination.
+	// It keeps the last complete filtered frame visible until scanout reaches the
+	// lines replaced by this capture, and avoids exposing the live 3D renderer.
+	videoSetMode(MODE_VRAM_D);
+	smoothed2FilterPass = false;
+	smoothed2FilteredReady = true;
+	return true;
 }
 
 void ggFullscreenVBlank(void) {
 	if (!ggFullscreenActive()) {
+		smoothedReadyBitmapBase = -1;
+		smoothedDisplayedBitmapBase = -1;
+		resetSmoothed2State();
 		if (ggFullscreenWasActive) {
 			restoreNormalVideoMode();
 			tileCacheValid = false;
@@ -279,6 +752,40 @@ void ggFullscreenVBlank(void) {
 			ggFullscreenWasActive = false;
 		}
 		return;
+	}
+	if (!getVDP0ScreenEnabled() || getVDP0DisplayMode() != 4) {
+		// Games disable the VDP display while replacing tiles and maps during
+		// transitions, and may briefly leave Mode 4. The normal renderer hides or
+		// changes layers in these states; the fullscreen renderer only supports
+		// Mode 4, so hide it to avoid exposing partially updated VRAM.
+		smoothedReadyBitmapBase = -1;
+		smoothedDisplayedBitmapBase = -1;
+		resetSmoothed2State();
+		DMA0_CONTROL_REG = 0;
+		videoSetMode(MODE_0_2D);
+		ggFullscreenWasActive = true;
+		return;
+	}
+	if (ggHardwareSmoothedMode()) {
+		smoothedReadyBitmapBase = -1;
+		smoothedDisplayedBitmapBase = -1;
+		if (runSmoothed2FilterPass()) {
+			ggFullscreenWasActive = true;
+			return;
+		}
+	}
+	else {
+		resetSmoothed2State();
+	}
+	if (ggCpuSmoothedMode()) {
+		if (presentSmoothedFrame()) {
+			ggFullscreenWasActive = true;
+			return;
+		}
+	}
+	else {
+		smoothedReadyBitmapBase = -1;
+		smoothedDisplayedBitmapBase = -1;
 	}
 
 	// The normal VBlank renderer has just restored its text-background setup.
@@ -291,12 +798,6 @@ void ggFullscreenVBlank(void) {
 	REG_BG3CNT = BG_PRIORITY(2) | BG_TILE_BASE(GG_EXT_BACKGROUND_TILE_BASE)
 			   | BG_MAP_BASE(GG_EXT_BACKGROUND_MAP_BASE) | BG_RS_32x32 | BG_WRAP_ON;
 
-	bool fullScreen = ggFullScreenMode();
-	int horizontalStep = fullScreen ? GG_FULL_SCREEN_HORIZONTAL_STEP
-		: GG_FULL_HEIGHT_HORIZONTAL_STEP;
-	int horizontalNumerator = fullScreen ? 8 : 4;
-	int horizontalDenominator = fullScreen ? 5 : 3;
-	int outputLeft = fullScreen ? 0 : GG_PILLAR_LEFT;
 	u32 displayMode = MODE_5_2D
 			 | DISPLAY_SPR_1D_LAYOUT
 			 | DISPLAY_BG_EXT_PALETTE
@@ -305,16 +806,6 @@ void ggFullscreenVBlank(void) {
 			 | DISPLAY_BG2_ACTIVE
 			 | DISPLAY_BG3_ACTIVE
 			 | DISPLAY_SPR_ACTIVE;
-
-	if (!fullScreen) {
-		// The 160x144 viewport becomes 213.33x192. An integer window of 214
-		// pixels gives symmetric 21-pixel pillarboxes without aspect stretching.
-		REG_WIN0H = (GG_PILLAR_LEFT << 8) | GG_PILLAR_RIGHT;
-		REG_WIN0V = SCREEN_HEIGHT;
-		REG_WININ = GG_WINDOW_LAYERS;
-		REG_WINOUT = 0;
-		displayMode |= DISPLAY_WIN0_ON;
-	}
 	videoSetMode(displayMode);
 
 	if (!ggFullscreenWasActive) {
@@ -325,7 +816,7 @@ void ggFullscreenVBlank(void) {
 	expandBackgroundTiles();
 	convertBackgroundMaps();
 	updateExtendedPalettes();
-	buildAffineDmaBuffer(horizontalStep, outputLeft);
+	buildAffineDmaBuffer(GG_FULL_SCREEN_HORIZONTAL_STEP, 0);
 
 	for (int i = 0; i < 12; i++) {
 		MAIN_BG_REG_BASE[i] = affineDmaBuffer[0][i];
@@ -334,6 +825,21 @@ void ggFullscreenVBlank(void) {
 	DMA0_DEST_REG = 0x04000010;
 	DMA0_CONTROL_REG = 0x9660000C;
 
-	scaleSprites(horizontalNumerator, horizontalDenominator, outputLeft);
+	scaleSprites(8, 5, 0);
+	if (ggHardwareSmoothedMode()) {
+		REG_DISPCAPCNT = DCAP_BANK(DCAP_BANK_VRAM_C)
+			| DCAP_SIZE(DCAP_SIZE_256x192)
+			| DCAP_MODE(DCAP_MODE_A)
+			| DCAP_SRC_A(DCAP_SRC_A_COMPOSITED)
+			| DCAP_ENABLE;
+		if (smoothed2FilteredReady) {
+			// Keep the affine layers rendering offscreen for capture while bank D
+			// is scanned out. MODE_VRAM_D must replace (not combine with) the normal
+			// display-source bits; combining them selects FIFO display and causes
+			// the repeated-scanline transition glitch.
+			videoSetMode((displayMode & ~DISPLAY_MODE_MASK) | MODE_VRAM_D);
+		}
+		smoothed2FilterPass = true;
+	}
 	ggFullscreenWasActive = true;
 }

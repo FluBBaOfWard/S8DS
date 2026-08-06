@@ -47,8 +47,9 @@
 #define SCALED_1_1		0		// Display types
 #define SCALED_FIT		1
 #define SCALED_ASPECT	2
-#define SCALED_GG_FULLSCREEN	3	// Scale the 160x144 GG viewport to 213x192
-#define SCALED_GG_FULL_SCREEN	4	// Scale the 160x144 GG viewport to 256x192
+#define SCALED_GG_FULL_SCREEN	3	// Nearest-neighbour 160x144 to 256x192
+#define SCALED_GG_FULL_SCREEN_SMOOTHED	4	// CPU bilinear 160x144 to 256x192
+#define SCALED_GG_FULL_SCREEN_SMOOTHED2	5	// 3D-engine filtered 160x144 to 256x192
 
 //------------------------------------------------------- Arcade games
 #define AC_NONE					(0x00)

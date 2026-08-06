@@ -81,8 +81,9 @@ better 3D effect, I have only tested with red/cyan glasses.
   * Use R as FastForward: Select turbo speed as long as R button is held.
 * Display:
   * Display: Here you can select if you want scaled or unscaled screenmode.
-    * GG full height: Scales the Game Gear's 160x144 active LCD viewport to approximately 213x192 while preserving its 10:9 aspect ratio. The image is centered with narrow pillarboxes.
     * GG Full Screen: Scales the Game Gear's 160x144 active LCD viewport to 256x192 using the original LCD's approximately 4:3 physical aspect ratio.
+    * GG FS Smooth: Uses the same 256x192 physical-aspect scaling with bilinear interpolation between adjacent Game Gear pixels.
+    * GG FS Smooth2: Alternates capture and two-tap horizontal filter passes at 30 FPS, using the DS 3D engine to reduce horizontal scaling artifacts with one 60 Hz display refresh of video latency and very little ARM9 work; vertical scaling remains nearest-neighbour.
   * Scaling: Here you can select if you want flicker or barebones lineskip.
   * Gamma: Lets you change the gamma ("brightness").
   * Color: Lets you change the color.

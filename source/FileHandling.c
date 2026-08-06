@@ -32,7 +32,7 @@ static ConfigData cfg;
 void applyConfigData(void) {
 	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
 	gScalingSet  = cfg.display & 7;
-	if (gScalingSet > SCALED_GG_FULL_SCREEN) {
+	if (gScalingSet > SCALED_GG_FULL_SCREEN_SMOOTHED2) {
 		gScalingSet = SCALED_FIT;
 	}
 	g3DEnable    = (cfg.display>>4) & 1;
