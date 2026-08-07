@@ -846,13 +846,13 @@ static void renderCpuSmoothedFrame(void) {
 
 	const u16 *foregroundMap = smoothedBackgroundMaps;
 	const u16 *backgroundMap = foregroundMap + 0x400;
-	bool firstRenderInterval = smoothedRenderNextLine == 0;
 #ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
 	// Try the whole picture. A fast host interval can publish immediately at
 	// 60 Hz; otherwise scaleSmoothedFrame yields at the deadline and this same
-	// frozen source picture resumes during the next interval.
+	// frozen source picture resumes during as many intervals as it needs.
 	int endOutputLine = SCREEN_HEIGHT;
 #else
+	bool firstRenderInterval = smoothedRenderNextLine == 0;
 	int endOutputLine = firstRenderInterval
 		? GG_SMOOTH_FIRST_SLICE_LINES : SCREEN_HEIGHT;
 #endif
@@ -869,18 +869,6 @@ static void renderCpuSmoothedFrame(void) {
 		smoothedRenderNextLine = 0;
 		smoothedRenderDestinationBase = -1;
 	}
-#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
-	else if (!firstRenderInterval) {
-		// A filtered picture gets two host intervals. If it misses the second
-		// deadline, retain the previously completed front bitmap and start from
-		// fresh emulated state next time instead of presenting a stale 20 Hz frame.
-		smoothedRenderNextLine = 0;
-		smoothedRenderDestinationBase = -1;
-#ifdef GG_SMOOTH_PROFILE
-		smoothProfileCurrent.dropped = true;
-#endif
-	}
-#endif
 #ifdef GG_SMOOTH_PROFILE
 	finishSmoothProfile();
 #endif

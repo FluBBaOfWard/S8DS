@@ -81,11 +81,11 @@ better 3D effect, I have only tested with red/cyan glasses.
   * Use R as FastForward: Select turbo speed as long as R button is held.
 * Display:
   * Display: Select unscaled, scaled-to-fit or physical-aspect-corrected geometry. This is used for all non-GG games and for GG games when GG Upscaler is Off.
-  * GG Upscaler: Independently select how Game Gear's 160x144 LCD viewport is enlarged, regardless of the Display setting.
+  * GG Upscaler: Independently select how Game Gear's 160x144 LCD viewport is enlarged, regardless of the Display setting. When enabled, the viewport is expanded to an aspect-correct fullscreen render.
     * Off: Uses the selected Display mode for GG games too.
-    * Fast: Scales to 256x192 using nearest-neighbour sampling.
-    * Smooth: Uses the same physical-aspect scaling with bilinear interpolation between adjacent Game Gear pixels.
-    * Smooth2: Alternates capture and two-tap horizontal filter passes at 30 FPS, using the DS 3D engine to reduce horizontal scaling artifacts with one 60 Hz display refresh of video latency and very little ARM9 work; vertical scaling remains nearest-neighbour.
+    * Fast: Scales to 256x192 using nearest-neighbour sampling at 60fps.
+    * Smooth: Uses the same physical-aspect scaling with bilinear interpolation between adjacent Game Gear pixels, high quality but CPU-dependent, 30+fps on DSi.
+    * Smooth2: Upscales via 3D engine at 30 FPS. Not as high quality as Smooth but very performant.
   * Scaling: Here you can select if you want flicker or barebones lineskip.
   * Gamma: Lets you change the gamma ("brightness").
   * Color: Lets you change the color.

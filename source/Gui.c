@@ -243,7 +243,12 @@ static char sdscBuffer[80];
 
 static char *const ctrlTxt[] = {"1P", "2P"};
 static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect"};
-static char *const ggUpscalerTxt[] = {"Off", "Fast", "Smooth", "Smooth2"};
+static char *const ggUpscalerTxt[] = {
+	"Off",
+	"Fast [60fps]",
+	"Smooth [Adaptive]",
+	"Smooth2 [30fps]"
+};
 
 static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"/*, "PV-2000"*/};
 static char *const bordTxt[] = {"Black", "Border Color", "None"};
