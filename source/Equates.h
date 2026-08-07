@@ -47,9 +47,12 @@
 #define SCALED_1_1		0		// Display types
 #define SCALED_FIT		1
 #define SCALED_ASPECT	2
-#define SCALED_GG_FULL_SCREEN	3	// Nearest-neighbour 160x144 to 256x192
-#define SCALED_GG_FULL_SCREEN_SMOOTHED	4	// CPU bilinear 160x144 to 256x192
-#define SCALED_GG_FULL_SCREEN_SMOOTHED2	5	// 3D-engine filtered 160x144 to 256x192
+
+#define GG_UPSCALER_OFF		0	// Keep the selected display geometry.
+#define GG_UPSCALER_FAST	1	// Nearest-neighbour 160x144 to 256x192.
+#define GG_UPSCALER_SMOOTH	2	// CPU bilinear 160x144 to 256x192.
+#define GG_UPSCALER_SMOOTH2	3	// 3D-engine filtered 160x144 to 256x192.
+#define GG_UPSCALER_COUNT	4
 
 //------------------------------------------------------- Arcade games
 #define AC_NONE					(0x00)

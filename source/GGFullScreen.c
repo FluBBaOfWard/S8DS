@@ -1,5 +1,9 @@
 #include <nds.h>
 
+#ifdef GG_SMOOTH_PROFILE
+#include <stdio.h>
+#endif
+
 #include "Cart.h"
 #include "Equates.h"
 #include "Gfx.h"
@@ -22,6 +26,12 @@
 #define GG_BACKGROUND_TILE_BYTES       0x4000
 #define GG_SPRITE_TILE_BYTES           0x8000
 #define GG_BACKGROUND_MAP_BYTES        0x1000
+#define GG_SMOOTH_FIRST_SLICE_LINES       84
+#define GG_SMOOTH_DYNAMIC_DEADLINE_MS     15
+#define GG_SMOOTH_DYNAMIC_DEADLINE_TICKS \
+	((BUS_CLOCK / 1000) * GG_SMOOTH_DYNAMIC_DEADLINE_MS)
+#define GG_SMOOTH_DYNAMIC_EARLY_SLICES    4
+#define GG_SMOOTH_DYNAMIC_MARGIN_SHIFT    3
 
 #define DMA0_SOURCE_REG         (*(vu32 *)0x040000B0)
 #define DMA0_DEST_REG           (*(vu32 *)0x040000B4)
@@ -42,10 +52,37 @@ static DTCM_DATA u16 ggHorizontalLines[2][SCREEN_WIDTH]
 	__attribute__((aligned(4)));
 static u8 smoothedBackgroundTiles[GG_BACKGROUND_TILE_BYTES]
 	__attribute__((aligned(32)));
+static u32 smoothedPackedBackgroundTileCache[GG_BACKGROUND_TILE_BYTES / sizeof(u32)]
+	__attribute__((aligned(4)));
+static u8 smoothedExpandedBackgroundTiles[GG_BACKGROUND_TILE_BYTES * 2]
+	__attribute__((aligned(32)));
 static u8 smoothedSpriteTiles[GG_SPRITE_TILE_BYTES]
 	__attribute__((aligned(32)));
 static u16 smoothedBackgroundMaps[GG_BACKGROUND_MAP_BYTES / sizeof(u16)]
 	__attribute__((aligned(32)));
+static u8 smoothedScrollTMap[SCREEN_HEIGHT * 2];
+static u16 smoothedPalette[0x200];
+
+typedef struct {
+	s16 x;
+	s16 y;
+	u16 baseTile;
+	u8 width;
+	u8 height;
+	u8 zoomShift;
+	u8 palette;
+	u8 tilesPerRow;
+} SmoothedSprite;
+
+static SmoothedSprite smoothedSprites[128];
+static int smoothedSpriteCount;
+static int smoothedRenderNextLine;
+static int smoothedRenderDestinationBase = -1;
+static int smoothedRenderYScroll;
+static int smoothedRenderScrollMask;
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+static u32 smoothedSliceEstimateTicks;
+#endif
 static bool ggFullscreenWasActive;
 static bool expansionTablesReady;
 static bool tileCacheValid;
@@ -55,27 +92,141 @@ static volatile int smoothedReadyBitmapBase = -1;
 static volatile int smoothedDisplayedBitmapBase = -1;
 static bool smoothed2VideoInitialised;
 static bool smoothedCacheInitialised;
+static bool smoothedExpandedTilesValid;
 static bool smoothed2BanksActive;
 static bool smoothed2FilterPass;
 static bool smoothed2FilteredReady;
 static volatile bool smoothed2DrawPending;
 
+#ifdef GG_SMOOTH_PROFILE
+#define GG_SMOOTH_PROFILE_WARMUP_FRAMES 60
+#define GG_SMOOTH_PROFILE_CAPTURE_FRAMES 180
+
+typedef struct {
+	u32 total;
+	u32 copy;
+	u32 backgroundBehind;
+	u32 sprites;
+	u32 backgroundForeground;
+	u32 horizontal;
+	u32 vertical;
+	u16 firstLine;
+	u16 endLine;
+	bool dropped;
+	u32 sliceAverage;
+	u32 sliceEstimate;
+} GGSmoothProfileFrame;
+
+static GGSmoothProfileFrame smoothProfileCurrent;
+static GGSmoothProfileFrame smoothProfileFrames[GG_SMOOTH_PROFILE_CAPTURE_FRAMES];
+static int smoothProfileWarmup;
+static int smoothProfileCount;
+static bool smoothProfileWritten;
+static u32 smoothProfileStarted;
+
+static void writeSmoothProfile(void) {
+	if (smoothProfileWritten) {
+		return;
+	}
+	smoothProfileWritten = true;
+	FILE *file = fopen("fat:/s8ds-smooth1-profile.csv", "w");
+	if (file == NULL) {
+		file = fopen("s8ds-smooth1-profile.csv", "w");
+	}
+	if (file == NULL) {
+		return;
+	}
+
+	fputs("frame,total,copy,bg_behind,sprites,bg_foreground,horizontal,vertical,other,first_line,end_line,dropped,slice_average,slice_estimate\n",
+		file);
+	u64 sums[7] = { 0 };
+	int droppedFrames = 0;
+	for (int frame = 0; frame < smoothProfileCount; frame++) {
+		const GGSmoothProfileFrame *sample = &smoothProfileFrames[frame];
+		u32 measured = sample->copy + sample->backgroundBehind + sample->sprites
+			+ sample->backgroundForeground + sample->horizontal + sample->vertical;
+		u32 other = sample->total > measured ? sample->total - measured : 0;
+		fprintf(file, "%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u,%u,%u,%lu,%lu\n", frame,
+			(unsigned long)sample->total, (unsigned long)sample->copy,
+			(unsigned long)sample->backgroundBehind,
+			(unsigned long)sample->sprites,
+			(unsigned long)sample->backgroundForeground,
+			(unsigned long)sample->horizontal, (unsigned long)sample->vertical,
+			(unsigned long)other, sample->firstLine, sample->endLine,
+			sample->dropped, (unsigned long)sample->sliceAverage,
+			(unsigned long)sample->sliceEstimate);
+		sums[0] += sample->total;
+		sums[1] += sample->copy;
+		sums[2] += sample->backgroundBehind;
+		sums[3] += sample->sprites;
+		sums[4] += sample->backgroundForeground;
+		sums[5] += sample->horizontal;
+		sums[6] += sample->vertical;
+		droppedFrames += sample->dropped;
+	}
+	if (smoothProfileCount > 0) {
+		fputs("# average_ticks", file);
+		for (int stage = 0; stage < 7; stage++) {
+			fprintf(file, ",%lu", (unsigned long)(sums[stage] / smoothProfileCount));
+		}
+		fputc('\n', file);
+		fputs("# average_us", file);
+		for (int stage = 0; stage < 7; stage++) {
+			fprintf(file, ",%lu", (unsigned long)timerTicks2usec(
+				(u32)(sums[stage] / smoothProfileCount)));
+		}
+		fputc('\n', file);
+		fprintf(file, "# dropped_frames,%d\n", droppedFrames);
+	}
+	fclose(file);
+}
+
+static inline void beginSmoothProfile(void) {
+	smoothProfileCurrent = (GGSmoothProfileFrame){ 0 };
+	smoothProfileStarted = cpuGetTiming();
+}
+
+static inline void finishSmoothProfile(void) {
+	smoothProfileCurrent.total = cpuGetTiming() - smoothProfileStarted;
+	if (smoothProfileWarmup < GG_SMOOTH_PROFILE_WARMUP_FRAMES) {
+		smoothProfileWarmup++;
+		return;
+	}
+	if (smoothProfileCount < GG_SMOOTH_PROFILE_CAPTURE_FRAMES) {
+		smoothProfileFrames[smoothProfileCount++] = smoothProfileCurrent;
+	}
+	if (smoothProfileCount == GG_SMOOTH_PROFILE_CAPTURE_FRAMES) {
+		writeSmoothProfile();
+	}
+}
+#endif
+
+#if defined(GG_SMOOTH_PROFILE) \
+	|| defined(GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING)
+void ggFrameTimingStart(void) {
+	// Timers 0-1 are reserved by the audio stream. Timers 2-3 form a cascaded
+	// 32-bit counter at the 33.5 MHz bus clock and are restarted once per host
+	// frame so the dynamic renderer accounts for emulation and GUI work too.
+	cpuStartTiming(2);
+}
+#endif
+
 static bool ggFullscreenActive(void) {
 	u32 tileAddress = (u32)getVDP0BgrTileAddress();
-	return (gScalingSet == SCALED_GG_FULL_SCREEN
-			|| gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED
-			|| gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED2)
+	return gGGScalingMethod != GG_UPSCALER_OFF
 		&& (gEmuFlags & GG_MODE)
 		&& tileAddress >= (u32)BG_GFX
 		&& tileAddress < (u32)BG_GFX + 0x20000;
 }
 
 static bool ggCpuSmoothedMode(void) {
-	return gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED;
+	return (gEmuFlags & GG_MODE)
+		&& gGGScalingMethod == GG_UPSCALER_SMOOTH;
 }
 
 static bool ggHardwareSmoothedMode(void) {
-	return gScalingSet == SCALED_GG_FULL_SCREEN_SMOOTHED2;
+	return (gEmuFlags & GG_MODE)
+		&& gGGScalingMethod == GG_UPSCALER_SMOOTH2;
 }
 
 static void expandBackgroundTiles(void) {
@@ -247,20 +398,10 @@ static void spriteSize(u16 attr0, u16 attr1, int *width, int *height) {
 	*height = shape < 3 ? heights[shape][size] : 8;
 }
 
-static u8 tilePixel(const vu8 *tiles, u16 entry, int x, int y) {
-	if (entry & BIT(10)) {
-		x = 7 - x;
-	}
-	if (entry & BIT(11)) {
-		y = 7 - y;
-	}
-	const vu8 *tile = tiles + (entry & 0x3FF) * 32;
-	u8 packed = tile[y * 4 + (x >> 1)];
-	return (packed >> ((x & 1) * 4)) & 0x0F;
-}
-
-static void drawSmoothedBackgroundLine(u16 *dst, int y, const vu16 *map,
-									   const vu8 *tiles, const u8 *scrollTMap,
+static void drawSmoothedBackgroundLine(u16 *restrict dst, int y,
+									   const u16 *restrict map,
+									   const u8 *restrict tiles,
+									   const u8 *scrollTMap,
 									   int yScroll, int scrollMask,
 									   bool foreground) {
 	int sourceLine = GG_ACTIVE_Y + y;
@@ -270,33 +411,64 @@ static void drawSmoothedBackgroundLine(u16 *dst, int y, const vu16 *map,
 		mapY -= scrollMask;
 	}
 
-	for (int x = 0; x < GAME_WIDTH_GG; x++) {
+	// Work a tile segment at a time. The former pixel loop repeated the map
+	// lookup, tile-address calculation and flip handling for all 160 pixels.
+	// A line crosses only 20 or 21 tiles, including an unaligned first tile.
+	for (int x = 0; x < GAME_WIDTH_GG;) {
 		int mapX = (scrollX + GG_ACTIVE_X + x) & 0xFF;
+		int tileX = mapX & 7;
+		int run = 8 - tileX;
+		if (run > GAME_WIDTH_GG - x) {
+			run = GAME_WIDTH_GG - x;
+		}
 		u16 entry = map[(mapY >> 3) * 32 + (mapX >> 3)];
 		if (foreground && (entry & 0x3FF) == 0x3FF) {
+			x += run;
 			continue;
 		}
 
-		u8 color = tilePixel(tiles, entry, mapX & 7, mapY & 7);
-		if (foreground && color == 0) {
-			continue;
+		int tileY = mapY & 7;
+		if (entry & BIT(11)) {
+			tileY = 7 - tileY;
 		}
-
+		int tileNumber = entry & 0x3FF;
 		int palette = (entry >> 12) & 0x0F;
-		if (!foreground && color == 0) {
-			dst[x] = EMUPALBUFF[(palette & 1) ? 0x40 : 0x30];
+		const u16 *colors = smoothedPalette + palette * 16;
+		const u8 *row = tiles + tileNumber * 64 + tileY * 8;
+		int sourceX;
+		int sourceStep;
+		if (entry & BIT(10)) {
+			sourceX = 7 - tileX;
+			sourceStep = -1;
 		}
 		else {
-			dst[x] = EMUPALBUFF[palette * 16 + color];
+			sourceX = tileX;
+			sourceStep = 1;
 		}
+
+		if (foreground) {
+			for (int pixel = 0; pixel < run; pixel++, sourceX += sourceStep) {
+				u8 color = row[sourceX];
+				if (color != 0) {
+					dst[x + pixel] = colors[color];
+				}
+			}
+		}
+		else {
+			u16 colorZero = smoothedPalette[(palette & 1) ? 0x40 : 0x30];
+			for (int pixel = 0; pixel < run; pixel++, sourceX += sourceStep) {
+				u8 color = row[sourceX];
+				dst[x + pixel] = color != 0 ? colors[color] : colorZero;
+			}
+		}
+		x += run;
 	}
 }
 
-static void drawSmoothedSpriteLine(u16 *dst, int y, const u16 *oam,
-								   const vu8 *tiles) {
-	int screenY = GG_ACTIVE_Y + y;
-
-	// Draw in reverse order so lower OAM indexes retain the DS priority rule.
+static void prepareSmoothedSprites(const u16 *oam) {
+	smoothedSpriteCount = 0;
+	// Store the active entries in reverse OAM order so drawing the compact list
+	// preserves the DS rule that lower OAM indexes win overlapping pixels.
 	for (int i = 127; i >= 0; i--) {
 		u16 attr0 = oam[i * 4];
 		u16 attr1 = oam[i * 4 + 1];
@@ -305,43 +477,53 @@ static void drawSmoothedSpriteLine(u16 *dst, int y, const u16 *oam,
 			continue;
 		}
 
-		int spriteX = attr1 & 0x1FF;
-		if (spriteX >= 256) {
-			spriteX -= 512;
+		SmoothedSprite *sprite = &smoothedSprites[smoothedSpriteCount++];
+		sprite->x = attr1 & 0x1FF;
+		if (sprite->x >= 256) {
+			sprite->x -= 512;
 		}
-		int spriteY = attr0 & 0xFF;
-		if (spriteY >= SCREEN_HEIGHT) {
-			spriteY -= 256;
+		sprite->y = attr0 & 0xFF;
+		if (sprite->y >= SCREEN_HEIGHT) {
+			sprite->y -= 256;
 		}
-
 		int width;
 		int height;
 		spriteSize(attr0, attr1, &width, &height);
-		int affineIndex = (attr1 >> 9) & 0x1F;
-		int zoomShift = (affineIndex & 2) ? 1 : 0;
-		int zoom = 1 << zoomShift;
-		int outputY = screenY - spriteY;
-		if ((unsigned)outputY >= (unsigned)(height * zoom)) {
+		sprite->width = width;
+		sprite->height = height;
+		sprite->zoomShift = (((attr1 >> 9) & 0x1F) & 2) ? 1 : 0;
+		sprite->baseTile = attr2 & 0x3FF;
+		sprite->palette = (attr2 >> 12) & 0x0F;
+		sprite->tilesPerRow = width >> 3;
+	}
+}
+
+static void drawSmoothedSpriteLine(u16 *dst, int y, const u8 *tiles) {
+	int screenY = GG_ACTIVE_Y + y;
+
+	for (int i = 0; i < smoothedSpriteCount; i++) {
+		const SmoothedSprite *sprite = &smoothedSprites[i];
+		int zoom = 1 << sprite->zoomShift;
+		int outputY = screenY - sprite->y;
+		if ((unsigned)outputY >= (unsigned)(sprite->height * zoom)) {
 			continue;
 		}
-		int baseTile = attr2 & 0x3FF;
-		int palette = (attr2 >> 12) & 0x0F;
-		int tilesPerRow = width >> 3;
-		int sourceY = outputY >> zoomShift;
+		int sourceY = outputY >> sprite->zoomShift;
 
-		for (int outputX = 0; outputX < width * zoom; outputX++) {
-			int dstX = spriteX - GG_ACTIVE_X + outputX;
+		for (int outputX = 0; outputX < sprite->width * zoom; outputX++) {
+			int dstX = sprite->x - GG_ACTIVE_X + outputX;
 			if ((unsigned)dstX >= GAME_WIDTH_GG) {
 				continue;
 			}
-			int sourceX = outputX >> zoomShift;
-			int tileNumber = baseTile + (sourceY >> 3) * tilesPerRow
+			int sourceX = outputX >> sprite->zoomShift;
+			int tileNumber = sprite->baseTile
+				+ (sourceY >> 3) * sprite->tilesPerRow
 				+ (sourceX >> 3);
-			const vu8 *tile = tiles + tileNumber * 32;
+			const u8 *tile = tiles + tileNumber * 32;
 			u8 packed = tile[(sourceY & 7) * 4 + ((sourceX & 7) >> 1)];
 			u8 color = (packed >> ((sourceX & 1) * 4)) & 0x0F;
 			if (color != 0) {
-				dst[dstX] = EMUPALBUFF[0x100 + palette * 16 + color];
+				dst[dstX] = smoothedPalette[0x100 + sprite->palette * 16 + color];
 			}
 		}
 	}
@@ -388,31 +570,49 @@ static inline u16 blendRgb15Eighth(u16 first, u16 second, int weight) {
 }
 
 static void composeSmoothedLine(u16 *source, int sourceY,
-								const vu16 *foregroundMap,
-								const vu16 *backgroundMap,
-								const vu8 *backgroundTiles, const u8 *scrollTMap,
-								int yScroll, int scrollMask, const u16 *oam,
-								const vu8 *spriteTiles) {
+								const u16 *foregroundMap,
+				const u16 *backgroundMap,
+				const u8 *backgroundTiles, const u8 *scrollTMap,
+				int yScroll, int scrollMask, const u8 *spriteTiles) {
+#ifdef GG_SMOOTH_PROFILE
+	u32 started = cpuGetTiming();
+#endif
 	drawSmoothedBackgroundLine(source, sourceY, backgroundMap, backgroundTiles,
 		scrollTMap, yScroll, scrollMask, false);
-	drawSmoothedSpriteLine(source, sourceY, oam, spriteTiles);
+#ifdef GG_SMOOTH_PROFILE
+	u32 finished = cpuGetTiming();
+	smoothProfileCurrent.backgroundBehind += finished - started;
+	started = finished;
+#endif
+	drawSmoothedSpriteLine(source, sourceY, spriteTiles);
+#ifdef GG_SMOOTH_PROFILE
+	finished = cpuGetTiming();
+	smoothProfileCurrent.sprites += finished - started;
+	started = finished;
+#endif
 	drawSmoothedBackgroundLine(source, sourceY, foregroundMap, backgroundTiles,
 		scrollTMap, yScroll, scrollMask, true);
+#ifdef GG_SMOOTH_PROFILE
+	finished = cpuGetTiming();
+	smoothProfileCurrent.backgroundForeground += finished - started;
+#endif
 }
 
 static void ITCM_CODE prepareSmoothedLine(int sourceY, int slot,
-								const vu16 *foregroundMap,
-								const vu16 *backgroundMap,
-								const vu8 *backgroundTiles, const u8 *scrollTMap,
-								int yScroll, int scrollMask, const u16 *oam,
-								const vu8 *spriteTiles) {
+								const u16 *foregroundMap,
+				const u16 *backgroundMap,
+				const u8 *backgroundTiles, const u8 *scrollTMap,
+				int yScroll, int scrollMask, const u8 *spriteTiles) {
 	u16 *source = ggSourceLines[slot];
 	u16 *horizontal = ggHorizontalLines[slot];
 	composeSmoothedLine(source, sourceY, foregroundMap, backgroundMap,
-		backgroundTiles, scrollTMap, yScroll, scrollMask, oam, spriteTiles);
+		backgroundTiles, scrollTMap, yScroll, scrollMask, spriteTiles);
 
 	// These source coordinates match the nearest-neighbour 5:8 mapping. The
 	// fractional remainder supplies the contribution from the adjacent pixel.
+#ifdef GG_SMOOTH_PROFILE
+	u32 horizontalStarted = cpuGetTiming();
+#endif
 	for (int x = 0, sourceX = 0; x < SCREEN_WIDTH; x += 8, sourceX += 5) {
 		int nextBlockPixel = sourceX < GAME_WIDTH_GG - 5
 			? sourceX + 5 : GAME_WIDTH_GG - 1;
@@ -432,17 +632,40 @@ static void ITCM_CODE prepareSmoothedLine(int sourceY, int slot,
 		horizontal[x + 7] = blendRgb15Eighth(source[sourceX + 4],
 			source[nextBlockPixel], 3);
 	}
+#ifdef GG_SMOOTH_PROFILE
+	smoothProfileCurrent.horizontal += cpuGetTiming() - horizontalStarted;
+#endif
 }
 
-static void ITCM_CODE __attribute__((noinline)) scaleSmoothedFrame(
-								vu16 *dst, const vu16 *foregroundMap,
-								const vu16 *backgroundMap,
-								const vu8 *backgroundTiles, const u8 *scrollTMap,
-								int yScroll, int scrollMask, const u16 *oam,
-								const vu8 *spriteTiles) {
-	int bufferedLine[2] = { -1, -1 };
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+static inline void updateSmoothedSliceEstimate(u32 currentAverage) {
+	if (smoothedSliceEstimateTicks == 0) {
+		smoothedSliceEstimateTicks = currentAverage;
+	}
+	else {
+		// Retain enough history to seed the first few slices of the next interval,
+		// but let the current picture move the estimate by one quarter.
+		smoothedSliceEstimateTicks = (smoothedSliceEstimateTicks * 3
+			+ currentAverage + 2) >> 2;
+	}
+}
+#endif
 
-	for (int y = 0; y < SCREEN_HEIGHT; y++) {
+static int ITCM_CODE __attribute__((noinline)) scaleSmoothedFrame(
+				vu16 *dst, const u16 *foregroundMap,
+				const u16 *backgroundMap,
+				const u8 *backgroundTiles, const u8 *scrollTMap,
+				int yScroll, int scrollMask, const u8 *spriteTiles,
+				int firstOutputLine, int endOutputLine) {
+	int bufferedLine[2] = { -1, -1 };
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+	u32 sliceTimingStarted = cpuGetTiming();
+	u32 priorSliceEstimate = smoothedSliceEstimateTicks;
+	u32 currentSliceAverage = priorSliceEstimate;
+	int slicesRendered = 0;
+#endif
+
+	for (int y = firstOutputLine; y < endOutputLine; y++) {
 		int fixedY = y * 3;
 		int sourceY = fixedY >> 2;
 		int nextY = sourceY < GAME_HEIGHT_GG - 1 ? sourceY + 1 : sourceY;
@@ -450,12 +673,12 @@ static void ITCM_CODE __attribute__((noinline)) scaleSmoothedFrame(
 		int secondSlot = nextY & 1;
 		if (bufferedLine[firstSlot] != sourceY) {
 			prepareSmoothedLine(sourceY, firstSlot, foregroundMap, backgroundMap,
-				backgroundTiles, scrollTMap, yScroll, scrollMask, oam, spriteTiles);
+				backgroundTiles, scrollTMap, yScroll, scrollMask, spriteTiles);
 			bufferedLine[firstSlot] = sourceY;
 		}
 		if (bufferedLine[secondSlot] != nextY) {
 			prepareSmoothedLine(nextY, secondSlot, foregroundMap, backgroundMap,
-				backgroundTiles, scrollTMap, yScroll, scrollMask, oam, spriteTiles);
+				backgroundTiles, scrollTMap, yScroll, scrollMask, spriteTiles);
 			bufferedLine[secondSlot] = nextY;
 		}
 		const u16 *first = ggHorizontalLines[firstSlot];
@@ -464,6 +687,9 @@ static void ITCM_CODE __attribute__((noinline)) scaleSmoothedFrame(
 		const u32 *secondPairs = (const u32 *)second;
 		int weight = fixedY & 3;
 		vu32 *output = (vu32 *)(dst + y * SCREEN_WIDTH);
+#ifdef GG_SMOOTH_PROFILE
+		u32 verticalStarted = cpuGetTiming();
+#endif
 		if (weight == 0) {
 			for (int pair = 0; pair < SCREEN_WIDTH / 2; pair++) {
 				output[pair] = firstPairs[pair] | 0x80008000;
@@ -480,11 +706,62 @@ static void ITCM_CODE __attribute__((noinline)) scaleSmoothedFrame(
 				output[pair] = blended | 0x80008000;
 			}
 		}
+#ifdef GG_SMOOTH_PROFILE
+		smoothProfileCurrent.vertical += cpuGetTiming() - verticalStarted;
+#endif
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+		// The 3:4 vertical filter repeats every four output lines. At each complete
+		// group, use all groups rendered during this call for a stable average and
+		// decide whether another complete group is likely to fit.
+		if (((y + 1) & (GG_VERTICAL_SCALE_NUMERATOR - 1)) == 0) {
+			slicesRendered++;
+			u32 now = cpuGetTiming();
+			currentSliceAverage = (now - sliceTimingStarted) / slicesRendered;
+			u32 nextSliceEstimate = currentSliceAverage;
+			if (slicesRendered < GG_SMOOTH_DYNAMIC_EARLY_SLICES) {
+				if (priorSliceEstimate != 0) {
+					// Blend the initially noisy current average with history. Its
+					// influence falls to zero after four groups.
+					int historyWeight = GG_SMOOTH_DYNAMIC_EARLY_SLICES
+						- slicesRendered;
+					nextSliceEstimate = (currentSliceAverage * slicesRendered
+						+ priorSliceEstimate * historyWeight)
+						/ GG_SMOOTH_DYNAMIC_EARLY_SLICES;
+				}
+				else {
+					// The first-ever group has no history and tends to be an
+					// optimistic sample, so bias it conservatively.
+					nextSliceEstimate += nextSliceEstimate >> 2;
+				}
+			}
+			// Keep a small margin for group-to-group variation and the timer check.
+			nextSliceEstimate += nextSliceEstimate
+				>> GG_SMOOTH_DYNAMIC_MARGIN_SHIFT;
+#ifdef GG_SMOOTH_PROFILE
+			smoothProfileCurrent.sliceAverage = currentSliceAverage;
+			smoothProfileCurrent.sliceEstimate = nextSliceEstimate;
+#endif
+			bool pictureComplete = y + 1 == endOutputLine;
+			bool nextSliceMissesDeadline = now >= GG_SMOOTH_DYNAMIC_DEADLINE_TICKS
+				|| nextSliceEstimate
+					>= GG_SMOOTH_DYNAMIC_DEADLINE_TICKS - now;
+			if (pictureComplete || nextSliceMissesDeadline) {
+				updateSmoothedSliceEstimate(currentSliceAverage);
+				if (!pictureComplete) {
+					return y + 1;
+				}
+			}
+		}
+#endif
 	}
+	return endOutputLine;
 }
 
 static void renderCpuSmoothedFrame(void) {
-	if (!ggCpuSmoothedMode() || !(gEmuFlags & GG_MODE)) {
+	if (!ggCpuSmoothedMode() || !(gEmuFlags & GG_MODE)
+			|| !getVDP0ScreenEnabled() || getVDP0DisplayMode() != 4) {
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
 		return;
 	}
 	// Do not overwrite a completed frame which VBlank has not displayed yet.
@@ -492,43 +769,121 @@ static void renderCpuSmoothedFrame(void) {
 		return;
 	}
 
-	int destinationBitmapBase = smoothedDisplayedBitmapBase
-		== GG_SMOOTH_BITMAP_C_BASE
-		? GG_SMOOTH_BITMAP_D_BASE : GG_SMOOTH_BITMAP_C_BASE;
-	vu16 *destination = (vu16 *)((u8 *)BG_GFX + destinationBitmapBase * 0x4000);
-	u32 mapOffset = getVDP0BgrMapOffset() & 0x1F00;
-	const vu16 *vramForegroundMap =
-		(const vu16 *)((const u8 *)BG_GFX + mapOffset * 8);
-	const vu8 *vramBackgroundTiles = (const vu8 *)getVDP0BgrTileAddress();
-	const u8 *scrollTMap = getVDP0ScrollTMapBuffer();
-	int yScroll = getVDP0YScroll();
-	int scrollMask = getVDP0ScrollMask();
-	const u16 *oam = getVDP0OAMBuffer();
-	const vu8 *vramSpriteTiles = (const vu8 *)getVDP0SpriteTileAddress();
+#ifdef GG_SMOOTH_PROFILE
+	beginSmoothProfile();
+	smoothProfileCurrent.firstLine = smoothedRenderNextLine;
+#endif
 
-	if (!smoothedCacheInitialised) {
-		DC_FlushRange(smoothedBackgroundTiles, sizeof(smoothedBackgroundTiles));
-		DC_FlushRange(smoothedSpriteTiles, sizeof(smoothedSpriteTiles));
-		DC_FlushRange(smoothedBackgroundMaps, sizeof(smoothedBackgroundMaps));
-		smoothedCacheInitialised = true;
+	if (smoothedRenderNextLine == 0) {
+		smoothedRenderDestinationBase = smoothedDisplayedBitmapBase
+			== GG_SMOOTH_BITMAP_C_BASE
+			? GG_SMOOTH_BITMAP_D_BASE : GG_SMOOTH_BITMAP_C_BASE;
 	}
-	dmaCopyWords(1, (const void *)vramBackgroundTiles, smoothedBackgroundTiles,
-		sizeof(smoothedBackgroundTiles));
-	dmaCopyWords(1, (const void *)vramSpriteTiles, smoothedSpriteTiles,
-		sizeof(smoothedSpriteTiles));
-	dmaCopyWords(1, (const void *)vramForegroundMap, smoothedBackgroundMaps,
-		sizeof(smoothedBackgroundMaps));
-	DC_InvalidateRange(smoothedBackgroundTiles, sizeof(smoothedBackgroundTiles));
-	DC_InvalidateRange(smoothedSpriteTiles, sizeof(smoothedSpriteTiles));
-	DC_InvalidateRange(smoothedBackgroundMaps, sizeof(smoothedBackgroundMaps));
+	int destinationBitmapBase = smoothedRenderDestinationBase;
+	vu16 *destination = (vu16 *)((u8 *)BG_GFX + destinationBitmapBase * 0x4000);
+
+	if (smoothedRenderNextLine == 0) {
+		u32 mapOffset = getVDP0BgrMapOffset() & 0x1F00;
+		const vu16 *vramForegroundMap =
+			(const vu16 *)((const u8 *)BG_GFX + mapOffset * 8);
+		const vu8 *vramBackgroundTiles = (const vu8 *)getVDP0BgrTileAddress();
+		const u16 *oam = getVDP0OAMBuffer();
+		const vu8 *vramSpriteTiles = (const vu8 *)getVDP0SpriteTileAddress();
+
+		if (!smoothedCacheInitialised) {
+			DC_FlushRange(smoothedBackgroundTiles, sizeof(smoothedBackgroundTiles));
+			DC_FlushRange(smoothedSpriteTiles, sizeof(smoothedSpriteTiles));
+			DC_FlushRange(smoothedBackgroundMaps, sizeof(smoothedBackgroundMaps));
+			smoothedCacheInitialised = true;
+		}
+#ifdef GG_SMOOTH_PROFILE
+		u32 copyStarted = cpuGetTiming();
+#endif
+		dmaCopyWords(1, (const void *)vramBackgroundTiles, smoothedBackgroundTiles,
+			sizeof(smoothedBackgroundTiles));
+		dmaCopyWords(1, (const void *)vramSpriteTiles, smoothedSpriteTiles,
+			sizeof(smoothedSpriteTiles));
+		dmaCopyWords(1, (const void *)vramForegroundMap, smoothedBackgroundMaps,
+			sizeof(smoothedBackgroundMaps));
+		DC_InvalidateRange(smoothedBackgroundTiles, sizeof(smoothedBackgroundTiles));
+		DC_InvalidateRange(smoothedSpriteTiles, sizeof(smoothedSpriteTiles));
+		DC_InvalidateRange(smoothedBackgroundMaps, sizeof(smoothedBackgroundMaps));
+
+		const u32 *packedTiles = (const u32 *)smoothedBackgroundTiles;
+		for (int word = 0; word < GG_BACKGROUND_TILE_BYTES / 4; word++) {
+			u32 packed = packedTiles[word];
+			if (smoothedExpandedTilesValid
+					&& smoothedPackedBackgroundTileCache[word] == packed) {
+				continue;
+			}
+			smoothedPackedBackgroundTileCache[word] = packed;
+			u8 *expanded = smoothedExpandedBackgroundTiles + word * 8;
+			for (int pixel = 0; pixel < 8; pixel++) {
+				expanded[pixel] = (packed >> (pixel * 4)) & 0x0F;
+			}
+		}
+		smoothedExpandedTilesValid = true;
+		const u8 *scrollTMap = getVDP0ScrollTMapBuffer();
+		for (int index = 0; index < SCREEN_HEIGHT * 2; index++) {
+			smoothedScrollTMap[index] = scrollTMap[index];
+		}
+		for (int index = 0; index < 0x200; index++) {
+			smoothedPalette[index] = EMUPALBUFF[index];
+		}
+		smoothedRenderYScroll = getVDP0YScroll();
+		smoothedRenderScrollMask = getVDP0ScrollMask();
+#ifdef GG_SMOOTH_PROFILE
+		smoothProfileCurrent.copy = cpuGetTiming() - copyStarted;
+#endif
+#ifdef GG_SMOOTH_PROFILE
+		u32 spriteSetupStarted = cpuGetTiming();
+#endif
+		prepareSmoothedSprites(oam);
+#ifdef GG_SMOOTH_PROFILE
+		smoothProfileCurrent.sprites += cpuGetTiming() - spriteSetupStarted;
+#endif
+	}
 
 	const u16 *foregroundMap = smoothedBackgroundMaps;
 	const u16 *backgroundMap = foregroundMap + 0x400;
-
-	scaleSmoothedFrame(destination, foregroundMap, backgroundMap,
-		smoothedBackgroundTiles,
-		scrollTMap, yScroll, scrollMask, oam, smoothedSpriteTiles);
-	smoothedReadyBitmapBase = destinationBitmapBase;
+	bool firstRenderInterval = smoothedRenderNextLine == 0;
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+	// Try the whole picture. A fast host interval can publish immediately at
+	// 60 Hz; otherwise scaleSmoothedFrame yields at the deadline and this same
+	// frozen source picture resumes during the next interval.
+	int endOutputLine = SCREEN_HEIGHT;
+#else
+	int endOutputLine = firstRenderInterval
+		? GG_SMOOTH_FIRST_SLICE_LINES : SCREEN_HEIGHT;
+#endif
+	smoothedRenderNextLine = scaleSmoothedFrame(destination,
+		foregroundMap, backgroundMap,
+		smoothedExpandedBackgroundTiles,
+		smoothedScrollTMap, smoothedRenderYScroll, smoothedRenderScrollMask,
+		smoothedSpriteTiles, smoothedRenderNextLine, endOutputLine);
+#ifdef GG_SMOOTH_PROFILE
+	smoothProfileCurrent.endLine = smoothedRenderNextLine;
+#endif
+	if (smoothedRenderNextLine == SCREEN_HEIGHT) {
+		smoothedReadyBitmapBase = destinationBitmapBase;
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
+	}
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+	else if (!firstRenderInterval) {
+		// A filtered picture gets two host intervals. If it misses the second
+		// deadline, retain the previously completed front bitmap and start from
+		// fresh emulated state next time instead of presenting a stale 20 Hz frame.
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
+#ifdef GG_SMOOTH_PROFILE
+		smoothProfileCurrent.dropped = true;
+#endif
+	}
+#endif
+#ifdef GG_SMOOTH_PROFILE
+	finishSmoothProfile();
+#endif
 }
 
 static void initialiseSmoothed2Video(void) {
@@ -602,6 +957,13 @@ static void drawSmoothed2Texture(void) {
 void ggSmoothedRender(void) {
 	if (ggCpuSmoothedMode()) {
 		renderCpuSmoothedFrame();
+	}
+	else {
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+		smoothedSliceEstimateTicks = 0;
+#endif
 	}
 }
 
@@ -744,6 +1106,8 @@ void ggFullscreenVBlank(void) {
 	if (!ggFullscreenActive()) {
 		smoothedReadyBitmapBase = -1;
 		smoothedDisplayedBitmapBase = -1;
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
 		resetSmoothed2State();
 		if (ggFullscreenWasActive) {
 			restoreNormalVideoMode();
@@ -760,6 +1124,8 @@ void ggFullscreenVBlank(void) {
 		// Mode 4, so hide it to avoid exposing partially updated VRAM.
 		smoothedReadyBitmapBase = -1;
 		smoothedDisplayedBitmapBase = -1;
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
 		resetSmoothed2State();
 		DMA0_CONTROL_REG = 0;
 		videoSetMode(MODE_0_2D);
@@ -786,6 +1152,8 @@ void ggFullscreenVBlank(void) {
 	else {
 		smoothedReadyBitmapBase = -1;
 		smoothedDisplayedBitmapBase = -1;
+		smoothedRenderNextLine = 0;
+		smoothedRenderDestinationBase = -1;
 	}
 
 	// The normal VBlank renderer has just restored its text-background setup.

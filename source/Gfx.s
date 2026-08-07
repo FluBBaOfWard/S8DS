@@ -481,22 +481,20 @@ setupScaling:		;@ r0-r3, r12 modified.
 	ldr r1,=gScalingSet
 	ldrb r1,[r1]
 
-	;@ All GG fullscreen modes deliberately ignore the border option and crop
-	;@ the native 160x144 LCD viewport before applying their affine scales.
-	cmp r1,#SCALED_GG_FULL_SCREEN
-	beq checkGGFullscreen
-	cmp r1,#SCALED_GG_FULL_SCREEN_SMOOTHED
-	beq checkGGFullscreen
-	cmp r1,#SCALED_GG_FULL_SCREEN_SMOOTHED2
-	beq checkGGFullscreen
+	;@ The GG upscaler is independent of the normal display geometry. When it is
+	;@ enabled for a GG game, use its corrected 256x192 viewport. When it is off,
+	;@ Unscaled/Fit/Aspect continue through the normal SMS display path below.
+	ldr r0,=gGGScalingMethod
+	ldrb r0,[r0]
+	cmp r0,#GG_UPSCALER_OFF
+	beq selectNormalScaling
+	tst r3,#GG_MODE
+	bne useGGFullscreen
+selectNormalScaling:
 	ldrb r0,bColor
 	cmp r0,#2
 	biceq r3,r3,#GG_MODE
 	b selectHorizontalScale
-checkGGFullscreen:
-	tst r3,#GG_MODE
-	bne useGGFullscreen
-	mov r1,#SCALED_FIT			;@ Sensible fallback for non-GG machines.
 
 selectHorizontalScale:
 	adr r12,scaleParms

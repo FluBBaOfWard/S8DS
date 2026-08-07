@@ -40,6 +40,8 @@ static const char *getSelectText(void);
 
 static void scalingSet(void);
 static const char *getScalingText(void);
+static void ggUpscalerSet(void);
+static const char *getGGUpscalerText(void);
 static void brightSet(void);
 static void colorSet(void);
 static const char *getColorText(void);
@@ -144,6 +146,7 @@ static const MItem ctrlItems[] = {
 };
 static const MItem displayItems[] = {
 	{"Display:", scalingSet, getScalingText},
+	{"GG Upscaler:", ggUpscalerSet, getGGUpscalerText},
 	{"Scaling:", flickSet, getFlickText},
 	{"Gamma:", brightSet, getGammaText},
 	{"Color:", colorSet, getColorText},
@@ -238,7 +241,8 @@ static char sdscBuffer[80];
 
 
 static char *const ctrlTxt[] = {"1P", "2P"};
-static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect", "GG Full Screen", "GG FS Smooth", "GG FS Smooth2"};
+static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect"};
+static char *const ggUpscalerTxt[] = {"Off", "Fast", "Smooth", "Smooth2"};
 
 static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"/*, "PV-2000"*/};
 static char *const bordTxt[] = {"Black", "Border Color", "None"};
@@ -672,7 +676,7 @@ const char *getSelectText() {
 
 void scalingSet() {
 	gScalingSet++;
-	if (gScalingSet >= 6) {
+	if (gScalingSet > SCALED_ASPECT) {
 		gScalingSet = 0;
 	}
 	setupScaling();
@@ -682,6 +686,20 @@ void scalingSet() {
 }
 const char *getScalingText() {
 	return dispTxt[gScalingSet];
+}
+
+void ggUpscalerSet() {
+	gGGScalingMethod++;
+	if (gGGScalingMethod >= GG_UPSCALER_COUNT) {
+		gGGScalingMethod = GG_UPSCALER_OFF;
+	}
+	setupScaling();
+	if (powerIsOn) {
+		VDP0ApplyScaling();
+	}
+}
+const char *getGGUpscalerText() {
+	return ggUpscalerTxt[gGGScalingMethod];
 }
 
 void brightSet() {
