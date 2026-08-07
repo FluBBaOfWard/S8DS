@@ -1,6 +1,10 @@
 S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
+	Added Game Gear full-screen scaling.
+	Added Fast, Smooth and Smooth2 Game Gear scaling modes.
+	Added adaptive frame splitting for Smooth mode.
+	Added DS/DSi ARM9 speed detection to the About screen.
 
 V1.1.9 - 2026-08-02 (FluBBa)
 	Fixed graphics Mode0 cache (Coleco - Up 'N Down).

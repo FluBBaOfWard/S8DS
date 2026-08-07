@@ -1,3 +1,177 @@
+/*
+ * Game Gear fullscreen upscaler
+ * =============================
+ *
+ * S8DS normally renders the Sega VDP's 256x192 field directly.  In Game Gear
+ * mode the handheld LCD only shows the centred 160x144 window at (48, 24):
+ *
+ *                 emulated VDP field: 256x192
+ *
+ *              48       160 active pixels       48
+ *           +------+-------------------------+------+
+ *        24 |      |                         |      |
+ *           +------+-------------------------+------+
+ *       144 |      |    Game Gear picture    |      |
+ *           +------+-------------------------+------+
+ *        24 |      |                         |      |
+ *           +------+-------------------------+------+
+ *
+ * Merely showing that window 1:1 leaves a small image.  Stretching 160x144 to
+ * the DS's 256x192 screen is also the intended aspect correction: a Game Gear
+ * LCD pixel is effectively 6:5 wider than it is tall, whereas DS pixels are
+ * approximately square.  Therefore:
+ *
+ *             horizontal scale = 256 / 160 = 8 / 5
+ *             vertical scale   = 192 / 144 = 4 / 3
+ *
+ * Or, expressed as the smallest repeating grid:
+ *
+ *                  5x3 Game Gear pixels -> 8x4 DS pixels
+ *
+ * The resulting 256:192 picture is 4:3.  This is why the GG upscaler is a
+ * separate option from the ordinary SMS display geometry: Off leaves the
+ * selected SMS display mode alone, while any of the three modes below replaces
+ * it for Game Gear software.
+ *
+ * Fast - 60 fps: DS 2D affine nearest neighbour
+ * ------------------------------------------------
+ *
+ *                  160x144 GG window
+ *                          |
+ *          expand 4-bpp tiles and convert tile maps
+ *                          |
+ *              DS affine BGs + affine sprites
+ *                          |
+ *                 256x192 DS display
+ *
+ * No complete RGB framebuffer is constructed.  The DS 2D engine scales the
+ * tile layers directly, using an inverse horizontal affine step of 5/8 and a
+ * per-scanline affine table for the 3/4 vertical step.  The table is rebuilt
+ * from the normal renderer's HBlank scroll data so raster and line-scroll
+ * effects remain visible.  Sprites are repositioned and enlarged separately.
+ *
+ * Mode 4 tiles are 4-bpp but extended affine backgrounds require 8-bpp tiles,
+ * hence the cached nibble expansion in this file.  Two background layers are
+ * used to preserve VDP priority around sprites: the foreground copy leaves
+ * colour 0 transparent, while the behind-sprites copy maps it to palette index
+ * 16 so that the GG backdrop colour remains opaque.
+ *
+ * Nearest-neighbour expansion necessarily repeats pixels unevenly.  Ignoring
+ * scroll phase, one horizontal and vertical period looks like this:
+ *
+ *             horizontal: A B C D E -> A A B B C D D E
+ *             vertical:   A B C     -> A A B C
+ *
+ * That uneven cadence is the visible scrolling "chonkiness" of Fast.  It is
+ * also why Fast is cheap enough to present every emulated frame.
+ *
+ * Smooth - Adaptive: ARM9 separable bilinear filter
+ * -------------------------------------------------
+ *
+ * Smooth first freezes one coherent source picture: tiles, both tile maps,
+ * palette, line-scroll state and decoded sprite state.  For each source line it
+ * then composes the same priority order as the VDP renderer:
+ *
+ *       background-behind -> sprites -> priority foreground
+ *
+ * The complete RGB15 line is filtered horizontally from 5 to 8 pixels.  The
+ * unrolled filter samples source positions 0, 5/8, 10/8, ... rather than
+ * choosing only the nearest source pixel:
+ *
+ *       source:       A---------B---------C---------D---------E
+ *       destinations: 0    1    2    3    4    5    6    7
+ *       source pos:   0   5/8 10/8 15/8 20/8 25/8 30/8 35/8
+ *
+ * Adjacent filtered lines are then blended vertically at source positions
+ * 0, 3/4, 1 1/2, 2 1/4, 3, ... . Thus each output pixel is bilinearly filtered
+ * with weighted contributions from a 2x2 source neighbourhood.
+ *
+ * Two line buffers are sufficient because the vertical pass only needs the
+ * current and next horizontally filtered source lines.
+ *
+ * This high-quality software path costs too much to finish during every 60 Hz
+ * host interval on existing DS hardware.  It therefore renders into the hidden
+ * half of a C/D VRAM double buffer and publishes only complete pictures:
+ *
+ *       visible:  [ previous complete picture ......................... ]
+ *       hidden:   [ part A ] -> [ part B ] -> [ part C ] -> complete
+ *                                                              |
+ *       VBlank:                                                swap
+ *
+ * Intermediate buffers are never displayed.  More importantly, every part is
+ * rendered from the same frozen source snapshot; continuing on a later host
+ * interval cannot mix state from two emulated frames.
+ *
+ * With GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING enabled, work is divided into
+ * four-output-line slices.  Four lines are the natural unit because the 3:4
+ * vertical filter phase repeats there.  At the beginning of each 60 Hz host
+ * interval, timers 2 and 3 start a 33.5 MHz counter.  After each slice the
+ * scheduler:
+ *
+ *   1. calculates elapsed time / slices completed in this interval;
+ *   2. blends the noisy first few samples with the historical slice average;
+ *   3. adds a 1/8 safety margin; and
+ *   4. yields if one more slice is predicted to cross the 15 ms deadline.
+ *
+ * The deadline includes GUI and emulation work performed before this renderer,
+ * so the split adapts to both the device and the current game's workload.  The
+ * next interval resumes at smoothedRenderNextLine.
+ *
+ * At a 60 Hz host cadence, a picture completed in N intervals is presented at
+ * approximately 60/N fps:
+ *
+ *        intervals used       1       2       3       4
+ *        video rate          60      30      20      15 fps
+ *
+ * For example, a three-way split is:
+ *
+ *        host interval:     |   N   |  N+1  |  N+2  |  N+3  |
+ *        Smooth work:       | part A| part B| part C| next A|
+ *        presentation:      | old picture  | new picture    |
+ *
+ * Emulation, input and audio still run at the host cadence; only intermediate
+ * video pictures are omitted.  Without the dynamic define, the legacy fallback
+ * is a fixed two-part split at GG_SMOOTH_FIRST_SLICE_LINES.
+ *
+ * On a physical DSi at 134 MHz, 30 fps has been measured; DS-mode emulation
+ * measured 15 fps.
+ *
+ * Smooth2 - 30 fps: captured 2D image plus DS 3D two-tap filter
+ * ----------------------------------------------------------------
+ *
+ * Smooth2 trades filtering quality and about one host frame of pipeline latency
+ * for very low ARM9 cost.  It alternates two stages:
+ *
+ *       stage 1: Fast affine result -> composited capture in VRAM C
+ *       stage 2: VRAM C texture     -> 3D filter -> capture/display VRAM D
+ *
+ * The DS texture sampler itself is nearest-neighbour, not bilinear.  The 3D
+ * filter draws the captured image once at full strength and again shifted left
+ * by one output pixel at half alpha.  Equal-depth blending averages adjacent
+ * horizontal output samples:
+ *
+ *                 output[x] ~= (Fast[x] + Fast[x + 1]) / 2
+ *
+ * These two fullscreen texture taps exactly consume the 3D engine's 512 pixels
+ * per scanline fill allowance.  Vertical scaling remains Fast's nearest-
+ * neighbour 3-to-4 mapping, so Smooth2 is an inexpensive horizontal smoothing
+ * approximation, not source-space bilinear filtering.
+ *
+ * Geometry submission and display capture are pipelined across VBlanks because
+ * the geometry engine consumes the submitted list after its buffer swap.  The
+ * raw capture cannot safely become a texture and be rendered/captured in the
+ * same VBlank.  This alternating capture/filter pipeline is the reason Smooth2
+ * is fixed at 30 fps and has more input-to-display latency than Smooth.
+ *
+ * When changing these paths, retain two important invariants:
+ *
+ *   - Never expose a partially updated capture or bitmap during VDP-disabled
+ *     transitions; games commonly replace tiles and maps in that state.
+ *   - Reset the 3D layer scroll and replace (do not OR together) the display-
+ *     source bits when selecting direct VRAM display.  Violating either rule
+ *     produces black bars, doubled scrolling or repeated scanlines.
+ */
+
 #include <nds.h>
 
 #ifdef GG_SMOOTH_PROFILE
