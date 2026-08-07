@@ -17,6 +17,7 @@
 #include "io.h"
 #include "cpu.h"
 #include "Sound.h"
+#include "ArmTiming.h"
 #include "ARMZ80/Version.h"
 #include "SN76496/Version.h"
 #include "SegaVDP/Version.h"
@@ -361,6 +362,9 @@ static void uiAbout() {
 	strcpy(str,"Coin counter1:       ");
 	int2Str(coinCounter1,s);
 	drawMenuText(str, 14, 0);
+	strlMerge(str, getArm9ModeText(), "  ", sizeof(str));
+	strlMerge(str, str, getArm9ClockText(), sizeof(str));
+	drawMenuText(str, 16, 0);
 
 	drawMenuText("S8DS         " EMUVERSION, 18, 0);
 	drawMenuText("ARMZ80       " ARMZ80VERSION, 19, 0);
