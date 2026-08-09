@@ -264,6 +264,8 @@ static bool paletteCacheValid;
 static bool affineBufferReady;
 static volatile int smoothedReadyBitmapBase = -1;
 static volatile int smoothedDisplayedBitmapBase = -1;
+static u8 smoothedPreviewMode = GG_UPSCALER_OFF;
+static bool smoothedPreviewPending;
 static bool smoothed2VideoInitialised;
 static bool smoothedCacheInitialised;
 static bool smoothedExpandedTilesValid;
@@ -1116,16 +1118,40 @@ static void drawSmoothed2Texture(void) {
 	glFlush(GL_TRANS_MANUALSORT);
 }
 
+static void resetCpuSmoothedRender(void) {
+	smoothedRenderNextLine = 0;
+	smoothedRenderDestinationBase = -1;
+#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
+	smoothedSliceEstimateTicks = 0;
+#endif
+}
+
 void ggSmoothedRender(void) {
+	smoothedPreviewMode = gGGScalingMethod;
+	smoothedPreviewPending = false;
 	if (ggCpuSmoothedMode()) {
 		renderCpuSmoothedFrame();
 	}
 	else {
-		smoothedRenderNextLine = 0;
-		smoothedRenderDestinationBase = -1;
-#ifdef GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING
-		smoothedSliceEstimateTicks = 0;
-#endif
+		resetCpuSmoothedRender();
+	}
+}
+
+void ggSmoothedRenderPausedPreview(void) {
+	// Autopause stops emulation frames, so render one frozen picture when the
+	// menu changes mode, then stay idle after that picture reaches VBlank.
+	if (gGGScalingMethod != smoothedPreviewMode) {
+		smoothedPreviewMode = gGGScalingMethod;
+		smoothedPreviewPending = ggCpuSmoothedMode();
+		resetCpuSmoothedRender();
+	}
+	if (!smoothedPreviewPending) {
+		return;
+	}
+
+	renderCpuSmoothedFrame();
+	if (smoothedReadyBitmapBase >= 0) {
+		smoothedPreviewPending = false;
 	}
 }
 

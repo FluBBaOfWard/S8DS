@@ -110,6 +110,9 @@ int main(int argc, char **argv) {
 				run();
 				ggSmoothedRender();
 			}
+			else {
+				ggSmoothedRenderPausedPreview();
+			}
 		}
 		else {
 			antWars();

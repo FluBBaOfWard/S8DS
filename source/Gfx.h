@@ -34,6 +34,7 @@ void hz50Refresh(void);
 void ggFullscreenVBlank(void);
 void ggHardwareSmoothedRender(void);
 void ggSmoothedRender(void);
+void ggSmoothedRenderPausedPreview(void);
 void ggFrameTimingStart(void);
 u8 *getVDP0BgrTileAddress(void);
 u32 getVDP0BgrMapOffset(void);
