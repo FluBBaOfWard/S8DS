@@ -108,11 +108,8 @@ int main(int argc, char **argv) {
 		if (powerIsOn) {
 			if (!pauseEmulation) {
 				run();
-				ggSmoothedRender();
 			}
-			else {
-				ggSmoothedRenderPausedPreview();
-			}
+			ggSmoothedRender(pauseEmulation);
 		}
 		else {
 			antWars();

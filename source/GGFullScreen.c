@@ -1126,7 +1126,24 @@ static void resetCpuSmoothedRender(void) {
 #endif
 }
 
-void ggSmoothedRender(void) {
+void ggSmoothedRender(bool emuPaused) {
+	if (emuPaused) {
+		// Autopause stops emulation frames, so render one frozen picture when the
+		// menu changes mode, then stay idle after that picture reaches VBlank.
+		if (gGGScalingMethod != smoothedPreviewMode) {
+			smoothedPreviewMode = gGGScalingMethod;
+			smoothedPreviewPending = ggCpuSmoothedMode();
+			resetCpuSmoothedRender();
+		}
+		if (smoothedPreviewPending) {
+			renderCpuSmoothedFrame();
+			if (smoothedReadyBitmapBase >= 0) {
+				smoothedPreviewPending = false;
+			}
+		}
+		return;
+	}
+
 	smoothedPreviewMode = gGGScalingMethod;
 	smoothedPreviewPending = false;
 	if (ggCpuSmoothedMode()) {
@@ -1134,24 +1151,6 @@ void ggSmoothedRender(void) {
 	}
 	else {
 		resetCpuSmoothedRender();
-	}
-}
-
-void ggSmoothedRenderPausedPreview(void) {
-	// Autopause stops emulation frames, so render one frozen picture when the
-	// menu changes mode, then stay idle after that picture reaches VBlank.
-	if (gGGScalingMethod != smoothedPreviewMode) {
-		smoothedPreviewMode = gGGScalingMethod;
-		smoothedPreviewPending = ggCpuSmoothedMode();
-		resetCpuSmoothedRender();
-	}
-	if (!smoothedPreviewPending) {
-		return;
-	}
-
-	renderCpuSmoothedFrame();
-	if (smoothedReadyBitmapBase >= 0) {
-		smoothedPreviewPending = false;
 	}
 }
 
