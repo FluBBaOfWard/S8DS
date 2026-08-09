@@ -494,14 +494,6 @@ selectNormalScaling:
 	ldrb r0,bColor
 	cmp r0,#2
 	biceq r3,r3,#GG_MODE
-	b selectHorizontalScale
-
-selectHorizontalScale:
-	adr r12,scaleParms
-	mov r0,#0x0100
-	mov r2,#0x0080
-	str r0,[r12,#4]
-	str r2,[r12,#8]
 	adr r0,BG_SCALING_1_1
 
 	tst r3,#GG_MODE
@@ -528,11 +520,6 @@ noFit:
 	b loadScaleValues
 
 useGGFullscreen:
-	adr r12,scaleParms
-	mov r0,#0x00A0				;@ Full screen: horizontal 8:5 inverse matrix.
-	mov r2,#0x0050				;@ Full screen double-size GG sprites.
-	str r0,[r12,#4]
-	str r2,[r12,#8]
 	adr r0,BG_SCALING_GG_FULLSCREEN
 
 loadScaleValues:
@@ -548,52 +535,71 @@ loadScaleValues:
 	adr r12,BG_SCALING_OFS
 	stmia r12,{r1-r3}
 
+	ldmia r0!,{r1-r2}
+	adr r12,scaleParms
+	str r1,[r12,#4]
+	str r2,[r12,#8]
+
 	ldmia r0!,{r1-r3}
 	adr r12,scaleSprParam
 	stmia r12,{r1-r3}
 
 	b buildSpriteScaling
 
+;@ Each scaling preset contains 14 words consumed by loadScaleValues:
+;@   0-2: background vertical scale, indexed by VDP height mode
+;@   3-5: window height, indexed by VDP height mode
+;@   6-8: vertical offset, indexed by VDP height mode
+;@  9-10: sprite horizontal coefficients (normal, double-size)
+;@ 11-13: sprite vertical coefficients (normal, 8x16, double-size)
 BG_SCALING_TO_FIT:	;@ 1:1, 7:6, 5:4
 	.long 0xFFFF,0xDB6D,0xCCCD
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0000,0x0000
+	.long 0x0100,0x0080
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_1_1:
 	.long 0xFFFF,0xFFFF,0xFFFF
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0010,0x0018
+	.long 0x0100,0x0080
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_1_1_GGMODE:
 	.long 0xFFFF,0xFFFF,0xFFFF
 	.long 0x18A8,0x18A8,0x18A8
 	.long 0x0000,0x0010,0x0018
+	.long 0x0100,0x0080
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_ASPECT_PAL:			;@ (4->3) 192->144, 224->168, 240->180
 	.long 0xC000,0xC000,0xC000
 	.long 0x18A8,0x0CB4,0x0800+SCREEN_HEIGHT-8
 	.long    -32,   -13,   -10
+	.long 0x0100,0x0080
 	.long 0x0155,0x0155,0x00AD
 BG_SCALING_ASPECT_NTSC:			;@ 192->170, 224->199, 240->213, 216->192, 9->8
 	.long 0xE38F,0xE38F,0xE38F
 	.long 0x0BB5,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long    -12,     4,    12
+	.long 0x0100,0x0080
 	.long 0x0100,0x0120,0x0092
 BG_SCALING_ASPECT_GG:			;@ 192->160, 216->180, 6->5
 	.long 0xD555,0xD555,0xD555
 	.long 0x10B0,0x07BA,0x06BA
 	.long    -19,    -3,0x0008
+	.long 0x0100,0x0080
 	.long 0x0133,0x0133,0x0092
 BG_SCALING_ASPECT_GGMODE:		;@ 160x144 -> 160x120, 6->5
 	.long 0xD555,0xD555,0xD555
 	.long 0x249C,0x249C,0x249C
 	.long    -19,    -3,0x0008
+	.long 0x0100,0x0080
 	.long 0x0133,0x0133,0x0092
 BG_SCALING_GG_FULLSCREEN:		;@ C affine renderer handles both GG viewport scales.
 	.long 0xFFFF,0xFFFF,0xFFFF	;@ C affine renderer performs the vertical scale.
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long      0,    16,    24
-	.long 0x00C0,0x00C0,0x0060
+	.long 0x00A0,0x0050			;@ Horizontal 8:5 inverse coefficients.
+	.long 0x00C0,0x00C0,0x0060	;@ Vertical 4:3 inverse coefficients.
 
 BG_SCALING_TBL:
 	.long 0,0,0
