@@ -608,7 +608,7 @@ static void spriteSize(u16 attr0, u16 attr1, int *width, int *height) {
 		{ 8, 8, 16, 32 },
 		{ 16, 32, 32, 64 },
 	};
-	int shape = (attr0 >> 14) & 3;
+	int shape = attr0 >> 14;
 	int size = attr1 >> 14;
 	*width = shape < 3 ? widths[shape][size] : 8;
 	*height = shape < 3 ? heights[shape][size] : 8;

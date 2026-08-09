@@ -487,10 +487,8 @@ setupScaling:		;@ r0-r3, r12 modified.
 	ldr r0,=gGGScalingMethod
 	ldrb r0,[r0]
 	cmp r0,#GG_UPSCALER_OFF
-	beq selectNormalScaling
-	tst r3,#GG_MODE
+	tstne r3,#GG_MODE
 	bne useGGFullscreen
-selectNormalScaling:
 	ldrb r0,bColor
 	cmp r0,#2
 	biceq r3,r3,#GG_MODE
