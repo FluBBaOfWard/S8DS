@@ -738,6 +738,10 @@ void borderSet() {
 		bColor = 0;
 	}
 	makeBorder();
+	setupScaling();
+	if (powerIsOn) {
+		VDP0ApplyScaling();
+	}
 }
 const char *getBorderText() {
 	return bordTxt[bColor];
