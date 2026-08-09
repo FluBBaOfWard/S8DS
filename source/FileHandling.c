@@ -203,9 +203,6 @@ void unpackState(const void *statePtr) {
 		sordM5UnpackState(statePtr);
 	}
 	smsUnpackState(statePtr);
-	if (gScalingSet > SCALED_ASPECT) {
-		gScalingSet = SCALED_1_1;
-	}
 }
 int getStateSize(void) {
 	if (gMachine == HW_MSX) {
