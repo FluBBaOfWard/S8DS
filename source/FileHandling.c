@@ -24,11 +24,16 @@ static const char *const folderName = "s8ds";
 static const char *const settingName = "settings.cfg";
 
 #define CONFIG_DISPLAY_MODE_MASK                 0x03
-#define CONFIG_DISPLAY_GG_UPSCALER_SHIFT            2
-#define CONFIG_DISPLAY_GG_UPSCALER_MASK          0x0C
 #define CONFIG_DISPLAY_3D_ENABLE                 0x10
+#define CONFIG_DISPLAY_GG_UPSCALER_SHIFT            5
+#define CONFIG_DISPLAY_GG_UPSCALER_MASK          0xE0
 
-
+/*
+ *   bits 0-1  SMS display geometry (unscaled, fit or aspect)
+ *   bits 2-3  reserved
+ *   bit  4    3D Display enabled
+ *   bits 5-7  Game Gear upscaler method
+ */
 static ConfigData cfg;
 
 //static char tempState[STATESIZE];

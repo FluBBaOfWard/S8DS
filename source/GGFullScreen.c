@@ -30,7 +30,7 @@
  *
  * The resulting 256:192 picture is 4:3.  This is why the GG upscaler is a
  * separate option from the ordinary SMS display geometry: Off leaves the
- * selected SMS display mode alone, while any of the three modes below replaces
+ * selected SMS display mode alone, while any of the four modes below replaces
  * it for Game Gear software.
  *
  * Fast - 60 fps: DS 2D affine nearest neighbour
@@ -163,6 +163,36 @@
  * same VBlank.  This alternating capture/filter pipeline is the reason Smooth2
  * is fixed at 30 fps and has more input-to-display latency than Smooth.
  *
+ * Flicker - 60 fps: two-phase DS 2D affine nearest neighbour
+ * ----------------------------------------------------------
+ *
+ * Flicker uses the same inexpensive affine path as Fast, but alternates the
+ * nearest-neighbour sampling origin by half a source pixel in both axes:
+ *
+ *                  frame N        frame N+1
+ *       source X:  0, 5/8, ...    1/2, 1 1/8, ...
+ *       source Y:  0, 3/4, ...    1/2, 1 1/4, ...
+ *
+ * The two sampling patterns therefore choose different neighbours around the
+ * uneven 5x3-to-8x4 repeats.  Persistence in the physical LCD and the viewer's
+ * eye act as the final filter, approximately averaging the two host frames:
+ *
+ *       perceived[x, y] ~= (phase0[x, y] + phase1[x, y]) / 2
+ *
+ * A solid area is present in both phases and retains its brightness.  A moving
+ * or high-contrast edge may occupy only one phase and is therefore dimmer, but
+ * its perceived position can fall between two DS pixels.  This reduces the
+ * uneven nearest-neighbour scrolling cadence and can look like higher spatial
+ * resolution, although it does not create new source detail.  The alternation
+ * continues on a paused emulation frame because it is advanced by host VBlank.
+ *
+ * Sprites receive the matching one-output-pixel phase shift so they remain
+ * registered with the background layers.  No framebuffer is constructed and
+ * no frame of pipeline latency is added.  This mode owns its phase and does not
+ * depend on the separate Display/Scaling Flicker setting.  Its trade-off is
+ * visible flicker, shimmer and dimmed edges, particularly on displays with
+ * little persistence.
+ *
  * When changing these paths, retain two important invariants:
  *
  *   - Never expose a partially updated capture or bitmap during VDP-disabled
@@ -273,6 +303,7 @@ static bool smoothed2BanksActive;
 static bool smoothed2FilterPass;
 static bool smoothed2FilteredReady;
 static volatile bool smoothed2DrawPending;
+static bool upscalerFlickerPhase;
 
 #ifdef GG_SMOOTH_PROFILE
 #define GG_SMOOTH_PROFILE_WARMUP_FRAMES 60
@@ -405,6 +436,11 @@ static bool ggHardwareSmoothedMode(void) {
 		&& gGGScalingMethod == GG_UPSCALER_SMOOTH2;
 }
 
+static bool ggFlickerUpscalerMode(void) {
+	return (gEmuFlags & GG_MODE)
+		&& gGGScalingMethod == GG_UPSCALER_FLICKER;
+}
+
 static void expandBackgroundTiles(void) {
 	const vu32 *src = (const vu32 *)getVDP0BgrTileAddress();
 	vu32 *foreground = (vu32 *)GG_EXT_FOREGROUND_TILE_ADDRESS;
@@ -501,11 +537,12 @@ static void updateExtendedPalettes(void) {
 }
 
 static u32 affineXFromTextScroll(u32 packedScroll, int horizontalStep,
-								 int outputLeft) {
+								 int outputLeft, int sourcePhase) {
 	u32 x = packedScroll & 0x1FF;
 	// Place source x=48 exactly at the output's left edge. Keeping the fractional
 	// reference point avoids sampling a hidden GG border column in full-height mode.
-	return (((x + GG_ACTIVE_X) << 8) - outputLeft * horizontalStep) & 0x1FFFF;
+	return (((x + GG_ACTIVE_X) << 8) - outputLeft * horizontalStep + sourcePhase)
+		& 0x1FFFF;
 }
 
 static u32 affineYFromTextScroll(u32 packedScroll, int sourceLine) {
@@ -513,7 +550,8 @@ static u32 affineYFromTextScroll(u32 packedScroll, int sourceLine) {
 	return ((y + sourceLine) & 0x1FF) << 8;
 }
 
-static void buildAffineDmaBuffer(int horizontalStep, int outputLeft) {
+static void buildAffineDmaBuffer(int horizontalStep, int outputLeft,
+								 int horizontalPhase, int verticalPhase) {
 	static int previousHorizontalStep;
 	if (horizontalStep != previousHorizontalStep) {
 		affineBufferReady = false;
@@ -521,7 +559,7 @@ static void buildAffineDmaBuffer(int horizontalStep, int outputLeft) {
 	}
 
 	for (int line = 0; line < SCREEN_HEIGHT; line++) {
-		int scaledLine = (line * GG_VERTICAL_SCALE_DENOMINATOR)
+		int scaledLine = (line * GG_VERTICAL_SCALE_DENOMINATOR + verticalPhase)
 			/ GG_VERTICAL_SCALE_NUMERATOR;
 		int sourceLine = GG_ACTIVE_Y + scaledLine;
 		// DMA0Buff contains the normal renderer's per-source-line scroll and its
@@ -547,11 +585,13 @@ static void buildAffineDmaBuffer(int horizontalStep, int outputLeft) {
 		}
 
 		// BG2: foreground-priority tiles.
-		dst[6] = affineXFromTextScroll(src[0], horizontalStep, outputLeft);
+		dst[6] = affineXFromTextScroll(src[0], horizontalStep, outputLeft,
+			horizontalPhase);
 		dst[7] = affineYFromTextScroll(src[0], sourceLine);
 
 		// BG3: tiles behind sprites.
-		dst[10] = affineXFromTextScroll(src[1], horizontalStep, outputLeft);
+		dst[10] = affineXFromTextScroll(src[1], horizontalStep, outputLeft,
+			horizontalPhase);
 		dst[11] = affineYFromTextScroll(src[1], sourceLine);
 	}
 	affineBufferReady = true;
@@ -1193,7 +1233,7 @@ static bool presentSmoothedFrame(void) {
 }
 
 static void scaleSprites(int horizontalNumerator, int horizontalDenominator,
-						 int outputLeft) {
+						 int outputLeft, int temporalOffset) {
 	vu16 *oam = (vu16 *)0x07000000;
 
 	for (int i = 0; i < 128; i++) {
@@ -1217,10 +1257,10 @@ static void scaleSprites(int horizontalNumerator, int horizontalDenominator,
 		spriteSize(attr0, attr1, &width, &height);
 		int scaledX = outputLeft
 			+ ((x - GG_ACTIVE_X) * horizontalNumerator) / horizontalDenominator
-			- width / horizontalDenominator;
+			- width / horizontalDenominator - temporalOffset;
 		int scaledY = ((y - GG_ACTIVE_Y) * GG_VERTICAL_SCALE_NUMERATOR)
 			/ GG_VERTICAL_SCALE_DENOMINATOR
-			- height / 3;
+			- height / 3 - temporalOffset;
 
 		// Affine sprites need the double-size bounding box when enlarged.
 		oam[i * 4] = (attr0 & ~0xFF) | (scaledY & 0xFF) | ATTR0_ROTSCALE_DOUBLE;
@@ -1291,6 +1331,7 @@ static bool runSmoothed2FilterPass(void) {
 
 void ggFullscreenVBlank(void) {
 	if (!ggFullscreenActive()) {
+		upscalerFlickerPhase = false;
 		smoothedReadyBitmapBase = -1;
 		smoothedDisplayedBitmapBase = -1;
 		smoothedRenderNextLine = 0;
@@ -1309,6 +1350,7 @@ void ggFullscreenVBlank(void) {
 		// transitions, and may briefly leave Mode 4. The normal renderer hides or
 		// changes layers in these states; the fullscreen renderer only supports
 		// Mode 4, so hide it to avoid exposing partially updated VRAM.
+		upscalerFlickerPhase = false;
 		smoothedReadyBitmapBase = -1;
 		smoothedDisplayedBitmapBase = -1;
 		smoothedRenderNextLine = 0;
@@ -1319,6 +1361,9 @@ void ggFullscreenVBlank(void) {
 		ggFullscreenWasActive = true;
 		return;
 	}
+	bool useFlicker = ggFlickerUpscalerMode();
+	bool useOffsetPhase = useFlicker && upscalerFlickerPhase;
+	upscalerFlickerPhase = useFlicker ? !upscalerFlickerPhase : false;
 	if (ggHardwareSmoothedMode()) {
 		smoothedReadyBitmapBase = -1;
 		smoothedDisplayedBitmapBase = -1;
@@ -1371,7 +1416,8 @@ void ggFullscreenVBlank(void) {
 	expandBackgroundTiles();
 	convertBackgroundMaps();
 	updateExtendedPalettes();
-	buildAffineDmaBuffer(GG_FULL_SCREEN_HORIZONTAL_STEP, 0);
+	buildAffineDmaBuffer(GG_FULL_SCREEN_HORIZONTAL_STEP, 0,
+		useOffsetPhase ? 0x80 : 0, useOffsetPhase ? 2 : 0);
 
 	for (int i = 0; i < 12; i++) {
 		MAIN_BG_REG_BASE[i] = affineDmaBuffer[0][i];
@@ -1380,7 +1426,7 @@ void ggFullscreenVBlank(void) {
 	DMA0_DEST_REG = 0x04000010;
 	DMA0_CONTROL_REG = 0x9660000C;
 
-	scaleSprites(8, 5, 0);
+	scaleSprites(8, 5, 0, useOffsetPhase ? 1 : 0);
 	if (ggHardwareSmoothedMode()) {
 		REG_DISPCAPCNT = DCAP_BANK(DCAP_BANK_VRAM_C)
 			| DCAP_SIZE(DCAP_SIZE_256x192)

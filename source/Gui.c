@@ -247,7 +247,8 @@ static char *const ggUpscalerTxt[] = {
 	"Off",
 	"Fast [60fps]",
 	"Smooth [Adaptive]",
-	"Smooth2 [30fps]"
+	"Smooth2 [30fps]",
+	"Flicker [60fps]"
 };
 
 static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"/*, "PV-2000"*/};

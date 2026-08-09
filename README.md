@@ -86,6 +86,7 @@ better 3D effect, I have only tested with red/cyan glasses.
     * Fast: Scales to 256x192 using nearest-neighbour sampling at 60fps.
     * Smooth: Uses the same physical-aspect scaling with bilinear interpolation. High quality but CPU-dependent, 30+fps on DSi.
     * Smooth2: Upscales via 3D engine at 30fps. Not as high quality as Smooth but performant.
+    * Flicker: Alternates nearest-neighbour phases at 60fps for smoother scaling, but may flicker or dim edges.
   * Scaling: Here you can select if you want flicker or barebones lineskip.
   * Gamma: Lets you change the gamma ("brightness").
   * Color: Lets you change the color.

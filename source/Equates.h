@@ -52,7 +52,8 @@
 #define GG_UPSCALER_FAST	1	// Nearest-neighbour 160x144 to 256x192.
 #define GG_UPSCALER_SMOOTH	2	// CPU bilinear 160x144 to 256x192.
 #define GG_UPSCALER_SMOOTH2	3	// 3D-engine filtered 160x144 to 256x192.
-#define GG_UPSCALER_COUNT	4
+#define GG_UPSCALER_FLICKER	4	// Temporally phase-shifted nearest-neighbour.
+#define GG_UPSCALER_COUNT	5
 
 //------------------------------------------------------- Arcade games
 #define AC_NONE					(0x00)
