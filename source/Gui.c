@@ -148,10 +148,10 @@ static const MItem ctrlItems[] = {
 static const MItem displayItems[] = {
 	{"Display:", scalingSet, getScalingText},
 	{"GG Upscaler:", ggUpscalerSet, getGGUpscalerText},
+	{"GG Border:", borderSet, getBorderText},
 	{"Scaling:", flickSet, getFlickText},
 	{"Gamma:", brightSet, getGammaText},
 	{"Color:", colorSet, getColorText},
-	{"GG Border:", borderSet, getBorderText},
 	{"Perfect Sprites:", spriteSet, getSpriteText},
 	{"3D Display:", glassesSet, getGlassesText},
 };
@@ -733,6 +733,9 @@ const char *getColorText() {
 }
 
 void borderSet() {
+	if (gGGScalingMethod != GG_UPSCALER_OFF) {
+		return;
+	}
 	bColor++;
 	if (bColor >= 3) {
 		bColor = 0;
@@ -744,6 +747,9 @@ void borderSet() {
 	}
 }
 const char *getBorderText() {
+	if (gGGScalingMethod != GG_UPSCALER_OFF) {
+		return "N/A";
+	}
 	return bordTxt[bColor];
 }
 
