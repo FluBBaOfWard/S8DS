@@ -520,7 +520,7 @@ static void updateExtendedPalettes(void) {
 
 	// BG2 and BG3 use the expanded 4-bpp game tiles. The background copy maps
 	// its opaque index 16 to the same dedicated color-0 values S8DS uses in its
-	// normal 8-bpp backdrop layer (0x30 for palette 0, 0x40 for palette 1).
+	// normal 8-bpp backdrop layer (0x20 for palette 0, 0x30 for palette 1).
 	for (int palette = 0; palette < 16; palette++) {
 		for (int color = 0; color < 16; color++) {
 			u16 value = EMUPALBUFF[palette * 16 + color];
@@ -528,7 +528,7 @@ static void updateExtendedPalettes(void) {
 			slot2[index] = value;
 			slot3[index] = value;
 		}
-		slot3[palette * 256 + 16] = EMUPALBUFF[(palette & 1) ? 0x40 : 0x30];
+		slot3[palette * 256 + 16] = EMUPALBUFF[(palette & 1) ? 0x30 : 0x20];
 	}
 
 	vramSetBankF(VRAM_F_BG_EXT_PALETTE_SLOT01);
@@ -671,7 +671,7 @@ static void drawSmoothedBackgroundLine(u16 *restrict dst, int y,
 			}
 		}
 		else {
-			u16 colorZero = smoothedPalette[(palette & 1) ? 0x40 : 0x30];
+			u16 colorZero = smoothedPalette[(palette & 1) ? 0x30 : 0x20];
 			for (int pixel = 0; pixel < run; pixel++, sourceX += sourceStep) {
 				u8 color = row[sourceX];
 				dst[x + pixel] = color != 0 ? colors[color] : colorZero;
