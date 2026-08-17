@@ -1,14 +1,11 @@
 S8DS revision history
 -=-=-=-=-=-=-=-=-=-=-=-
 
+V1.1.9 - 2026-08-17 (FluBBa & mrstux)
 	Added Game Gear full-screen scaling.
 	Added Fast, Smooth, Smooth2 and Flicker Game Gear scaling modes.
-	Added adaptive frame splitting for Smooth mode.
 	Disabled GG Border menu item when using GG Upscaler
 	Fixed GG Border refresh when changing Display settings
-	Fixed GG Upscaler preview when emulation paused
-
-V1.1.9 - 2026-08-02 (FluBBa)
 	Fixed graphics Mode0 cache (Coleco - Up 'N Down).
 
 V1.1.8 - 2026-07-30 (FluBBa)

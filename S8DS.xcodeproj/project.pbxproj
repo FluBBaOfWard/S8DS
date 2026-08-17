@@ -69,6 +69,7 @@
 		9C4C21D026E4EF13007D0280 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9C4DF1E224BB5F6F00FB4EB0 /* AY38910.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AY38910.h; sourceTree = "<group>"; };
 		9C4DF1E324BB5F6F00FB4EB0 /* AY38910.i */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c.preprocessed; path = AY38910.i; sourceTree = "<group>"; };
+		9C4E04D3303377880071F527 /* GGFullScreen.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = GGFullScreen.c; sourceTree = "<group>"; };
 		9C4EB1C1271C3A840072D38E /* MasterSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MasterSystem.h; sourceTree = "<group>"; };
 		9C4EB1C2271C3A840072D38E /* MasterSystem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MasterSystem.c; sourceTree = "<group>"; };
 		9C5082C425E2C4B400A8E1BA /* ARMZ80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ARMZ80.h; sourceTree = "<group>"; };
@@ -371,6 +372,7 @@
 				35E683AE1C66478D00FCFE8A /* Gfx.h */,
 				A49D343D1757E54900BD9B4B /* Gfx.s */,
 				A49D34461757E54900BD9B4B /* Memory.s */,
+				9C4E04D3303377880071F527 /* GGFullScreen.c */,
 				9CCEF3703001062C00D401BB /* MSX.h */,
 				9CCEF3713001062C00D401BB /* MSX.c */,
 				A4DA20381B18D56C00034389 /* MSXIO.s */,
