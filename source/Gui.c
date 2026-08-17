@@ -40,6 +40,8 @@ static const char *getSelectText(void);
 
 static void scalingSet(void);
 static const char *getScalingText(void);
+static void ggUpscalerSet(void);
+static const char *getGGUpscalerText(void);
 static void brightSet(void);
 static void colorSet(void);
 static const char *getColorText(void);
@@ -144,10 +146,11 @@ static const MItem ctrlItems[] = {
 };
 static const MItem displayItems[] = {
 	{"Display:", scalingSet, getScalingText},
+	{"GG Upscaler:", ggUpscalerSet, getGGUpscalerText},
+	{"GG Border:", borderSet, getBorderText},
 	{"Scaling:", flickSet, getFlickText},
 	{"Gamma:", brightSet, getGammaText},
 	{"Color:", colorSet, getColorText},
-	{"GG Border:", borderSet, getBorderText},
 	{"Perfect Sprites:", spriteSet, getSpriteText},
 	{"3D Display:", glassesSet, getGlassesText},
 };
@@ -239,6 +242,13 @@ static char sdscBuffer[80];
 
 static char *const ctrlTxt[] = {"1P", "2P"};
 static char *const dispTxt[] = {"Unscaled", "Scaled to fit", "Scaled to aspect"};
+static char *const ggUpscalerTxt[] = {
+	"Off",
+	"Fast [60fps]",
+	"Smooth [Adaptive]",
+	"Smooth2 [30fps]",
+	"Flicker [60fps]"
+};
 
 static char *const machTxt[] = {"Auto", "SG-1000", "SC-3000", "OMV", "SG-1000 II", "Mark III", "Master System", "Master System 2", "Game Gear", "Mega Drive", "Coleco", "MSX", "Sord M5"/*, "PV-2000"*/};
 static char *const bordTxt[] = {"Black", "Border Color", "None"};
@@ -357,7 +367,6 @@ static void uiAbout() {
 	strcpy(str,"Coin counter1:       ");
 	int2Str(coinCounter1,s);
 	drawMenuText(str, 14, 0);
-
 	drawMenuText("S8DS         " EMUVERSION, 18, 0);
 	drawMenuText("ARMZ80       " ARMZ80VERSION, 19, 0);
 	drawMenuText("SEGAVDP      " SEGAVDPVERSION, 20, 0);
@@ -672,7 +681,7 @@ const char *getSelectText() {
 
 void scalingSet() {
 	gScalingSet++;
-	if (gScalingSet >= 3) {
+	if (gScalingSet > SCALED_ASPECT) {
 		gScalingSet = 0;
 	}
 	setupScaling();
@@ -682,6 +691,20 @@ void scalingSet() {
 }
 const char *getScalingText() {
 	return dispTxt[gScalingSet];
+}
+
+void ggUpscalerSet() {
+	gGGScalingMethod++;
+	if (gGGScalingMethod >= GG_UPSCALER_COUNT) {
+		gGGScalingMethod = GG_UPSCALER_OFF;
+	}
+	setupScaling();
+	if (powerIsOn) {
+		VDP0ApplyScaling();
+	}
+}
+const char *getGGUpscalerText() {
+	return ggUpscalerTxt[gGGScalingMethod];
 }
 
 void brightSet() {
@@ -706,13 +729,23 @@ const char *getColorText() {
 }
 
 void borderSet() {
+	if (gGGScalingMethod != GG_UPSCALER_OFF) {
+		return;
+	}
 	bColor++;
 	if (bColor >= 3) {
 		bColor = 0;
 	}
 	makeBorder();
+	setupScaling();
+	if (powerIsOn) {
+		VDP0ApplyScaling();
+	}
 }
 const char *getBorderText() {
+	if (gGGScalingMethod != GG_UPSCALER_OFF) {
+		return "N/A";
+	}
 	return bordTxt[bColor];
 }
 

@@ -96,11 +96,17 @@ int main(int argc, char **argv) {
 
 	while (1) {
 		waitVBlank();
+#if defined(GG_SMOOTH_PROFILE) \
+		|| defined(GG_SMOOTH_DYNAMIC_FRAME_RENDER_SPLITTING)
+		ggFrameTimingStart();
+#endif
+		ggHardwareSmoothedRender();
 		guiRunLoop();
 		if (powerIsOn) {
 			if (!pauseEmulation) {
 				run();
 			}
+			ggSmoothedRender(pauseEmulation);
 		}
 		else {
 			antWars();

@@ -10,6 +10,7 @@ extern u32 gEmuFlags;
 extern u8 gCartFlags;
 extern u8 gConfigSet;
 extern u8 gScalingSet;
+extern u8 gGGScalingMethod;
 extern u8 gMachineSet;
 extern u8 gMachine;
 extern u8 gRegion;

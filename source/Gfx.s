@@ -19,12 +19,22 @@
 	.global VDP1
 	.global VDPRAM				;@ Used by cart.s, init ram.
 	.global EMUPALBUFF			;@ Needs to be flushed before dma copied.
+	.global DMA0Buff
 
 	.global antWarsInit
 	.global antWars
 	.global gfxInit
 	.global gfxReset
 	.global setupScaling
+	.global getVDP0BgrTileAddress
+	.global getVDP0BgrMapOffset
+	.global getVDP0ScreenEnabled
+	.global getVDP0DisplayMode
+	.global getVDP0ScrollTMapBuffer
+	.global getVDP0YScroll
+	.global getVDP0ScrollMask
+	.global getVDP0OAMBuffer
+	.global getVDP0SpriteTileAddress
 	.global VDP0ApplyScaling
 	.global paletteInit
 	.global mapSGPalette
@@ -169,6 +179,71 @@ gfxInit:					;@ (called from main.c) only need to call once
 	bl rendererInit
 	ldmfd sp!,{lr}
 	b VDP0Init
+;@----------------------------------------------------------------------------
+getVDP0BgrTileAddress:
+	.type getVDP0BgrTileAddress STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r1,=VDP0
+	ldr r0,[r1,#vdpBgrTileOfs]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0BgrMapOffset:
+	.type getVDP0BgrMapOffset STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r1,=VDP0
+	ldr r0,[r1,#vdpBgrMapOfs0]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0ScreenEnabled:
+	.type getVDP0ScreenEnabled STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r1,=VDP0
+	ldrb r0,[r1,#vdpMode2Bak2]
+	and r0,r0,#0x40
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0DisplayMode:
+	.type getVDP0DisplayMode STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldrb r0,[r0,#vdpHeightMode]
+	and r0,r0,#VDPMODE_MASK
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0ScrollTMapBuffer:
+	.type getVDP0ScrollTMapBuffer STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	add r0,r0,#scrollTMapBuff
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0YScroll:
+	.type getVDP0YScroll STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldrb r0,[r0,#vdpYScrollBak1]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0ScrollMask:
+	.type getVDP0ScrollMask STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldr r0,[r0,#vdpScrollMask]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0OAMBuffer:
+	.type getVDP0OAMBuffer STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldr r0,[r0,#vdpDMAOAMBuffer]
+	bx lr
+;@----------------------------------------------------------------------------
+getVDP0SpriteTileAddress:
+	.type getVDP0SpriteTileAddress STT_FUNC
+;@----------------------------------------------------------------------------
+	ldr r0,=VDP0
+	ldr r0,[r0,#vdpSprTileOfs]
+	bx lr
 ;@----------------------------------------------------------------------------
 gfxReset:					;@ Called with cpuReset
 ;@----------------------------------------------------------------------------
@@ -399,15 +474,24 @@ setBorderValues:
 setupScaling:		;@ r0-r3, r12 modified.
 	.type   setupScaling STT_FUNC
 ;@----------------------------------------------------------------------------
-	ldrb r0,bColor
-	cmp r0,#2
 	ldr r3,=gEmuFlags
 	ldrb r3,[r3]
-	biceq r3,r3,#GG_MODE
 	ldr r2,=gMachine
 	ldrb r2,[r2]
 	ldr r1,=gScalingSet
 	ldrb r1,[r1]
+
+	;@ The GG upscaler is independent of the normal display geometry. When it is
+	;@ enabled for a GG game, use its corrected 256x192 viewport. When it is off,
+	;@ Unscaled/Fit/Aspect continue through the normal SMS display path below.
+	ldr r0,=gGGScalingMethod
+	ldrb r0,[r0]
+	cmp r0,#GG_UPSCALER_OFF
+	tstne r3,#GG_MODE
+	bne useGGFullscreen
+	ldrb r0,bColor
+	cmp r0,#2
+	biceq r3,r3,#GG_MODE
 	adr r0,BG_SCALING_1_1
 
 	tst r3,#GG_MODE
@@ -431,6 +515,10 @@ noFit:
 	adreq r0,BG_SCALING_ASPECT_GG
 	tst r3,#GG_MODE
 	adrne r0,BG_SCALING_ASPECT_GGMODE
+	b loadScaleValues
+
+useGGFullscreen:
+	adr r0,BG_SCALING_GG_FULLSCREEN
 
 loadScaleValues:
 	ldmia r0!,{r1-r3}
@@ -445,47 +533,71 @@ loadScaleValues:
 	adr r12,BG_SCALING_OFS
 	stmia r12,{r1-r3}
 
+	ldmia r0!,{r1-r2}
+	adr r12,scaleParms
+	str r1,[r12,#4]
+	str r2,[r12,#8]
+
 	ldmia r0!,{r1-r3}
 	adr r12,scaleSprParam
 	stmia r12,{r1-r3}
 
 	b buildSpriteScaling
 
+;@ Each scaling preset contains 14 words consumed by loadScaleValues:
+;@   0-2: background vertical scale, indexed by VDP height mode
+;@   3-5: window height, indexed by VDP height mode
+;@   6-8: vertical offset, indexed by VDP height mode
+;@  9-10: sprite horizontal coefficients (normal, double-size)
+;@ 11-13: sprite vertical coefficients (normal, 8x16, double-size)
 BG_SCALING_TO_FIT:	;@ 1:1, 7:6, 5:4
 	.long 0xFFFF,0xDB6D,0xCCCD
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0000,0x0000
+	.long 0x0100,0x0080
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_1_1:
 	.long 0xFFFF,0xFFFF,0xFFFF
 	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long 0x0000,0x0010,0x0018
+	.long 0x0100,0x0080
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_1_1_GGMODE:
 	.long 0xFFFF,0xFFFF,0xFFFF
 	.long 0x18A8,0x18A8,0x18A8
 	.long 0x0000,0x0010,0x0018
+	.long 0x0100,0x0080
 	.long 0x0100,0x0100,0x0080
 BG_SCALING_ASPECT_PAL:			;@ (4->3) 192->144, 224->168, 240->180
 	.long 0xC000,0xC000,0xC000
 	.long 0x18A8,0x0CB4,0x0800+SCREEN_HEIGHT-8
 	.long    -32,   -13,   -10
+	.long 0x0100,0x0080
 	.long 0x0155,0x0155,0x00AD
 BG_SCALING_ASPECT_NTSC:			;@ 192->170, 224->199, 240->213, 216->192, 9->8
 	.long 0xE38F,0xE38F,0xE38F
 	.long 0x0BB5,SCREEN_HEIGHT,SCREEN_HEIGHT
 	.long    -12,     4,    12
+	.long 0x0100,0x0080
 	.long 0x0100,0x0120,0x0092
 BG_SCALING_ASPECT_GG:			;@ 192->160, 216->180, 6->5
 	.long 0xD555,0xD555,0xD555
 	.long 0x10B0,0x07BA,0x06BA
 	.long    -19,    -3,0x0008
+	.long 0x0100,0x0080
 	.long 0x0133,0x0133,0x0092
 BG_SCALING_ASPECT_GGMODE:		;@ 160x144 -> 160x120, 6->5
 	.long 0xD555,0xD555,0xD555
 	.long 0x249C,0x249C,0x249C
 	.long    -19,    -3,0x0008
+	.long 0x0100,0x0080
 	.long 0x0133,0x0133,0x0092
+BG_SCALING_GG_FULLSCREEN:		;@ C affine renderer handles both GG viewport scales.
+	.long 0xFFFF,0xFFFF,0xFFFF	;@ C affine renderer performs the vertical scale.
+	.long SCREEN_HEIGHT,SCREEN_HEIGHT,SCREEN_HEIGHT
+	.long      0,    16,    24
+	.long 0x00A0,0x0050			;@ Horizontal 8:5 inverse coefficients.
+	.long 0x00C0,0x00C0,0x0060	;@ Vertical 4:3 inverse coefficients.
 
 BG_SCALING_TBL:
 	.long 0,0,0
@@ -915,6 +1027,9 @@ scaleLoop4:
 @	biceq r0,r0,#0x1700			;@ Turn off sprites and bg
 @	ldrb r2,gfxLayerMask
 @	bic r0,r0,r2,lsl#8
+
+	bl ggFullscreenVBlank
+	ldr vdpptr,=VDP0			;@ C may clobber the caller-saved r12 register.
 
 	ldrb r4,[vdpptr,#vdpTVType]
 	blx scanKeys

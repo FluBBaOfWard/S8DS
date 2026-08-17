@@ -12,6 +12,7 @@
 	.global gEmuFlags
 //	.global scaling
 	.global gScalingSet
+	.global gGGScalingMethod
 	.global gCartFlags
 	.global gMachine
 	.global gMachineSet
@@ -1678,7 +1679,11 @@ gRegion:
 	.byte 0						;@ 0=Auto, 1=USA, 2=Euro, 3=Japan.
 gArcadeGameSet:
 	.byte 0						;@ see equates for defines, 0 = none.
-//	.space 4		;@ alignment.
+
+;@ The GG upscaler is a user setting and is deliberately not part of a game state.
+gGGScalingMethod:
+	.byte GG_UPSCALER_OFF
+	.align 2
 
 BankState:
 BankMap_Exp:

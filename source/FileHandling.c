@@ -23,6 +23,17 @@
 static const char *const folderName = "s8ds";
 static const char *const settingName = "settings.cfg";
 
+/* 
+*	ConfigData.display
+*   bits 0-1  SMS display geometry (unscaled, fit or aspect)
+*   bits 2-3  reserved
+*   bit  4    3D Display enabled
+*   bits 5-7  Game Gear upscaler method
+*/
+#define CONFIG_DISPLAY_MODE_MASK                 0x03
+#define CONFIG_DISPLAY_3D_ENABLE                 0x10
+#define CONFIG_DISPLAY_GG_UPSCALER_SHIFT            5
+#define CONFIG_DISPLAY_GG_UPSCALER_MASK          0xE0
 
 static ConfigData cfg;
 
@@ -31,8 +42,16 @@ static ConfigData cfg;
 //---------------------------------------------------------------------------------
 void applyConfigData(void) {
 	emuSettings  = cfg.emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	gScalingSet  = cfg.display & 3;
-	g3DEnable    = (cfg.display>>4) & 1;
+	gScalingSet = cfg.display & CONFIG_DISPLAY_MODE_MASK;
+	if (gScalingSet > SCALED_ASPECT) {
+		gScalingSet = SCALED_1_1;
+	}
+	gGGScalingMethod = (cfg.display & CONFIG_DISPLAY_GG_UPSCALER_MASK)
+		>> CONFIG_DISPLAY_GG_UPSCALER_SHIFT;
+	if (gGGScalingMethod >= GG_UPSCALER_COUNT) {
+		gGGScalingMethod = GG_UPSCALER_OFF;
+	}
+	g3DEnable    = (cfg.display & CONFIG_DISPLAY_3D_ENABLE) != 0;
 	gFlicker     = cfg.flicker & 1;
 	gGammaValue  = cfg.gammaValue & 0x7;
 	gColorValue  = (cfg.gammaValue >> 4) & 0x7;
@@ -51,7 +70,10 @@ void applyConfigData(void) {
 void updateConfigData(void) {
 	strcpy(cfg.magic, "cfg");
 	cfg.emuSettings = emuSettings & ~EMUSPEED_MASK; // Clear speed setting.
-	cfg.display     = (gScalingSet & 3) | ((g3DEnable & 1)<<4);
+	cfg.display     = (gScalingSet & CONFIG_DISPLAY_MODE_MASK)
+		| ((gGGScalingMethod << CONFIG_DISPLAY_GG_UPSCALER_SHIFT)
+			& CONFIG_DISPLAY_GG_UPSCALER_MASK)
+		| (g3DEnable ? CONFIG_DISPLAY_3D_ENABLE : 0);
 	cfg.flicker     = gFlicker & 1;
 	cfg.gammaValue  = (gGammaValue & 0x7) | ((gColorValue & 0x7) << 4);
 	cfg.sprites     = SPRS;
@@ -65,7 +87,7 @@ void updateConfigData(void) {
 void initSettings() {
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.emuSettings = AUTOPAUSE_EMULATION | AUTOLOAD_NVRAM | AUTOSAVE_NVRAM | AUTOSLEEP_OFF | ENABLE_LIVE_UI;
-	cfg.display     = SCALED_FIT | 0x10; // Scaling + 3DGlasses
+	cfg.display     = SCALED_FIT | CONFIG_DISPLAY_3D_ENABLE;
 	cfg.flicker     = 1;
 	cfg.gammaValue  = 0x40;		// ColorValue = 4
 	cfg.sprites     = 1;		// SpriteScanning On/Off;

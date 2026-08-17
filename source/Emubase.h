@@ -15,7 +15,7 @@ typedef struct {				//(config struct)
 	char magic[4];				//="CFG",0
 	int emuSettings;
 	int unused;					// unused
-	u8 display;					// from gfx.s
+	u8 display;					// from gfx.s, see ConfigData.display in FileHandling.c
 	u8 flicker;					// from gfx.s
 	u8 gammaValue;				// from gfx.s
 	u8 sprites;					// from gfx.s
