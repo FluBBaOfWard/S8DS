@@ -15,7 +15,6 @@
 #include "Gfx.h"
 #include "io.h"
 #include "Sound.h"
-#include "ArmTiming.h"
 
 static void checkTimeOut(void);
 static void setupGraphics(void);
@@ -56,8 +55,6 @@ static void myVblank(void) {
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
-	detectArm9Timing();
-
 	if (argc > 1) {
 		enableExit = true;
 	}
