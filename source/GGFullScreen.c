@@ -785,7 +785,7 @@ static inline u16 blendRgb15Eighth(u16 first, u16 second, int weight) {
 	}
 }
 
-static void composeSmoothedLine(u16 *source, int sourceY,
+static void composeSmoothedLine(u16 *dest, int sourceY,
 								const u16 *foregroundMap,
 				const u16 *backgroundMap,
 				const u8 *backgroundTiles, const u8 *scrollTMap,
@@ -793,20 +793,20 @@ static void composeSmoothedLine(u16 *source, int sourceY,
 #ifdef GG_SMOOTH_PROFILE
 	u32 started = cpuGetTiming();
 #endif
-	drawSmoothedBackgroundLine(source, sourceY, backgroundMap, backgroundTiles,
+	drawSmoothedBackgroundLine(dest, sourceY, backgroundMap, backgroundTiles,
 		scrollTMap, yScroll, scrollMask, false);
 #ifdef GG_SMOOTH_PROFILE
 	u32 finished = cpuGetTiming();
 	smoothProfileCurrent.backgroundBehind += finished - started;
 	started = finished;
 #endif
-	drawSmoothedSpriteLine(source, sourceY, spriteTiles);
+	drawSmoothedSpriteLine(dest, sourceY, spriteTiles);
 #ifdef GG_SMOOTH_PROFILE
 	finished = cpuGetTiming();
 	smoothProfileCurrent.sprites += finished - started;
 	started = finished;
 #endif
-	drawSmoothedBackgroundLine(source, sourceY, foregroundMap, backgroundTiles,
+	drawSmoothedBackgroundLine(dest, sourceY, foregroundMap, backgroundTiles,
 		scrollTMap, yScroll, scrollMask, true);
 #ifdef GG_SMOOTH_PROFILE
 	finished = cpuGetTiming();
