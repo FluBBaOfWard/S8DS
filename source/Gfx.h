@@ -16,7 +16,7 @@ extern u8 bColor;
 extern u8 SPRS;
 
 extern SegaVDP VDP0;
-extern u16 EMUPALBUFF[];
+extern u16 EMUPALBUFF[0x200];
 extern u32 DMA0Buff[];
 
 void gfxInit(void);
